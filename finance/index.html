@@ -12,7 +12,7 @@
 <div class="topbar no-print"><strong>Or Hachaim / אור החיים</strong><span>Finance, TEST names only</span><a href="../screen/index.html">Screen</a><a href="../admin/index.html">Gabbai admin</a></div>
 <div class="page">
 <p><span class="badge-sample">TEST DATA ONLY</span> No real congregants. Ledger is append-only: corrections are correction entries, never deletes. Foundation: every financial action carries a unique operationId, and a duplicate submission is rejected. Pledge, charge, payment, and open balance are four distinct states, never conflated.</p>
-<label>Search congregants</label><input id="search" placeholder="Type a test name" oninput="renderList()">
+<p id="dataSource">Source: TEST data (mock, signed out)</p><label>Search congregants</label><input id="search" placeholder="Type a test name" oninput="renderList()">
 <div id="list"></div>
 <h2>Add congregant / הוספת מתפלל</h2>
 <div class="gold-frame no-print" style="padding:1rem"><p>Email is optional. A congregant without email is fully managed here and cannot sign in until the super admin adds an email to this same existing record; history and balance are preserved.</p>
@@ -199,5 +199,20 @@ function backupExport(){
   logActivity("TEST gabbai (mock)", "Exported full finance backup (mock)", "backup");
 }
 renderList(); renderActivity(); renderNederCong(); renderRec(); renderPledges();
+var _lastUserEmail = null;
+async function refreshFromFirestore(){
+  try {
+    var fb = window.OH_FIREBASE;
+    if(!fb || !fb.ready || !fb.user) { if(_lastUserEmail !== null){ _lastUserEmail = null; cons = window.TEST_DATA.congregants.slice(); document.getElementById('dataSource').textContent = 'Source: TEST data (mock, signed out)'; renderList(); } return; }
+    var email = fb.user.email || '';
+    if(email === _lastUserEmail) return;
+    _lastUserEmail = email;
+    var live = await fb.loadCongregants();
+    if(live && live.length){ cons = live; document.getElementById('dataSource').textContent = 'Source: Firestore (live TEST docs), signed in as ' + email; renderList(); }
+    else { document.getElementById('dataSource').textContent = 'Source: TEST data (mock), Firestore load returned no live docs, signed in as ' + email; }
+  } catch(e) {}
+}
+setInterval(refreshFromFirestore, 1000);
+refreshFromFirestore();
 </script>
 </div></body></html>
