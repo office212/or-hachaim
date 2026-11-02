@@ -1,70 +1,88 @@
-/* Or Hachaim theme layer: the ONLY place for colors, fonts and frames.
-   Change this file to restyle the site. Do not put colors or fonts in
-   data files or logic files. Data and logic live elsewhere. */
+/* Or Hachaim theme layer, modern demo style (approved 2026-11-02).
+   The ONLY place for colors, fonts and frames. Change this file to
+   restyle the site. Data and logic live elsewhere.
+   Variable names are kept for compatibility with screen.css. */
 :root {
-  --navy: #0e2c4c;
-  --navy-deep: #081d33;
-  --navy-soft: #1b3f66;
-  --gold: #c9a227;
+  --navy: #1b365d;
+  --navy-deep: #0f233f;
+  --navy-soft: #33475e;
+  --gold: #c9a86a;
   --gold-light: #e8c766;
   --gold-dark: #8a6d1b;
-  --stone: #f3ead3;
-  --stone-dark: #e2d3ac;
-  --marble: #fdfaf2;
+  --stone: #efe8da;
+  --stone-dark: #e2d9c4;
+  --marble: #f7f3ea;
   --sky: #7fb3d5;
-  --sky-pale: #dbeaf5;
-  --ink: #1c2430;
+  --sky-deep: #4a90b8;
+  --sky-pale: #e8f2f8;
+  --sky-soft: #e8f2f8;
+  --ink: #1b365d;
   --white: #ffffff;
-  --font-hebrew: "Frank Ruhl Libre", "David", serif;
-  --font-latin: Georgia, "Times New Roman", serif;
-  --frame: 3px double var(--gold);
-  --frame-thin: 1px solid var(--gold);
-  --radius: 10px;
-  --shadow: 0 4px 18px rgba(8, 29, 51, 0.25);
+  --font-hebrew: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --font-latin: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+  --frame: 1px solid var(--stone-dark);
+  --frame-thin: 1px solid var(--stone-dark);
+  --radius: 18px;
+  --shadow: 0 6px 24px rgba(27, 54, 93, 0.08);
 }
 * { box-sizing: border-box; }
 body {
   margin: 0;
   font-family: var(--font-latin);
+  font-size: 18px;
+  line-height: 1.5;
   color: var(--ink);
-  background: var(--stone);
+  background: linear-gradient(180deg, #f7f3ea 0%, #efe8da 55%, #e8f2f8 100%);
 }
+h1 { font-size: 30px; line-height: 1.15; }
+h2 { font-size: 28px; }
+h3 { font-size: 22px; }
 .he { font-family: var(--font-hebrew); direction: rtl; }
 .gold-frame {
   border: var(--frame);
   border-radius: var(--radius);
-  background: var(--marble);
+  background: var(--white);
   box-shadow: var(--shadow);
-  outline: 1px solid var(--gold-light);
-  outline-offset: 4px;
+  padding: 22px;
 }
 .ornament { color: var(--gold); letter-spacing: 0.35em; text-align: center; }
-.btn {
-  background: var(--navy); color: var(--white); border: 1px solid var(--gold);
-  border-radius: 8px; padding: 0.55rem 1.1rem; cursor: pointer;
-  font-size: 1rem; font-family: inherit;
+.btn, button.btn {
+  background: var(--sky-deep); color: var(--white); border: 0;
+  border-radius: 14px; padding: 18px 20px; cursor: pointer;
+  font-size: 21px; font-weight: 700; font-family: inherit;
+  min-height: 60px; width: 100%;
 }
-.btn-gold { background: var(--gold); color: var(--navy); font-weight: bold; }
-.btn:hover { filter: brightness(1.15); }
+.btn-gold { background: var(--sky-deep); color: var(--white); font-weight: 700; }
+.btn.secondary, button.btn.secondary { background: var(--white); color: var(--ink); border: 2px solid var(--stone-dark); }
+.btn:hover { filter: brightness(1.08); }
+.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid var(--sky-deep); outline-offset: 3px; }
 input, select, textarea {
-  font: inherit; padding: 0.5rem; border: 1px solid var(--gold-dark);
-  border-radius: 6px; background: var(--white); width: 100%;
+  font: inherit; font-size: 19px; padding: 16px; border: 2px solid var(--stone-dark);
+  border-radius: 12px; background: var(--white); color: var(--ink); width: 100%; min-height: 60px;
 }
-label { font-weight: bold; display: block; margin: 0.6rem 0 0.25rem; }
-table { border-collapse: collapse; width: 100%; }
-th { background: var(--navy); color: var(--white); padding: 0.5rem; text-align: left; }
-td { padding: 0.5rem; border-bottom: 1px solid var(--stone-dark); }
+textarea { min-height: 120px; }
+label { font-weight: 700; display: block; margin: 14px 0 6px; font-size: 18px; }
+table { border-collapse: collapse; width: 100%; font-size: 18px; }
+th { background: var(--navy); color: var(--white); padding: 12px 8px; text-align: left; }
+td { padding: 12px 8px; border-bottom: 1px solid var(--stone-dark); }
 .topbar {
-  background: var(--navy); color: var(--white); padding: 0.7rem 1rem;
-  border-bottom: 4px solid var(--gold); display: flex; gap: 1rem; align-items: center;
+  background: var(--white); color: var(--ink); padding: 16px;
+  border-bottom: 3px solid var(--gold); display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
 }
-.topbar a { color: var(--gold-light); }
-.page { max-width: 1100px; margin: 1rem auto; padding: 0 1rem 2rem; }
-.badge-sample {
-  display: inline-block; background: #b00020; color: #fff; font-weight: bold;
-  padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.85rem;
-}
+.topbar a { color: var(--sky-deep); }
+.topbar strong { font-size: 20px; }
+.page { max-width: 1180px; margin: 0 auto; padding: 8px 20px 40px; }
+.badge-sample { display: none; }
 .note { background: var(--sky-pale); border-left: 5px solid var(--navy); padding: 0.8rem; margin: 1rem 0; }
+.hint { font-size: 16px; color: var(--navy-soft); }
+.gate-card {
+  display: none; background: var(--white); border: 1px solid var(--stone-dark);
+  border-radius: 18px; padding: 28px; box-shadow: var(--shadow); text-align: center; margin: 20px 0;
+}
+.gate-card h2 { margin-top: 0; }
+body.gated .gate-card { display: block; }
+body.gated .page > :not(.gate-card) { display: none !important; }
+body.gated .page > .gate-card { display: block !important; }
 @media print {
   .no-print, .topbar, .btn { display: none !important; }
   body { background: #fff; }
