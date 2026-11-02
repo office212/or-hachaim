@@ -3,9 +3,11 @@
 Synagogue: Or Hachaim Congregation, 321 Harold St, Staten Island, NY 10314.
 Super admin: hanochhason@gmail.com. Login in production is Google only, via Firebase Auth.
 
-This scaffold is NOT live, NOT connected to Firebase, NOT connected to a real
-times engine, and contains NO real gabbai or congregant lists, NO real prayer
+This scaffold is TEST DATA ONLY, NOT connected to Firebase yet,
+and contains NO real gabbai or congregant lists, NO real prayer
 times, and NO real API keys. Everything on every page is labeled TEST or SAMPLE.
+A Firebase project was created 2026-11-02, empty, see below, but no
+frontend wiring, no Firestore, no Auth, and no data import yet.
 
 Authoritative plan: `~/workspace/your_files/Or-Hachaim-Synagogue-Site-Plan.md`.
 That plan's YES list, NO list, Later list, and Shabbat rules govern this
@@ -174,7 +176,7 @@ times, announcements, dedications, sponsors, yahrzeits, flyers, users and
 roles. Storage for images and graphics.
 
 Security-rule intent (draft in `src/firebase/firestore.rules`, not
-deployed, no project created yet): super admin is
+deployed, no data yet): super admin is
 hanochhason@gmail.com only, management only. The super admin
 chooses each gabbai's permissions: finance only, times and screen
 only, or both. A gabbai touches only the collections their permission
@@ -184,10 +186,14 @@ screen viewer account reads screen content only and never reads
 finance data. Ledger entries, nedarim, and activity log entries can
 be created but never updated or deleted, by anyone.
 
-Firebase project: NOT created in this task. Creation is authorized
-by Hanoch (2026-11-01 23:06) when needed, free as far as possible,
-under hanochhason@gmail.com. That authorization does not cover a
-paid project; a paid tier still needs a separate decision.
+Firebase project: CREATED 2026-11-02, empty. Name or-hachaim,
+ID or-hachaim, number 1030831668431, owner hanochhason@gmail.com,
+Spark plan, no cost, Google Analytics off, Gemini in Firebase off,
+no apps, no Firestore, no Auth, no Storage, no data imported.
+Console: https://console.firebase.google.com/project/or-hachaim/overview
+Creation was authorized by Hanoch (2026-11-01 23:06) when needed,
+free as far as possible, under hanochhason@gmail.com. That authorization
+does not cover a paid project; a paid tier still needs a separate decision.
 
 ## How to run locally (static server, no build step)
 
@@ -215,11 +221,12 @@ Balance owed: 300 - 150 = 150. Verified by the totals function in
 
 ## NOT yet done (checklist)
 
-- [x] Live GitHub repo: CREATED by Hanoch, https://github.com/office212/or-hachaim, owner office212, Public, README only, no code pushed yet. Local codebase is ready to push to this repo later. Do NOT push via the GitHub connector (it returned 401 before); pushing goes through the browser session when Hanoch approves that step.
-- [ ] Code push to office212/or-hachaim: PRE-APPROVED by Hanoch 2026-11-01 22:54, for validated code with test data only, without asking again for the push itself. Scope does NOT cover go-live, real lists, or a paid Firebase project. Push via the browser's signed-in GitHub session, not the connector.
-- [ ] Live Firebase project (not created; creation authorized by Hanoch 2026-11-01 23:06 when needed, free as far as possible, under hanochhason@gmail.com; no paid tier covered)
+- [x] Live GitHub repo: CREATED by Hanoch, https://github.com/office212/or-hachaim, owner office212, Public.
+- [x] Code push to office212/or-hachaim: DONE 2026-11-02, validated code with test data only. Text commit b4f84a2, logo PNG commit e977fb6, via the GitHub connector, which worked on 2026-11-02. Scope does NOT cover go-live with real data, real lists, or a paid Firebase project.
+- [x] Live Firebase project: CREATED 2026-11-02, empty, or-hachaim, Spark free, under hanochhason@gmail.com, no paid tier covered. Firestore, Auth, Storage, rules deployment, and frontend wiring are NOT done yet.
+- [ ] GitHub Pages activation and test-site verification (next step, test data only)
 - [ ] Google login wiring (placeholder only)
 - [ ] Roy engine integration (demo and sample data only for now)
 - [x] Shabbat ends module (real module in src/zmanim/shabbat-ends.js; the placeholder note above was stale and is corrected here)
 - [ ] Real gabbai list, real congregant list, real prayer times (all arrive only after verification, per the plan)
-- [ ] Go-live, public sharing, or any real data import (none done, none claimed)
+- [ ] Go-live with real data, public sharing of real data, or any real data import (none done, none claimed)
