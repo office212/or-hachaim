@@ -1,0 +1,212 @@
+/* Firestore security rules DRAFT, not deployed, no project created yet.
+   Purpose: enforce the append-only ledger in the database itself, not
+   only in the user interface. A user interface rule can be bypassed;
+   these rules cannot be bypassed by a normal client call.
+
+   Decisions enforced here (Hanoch, 2026-11-01 23:06, and critical
+   review 2026-11-01 23:11, foundation requirements):
+   - Security rules are a central design layer, not an extra
+     layer. Sensitive actions are verified server-side, in these
+     rules, not only in the user interface.
+   - A finance gabbai cannot edit his own permissions, and cannot
+     grant himself access. Only the super admin writes users.
+   - A screen gabbai cannot read finance data, in any collection.
+   - A screen viewer account cannot read finance data, in any
+     collection, and cannot read user roles.
+   - A congregant reads only the record whose email matches their
+     signed-in Google email, and reads only its ledger entries.
+     A congregant cannot change a balance, cannot write a ledger
+     entry, and cannot reach another congregant by changing an
+     address or an id in a request.
+   - Every financial action carries a unique operationId. The
+     operationIds collection allows create only when the id does
+     not already exist, and never allows update or delete, so a
+     duplicate submission is rejected in the database itself.
+   - Ledger entries can be created by authorized gabbaim and by the
+     super admin only. Ledger entries can NEVER be updated or deleted
+     by anyone, including the super admin and including gabbaim.
+     A mistake is fixed by a new correction entry with a signed
+     amount, never by editing or deleting the original entry.
+   - Finance backup is a day-one requirement, not a go-live item.
+     Backup exports read the full ledger and congregant records;
+     restore never deletes or overwrites existing entries (see
+     backup-design.md). Restore imports missing entries as new
+     entries with their original dates and entered-by values.
+   - The TV screen runs on a dedicated synagogue viewer account with
+     screen-read-only access. That account has NO finance access,
+     NO admin access, and NO editing access of any kind. The screen
+     device NEVER uses the super admin account.
+   - Super admin is hanochhason@gmail.com, management only. The
+     super admin chooses each gabbai's permissions: finance only,
+     times/screen only, or both.
+   - A congregant signed in with Google using the email the super
+     admin added to their existing record reads ONLY their own
+     congregant record and its ledger entries, nothing else.
+
+   Roles are stored in users/{uid} documents, written by the super
+   admin only. A role document has: email, permissions (finance,
+   screen, both, or viewer), and for a viewer account, a marker
+   screenViewer = true. This draft assumes that shape; the exact
+   field names must be frozen when the Firebase project is created,
+   and the rules must be tested with test users before any real data
+   is imported. Do not deploy this draft to a project with real data
+   until those tests pass.
+
+   NOTE: this file is a draft for review. Firestore rules syntax must
+   be validated with the Firebase emulator or the Firebase console
+   rules tester before deployment. */
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isSuperAdmin() {
+      return isSignedIn() && request.auth.token.email == 'hanochhason@gmail.com';
+    }
+    function hasFinance() {
+      return isSuperAdmin() || (isSignedIn() && (userDoc().permissions == 'finance' || userDoc().permissions == 'both'));
+    }
+    function hasScreen() {
+      return isSuperAdmin() || (isSignedIn() && (userDoc().permissions == 'screen' || userDoc().permissions == 'both'));
+    }
+    function isScreenViewer() {
+      return isSignedIn() && userDoc().screenViewer == true;
+    }
+
+    /* Users and roles: super admin only writes. Nobody else can
+       grant themselves finance, screen, or viewer access. */
+    match /users/{uid} {
+      allow read: if isSuperAdmin() || request.auth.uid == uid;
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    /* Idempotency: one operationId, one entry. Create only when
+       the id is not already present. Update and delete denied
+       for everyone, including the super admin. A duplicate
+       submission with the same operationId must be rejected
+       here, not only by disabling a button in the interface. */
+    match /operationIds/{id} {
+      allow read: if hasFinance();
+      allow create: if hasFinance() && !exists(/databases/$(database)/documents/operationIds/$(id));
+      allow update, delete: if false;
+    }
+
+    /* Pledges: a pledge is a commitment, not a charge and not a
+       payment. Pledges are append only, like the ledger. A pledge
+       becomes a charge only by a new ledger charge entry that
+       references the pledge id; the pledge status change itself
+       is recorded in the activity log, and past entries are never
+       deleted. */
+    match /pledges/{id} {
+      allow read: if hasFinance();
+      allow create: if hasFinance();
+      allow update: if hasFinance();
+      allow delete: if false;
+    }
+
+    /* Congregants: finance gabbaim and super admin manage them.
+       A congregant reads only the record whose email matches their
+       signed-in Google email. No congregant can list all records. */
+    match /congregants/{id} {
+      allow read: if hasFinance() || (isSignedIn() && resource.data.email == request.auth.token.email);
+      allow create, update: if hasFinance();
+      allow delete: if false;
+    }
+
+    /* Ledger entries: APPEND ONLY. Create only, by finance gabbaim
+       and super admin. Update and delete are denied for everyone,
+       including the super admin. This is the database enforcement
+       of the append-only ledger, decision 5. */
+    match /ledgerEntries/{id} {
+      allow read: if hasFinance() || (isSignedIn() && get(/databases/$(database)/documents/congregants/$(resource.data.congregantId)).data.email == request.auth.token.email);
+      allow create: if hasFinance();
+      allow update, delete: if false;
+    }
+
+    /* Nedarim: a neder is a ledger charge with a source of neder and
+       an aliyah field. The same append-only rule applies, because a
+       neder is stored as a ledger entry, not as a separate editable
+       record. */
+    match /nedarim/{id} {
+      allow read: if hasFinance();
+      allow create: if hasFinance();
+      allow update, delete: if false;
+    }
+
+    /* Recurring charge schedules: finance gabbaim manage the
+       schedule. Pausing or cancelling a schedule is an update to
+       the schedule record only; it never deletes past ledger
+       entries created from that schedule. */
+    match /recurringSchedules/{id} {
+      allow read: if hasFinance();
+      allow create, update: if hasFinance();
+      allow delete: if false;
+    }
+
+    /* Activity log: append only, same as the ledger. Finance and
+       screen gabbaim may create entries for actions in their own
+       area, super admin for any area. Nobody updates or deletes
+       a log entry. */
+    match /activityLog/{id} {
+      allow read: if isSuperAdmin() || hasFinance() || hasScreen();
+      allow create: if isSuperAdmin() || hasFinance() || hasScreen();
+      allow update, delete: if false;
+    }
+
+    /* Screen content: prayer times, announcements, dedications,
+       sponsors, flyers, yahrzeits. Screen gabbaim and super admin
+       edit; the dedicated screen viewer account reads only. */
+    match /prayerTimes/{id} {
+      allow read: if hasScreen() || isScreenViewer();
+      allow create, update, delete: if hasScreen();
+    }
+    match /announcements/{id} {
+      allow read: if hasScreen() || isScreenViewer();
+      allow create, update, delete: if hasScreen();
+    }
+    match /dedications/{id} {
+      allow read: if hasScreen() || isScreenViewer();
+      allow create, update, delete: if hasScreen();
+    }
+    match /sponsors/{id} {
+      allow read: if hasScreen() || isScreenViewer();
+      allow create, update, delete: if hasScreen();
+    }
+    match /flyers/{id} {
+      allow read: if hasScreen() || isScreenViewer();
+      allow create, update, delete: if hasScreen();
+    }
+    match /yahrzeits/{id} {
+      allow read: if hasScreen() || isScreenViewer();
+      allow create, update, delete: if hasScreen();
+    }
+
+    /* Backup records: metadata only (when an export ran, by whom,
+       how many records). The export file itself is downloaded by
+       a finance gabbai or the super admin and stored outside
+       Firestore. Nobody deletes a backup record. */
+    match /backups/{id} {
+      allow read: if hasFinance();
+      allow create: if hasFinance();
+      allow update, delete: if false;
+    }
+
+    /* Note on the screen viewer and finance: no match block below
+       grants the viewer any finance collection. The default deny
+       at the end blocks viewer reads of ledger, pledges,
+       operation ids, congregants, recurring schedules, activity
+       log, and backups. Do not add a viewer grant to a finance
+       collection in a later edit without a new foundation decision. */
+
+    /* Everything else: deny by default. */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

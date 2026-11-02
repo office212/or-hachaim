@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gabbai Admin / ממשק גבאי (MOCK)</title>
+<link rel="stylesheet" href="../src/theme.css">
+<script src="../src/data/test-data.js"></script></head>
+<body>
+<div class="topbar"><strong>Or Hachaim / אור החיים</strong><span>Gabbai editing interface (MOCK, local state only)</span><a href="../screen/index.html">Screen</a><a href="../finance/index.html">Finance</a></div>
+<div class="page">
+<p><span class="badge-sample">MOCK ONLY</span> No login is wired yet (placeholder). No data is saved to a live backend. In the Firebase phase, Google login gates this page and Firestore stores every change.</p>
+<div class="note"><strong>Permissions model (documented, not enforced here yet):</strong> super admin hanochhason@gmail.com chooses per gabbai: finance only, times/screen only, or both. A gabbai with screen permission edits the items below; a gabbai with finance permission only does not see this page. Every change here is recorded in the activity log in the Firebase phase (who, what, when). The TV screen itself never uses the super admin account: it uses a dedicated synagogue viewer account, screen-read-only, with no finance and no editing access.</div>
+<h2>Prayer times / זמני תפילות</h2>
+<div class="gold-frame" style="padding:1rem"><div id="ptList"></div>
+<label>New prayer time (mock)</label><input id="ptName" placeholder="Name, e.g. Shacharit">
+<label>Time</label><input id="ptTime" placeholder="e.g. 7:00 AM">
+<button class="btn" onclick="addPT()">Add locally (mock)</button><p id="ptMsg"></p></div>
+<h2>Announcements / הודעות</h2>
+<div class="gold-frame" style="padding:1rem"><label>Announcement text</label><textarea id="anText" rows="3"></textarea><button class="btn" onclick="mockSave('Announcement saved locally (mock).')">Save locally (mock)</button><p id="anMsg"></p></div>
+<h2>Dedications and sponsors / הקדשות ונותני חסות</h2>
+<div class="gold-frame" style="padding:1rem"><label>Dedication or sponsor</label><textarea id="dedText" rows="3"></textarea><label>Date window: from</label><input type="date" id="dedFrom"><label>Date window: to</label><input type="date" id="dedTo"><button class="btn" onclick="mockSave2()">Save locally (mock)</button><p id="dedMsg"></p></div>
+<h2>Flyers with date windows / פליירים</h2>
+<div class="gold-frame" style="padding:1rem"><label>Flyer title</label><input id="flyTitle"><label>From</label><input type="date" id="flyFrom"><label>To</label><input type="date" id="flyTo"><button class="btn" onclick="mockSave3()">Save locally (mock)</button><p id="flyMsg"></p></div>
+<h2>Yahrzeit, add once / יורצייט</h2>
+<div class="gold-frame" style="padding:1rem"><p>Added once, recurs yearly in its week automatically (sample logic documented; Firebase phase implements the yearly recurrence).</p><label>Name</label><input id="yName"><label>Hebrew date</label><input id="yDate" placeholder="e.g. 5 Kislev"><button class="btn" onclick="mockSave4()">Add locally (mock)</button><p id="yMsg"></p></div>
+<h2>Images and graphics / תמונות וגרפיקות</h2>
+<div class="gold-frame" style="padding:1rem"><p>Local preview only in this mock. Real uploads go to Firebase Storage in the Firebase phase, by gabbaim with screen permission.</p><input type="file" accept="image/*" onchange="previewImg(event)"><div id="imgPreview"></div></div>
+<h2>Preview before publishing, and change history / תצוגה מקדימה והיסטוריה</h2>
+<div class="gold-frame" style="padding:1rem"><p>Foundation, priority high: before publishing, the gabbai sees the exact TV view at 1920x1080 landscape, including the Shabbat view, by opening the screen page and using its Shabbat preview toggle. Every announcement, sponsorship, and dedication has a start and end date and shows only inside its window. Change history with restore of a previous announcement or message is a Firebase-phase requirement, recorded in the activity log; this mock does not yet store history.</p></div>
+<h2>Shabbat rules per page / כללי שבת לכל עמוד</h2>
+<div class="gold-frame" style="padding:1rem"><p>Foundation: Shabbat safety is system-enforced, not gabbai memory. Weekday-only items, payment text, and donation QR are hidden automatically on Shabbat and Yom Tov, even if a gabbai forgot to flag them. See src/engines/shabbat-safe.js. Each page also marks its own weekday-only items. On the screen, weekday-only items are hidden from Shabbat entry to Shabbat exit. Use the Shabbat preview toggle on the screen to test this.</p></div>
+<script>
+var pts = window.TEST_DATA.prayerTimes.slice();
+function renderPT(){ document.getElementById("ptList").innerHTML = pts.map(function(p){ return "<p>" + p.nameEn + " / " + p.nameHe + ": " + p.time + "</p>"; }).join(""); }
+function addPT(){ var n = document.getElementById("ptName").value, t = document.getElementById("ptTime").value; if(!n || !t){ document.getElementById("ptMsg").textContent = "Enter a name and a time."; return; } pts.push({nameEn: n, nameHe: n, time: t + " (MOCK)"}); renderPT(); document.getElementById("ptMsg").textContent = "Added locally (mock, not saved)."; }
+function mockSave(m){ document.getElementById("anMsg").textContent = m; }
+function mockSave2(){ document.getElementById("dedMsg").textContent = "Saved locally (mock, not saved). Window: " + document.getElementById("dedFrom").value + " to " + document.getElementById("dedTo").value; }
+function mockSave3(){ document.getElementById("flyMsg").textContent = "Flyer saved locally (mock). Shown only " + document.getElementById("flyFrom").value + " to " + document.getElementById("flyTo").value; }
+function mockSave4(){ document.getElementById("yMsg").textContent = "Yahrzeit added locally (mock). It will recur yearly in its week in the Firebase phase."; }
+function previewImg(e){ var f = e.target.files[0]; if(!f) return; var r = new FileReader(); r.onload = function(){ document.getElementById("imgPreview").innerHTML = '<img src="' + r.result + '" style="max-width:300px">'; }; r.readAsDataURL(f); }
+renderPT();
+</script>
+</div></body></html>

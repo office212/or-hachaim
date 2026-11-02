@@ -1,0 +1,71 @@
+/* Or Hachaim theme layer: the ONLY place for colors, fonts and frames.
+   Change this file to restyle the site. Do not put colors or fonts in
+   data files or logic files. Data and logic live elsewhere. */
+:root {
+  --navy: #0e2c4c;
+  --navy-deep: #081d33;
+  --navy-soft: #1b3f66;
+  --gold: #c9a227;
+  --gold-light: #e8c766;
+  --gold-dark: #8a6d1b;
+  --stone: #f3ead3;
+  --stone-dark: #e2d3ac;
+  --marble: #fdfaf2;
+  --sky: #7fb3d5;
+  --sky-pale: #dbeaf5;
+  --ink: #1c2430;
+  --white: #ffffff;
+  --font-hebrew: "Frank Ruhl Libre", "David", serif;
+  --font-latin: Georgia, "Times New Roman", serif;
+  --frame: 3px double var(--gold);
+  --frame-thin: 1px solid var(--gold);
+  --radius: 10px;
+  --shadow: 0 4px 18px rgba(8, 29, 51, 0.25);
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: var(--font-latin);
+  color: var(--ink);
+  background: var(--stone);
+}
+.he { font-family: var(--font-hebrew); direction: rtl; }
+.gold-frame {
+  border: var(--frame);
+  border-radius: var(--radius);
+  background: var(--marble);
+  box-shadow: var(--shadow);
+  outline: 1px solid var(--gold-light);
+  outline-offset: 4px;
+}
+.ornament { color: var(--gold); letter-spacing: 0.35em; text-align: center; }
+.btn {
+  background: var(--navy); color: var(--white); border: 1px solid var(--gold);
+  border-radius: 8px; padding: 0.55rem 1.1rem; cursor: pointer;
+  font-size: 1rem; font-family: inherit;
+}
+.btn-gold { background: var(--gold); color: var(--navy); font-weight: bold; }
+.btn:hover { filter: brightness(1.15); }
+input, select, textarea {
+  font: inherit; padding: 0.5rem; border: 1px solid var(--gold-dark);
+  border-radius: 6px; background: var(--white); width: 100%;
+}
+label { font-weight: bold; display: block; margin: 0.6rem 0 0.25rem; }
+table { border-collapse: collapse; width: 100%; }
+th { background: var(--navy); color: var(--white); padding: 0.5rem; text-align: left; }
+td { padding: 0.5rem; border-bottom: 1px solid var(--stone-dark); }
+.topbar {
+  background: var(--navy); color: var(--white); padding: 0.7rem 1rem;
+  border-bottom: 4px solid var(--gold); display: flex; gap: 1rem; align-items: center;
+}
+.topbar a { color: var(--gold-light); }
+.page { max-width: 1100px; margin: 1rem auto; padding: 0 1rem 2rem; }
+.badge-sample {
+  display: inline-block; background: #b00020; color: #fff; font-weight: bold;
+  padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.85rem;
+}
+.note { background: var(--sky-pale); border-left: 5px solid var(--navy); padding: 0.8rem; margin: 1rem 0; }
+@media print {
+  .no-print, .topbar, .btn { display: none !important; }
+  body { background: #fff; }
+}

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Account / החשבון שלי (TEST)</title>
+<link rel="stylesheet" href="../src/theme.css">
+<script src="../src/data/test-data.js"></script></head>
+<body>
+<div class="topbar"><strong>Or Hachaim / אור החיים</strong><span>Own-data-only dashboard (TEST)</span><a href="../screen/index.html">Screen</a></div>
+<div class="page">
+<p><span class="badge-sample">TEST CONGREGANT ONLY</span> This page shows only one congregant's own balance and history.</p>
+<div class="note"><strong>Real access rule (not wired yet):</strong> in the Firebase phase, a congregant signs in with Google using the email the super admin added to their existing record, and sees only their own record. No other congregant's data is ever shown here.</div>
+<div id="card"></div>
+<script>
+var c = window.TEST_DATA.congregants[0]; var t = window.ledgerTotals(c);
+document.getElementById("card").innerHTML = '<div class="gold-frame" style="padding:1rem"><h2>' + c.name + '</h2>' +
+'<p>Charges total: $' + t.charges + ' | Payments total: $' + t.payments + ' | <strong>Balance owed: $' + t.balance + '</strong></p>' +
+'<table><tr><th>Date</th><th>Type</th><th>Amount</th><th>Description</th></tr>' +
+c.ledger.map(function(e){ return "<tr><td>" + e.date + "</td><td>" + e.type + "</td><td>$" + e.amount + "</td><td>" + e.description + "</td></tr>"; }).join("") +
+'</table><p><small>TEST data. In production this is the signed-in congregant only.</small></p></div>';
+</script>
+</div></body></html>

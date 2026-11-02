@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="he" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Or Hachaim Screen / מסך אור החיים (TEST)</title>
+<link rel="stylesheet" href="screen.css">
+<script src="../src/data/test-data.js"></script>
+<script src="../src/engines/shabbat-safe.js"></script>
+</head>
+<body>
+<div class="tv">
+  <header>
+    <img class="logo" src="../src/assets/logo-4k-transparent.png" alt="Or Hachaim logo, unchanged">
+    <div>
+      <h1><span class="he">אור החיים</span> / Or Hachaim Congregation</h1>
+      <div>321 Harold St, Staten Island, NY 10314 <span class="badge-sample">TEST / SAMPLE DATA ONLY</span></div>
+    </div>
+    <div class="meta">
+      <div id="clock">--:--:--</div>
+      <div id="dateLine"></div>
+      <div><span class="he">פרשת תולדות</span> / Parashat Toldot (sample)</div>
+    </div>
+  </header>
+  <main>
+    <section class="col gold-frame">
+      <h2>Daily Zmanim / זמני היום</h2>
+      <p><small>Plan order. Anchor values are labeled sample anchors; other times are labeled demo, not Roy output. Each zman disappears 5 minutes after it passes, for that day. Next zman is highlighted.</small></p>
+      <div id="zmanList"></div>
+      <div id="netzBox"></div>
+      <p><small>Candles (sample anchor): 4:22, which is 18 minutes before sunset (decision 2026-11-01, NOT Roy default 20). Shema Magen Avraham (sample anchor): 8:35, equal minutes (decision 2026-11-01, NOT Roy seasonal). Shabbat ends (sample anchor): 5:23. Rabbeinu Tam (sample anchor): 5:52. Shabbat ends in production is angle-based (8.5 degrees), not fixed minutes; see src/zmanim/shabbat-ends.js.</small></p>
+      <p><small>Screen account: this TV screen runs on a dedicated synagogue viewer account, screen-read-only, NEVER the super admin account. No finance, no admin, no editing from this screen. Super admin hanochhason@gmail.com is management only.</small></p>
+      <p><small>Burn-in prevention: content shifts gently on weekdays to protect a TV that runs 24/7. On Shabbat and holidays there is NO movement at all, including this shift.</small></p>
+      <p class="note"><small>Offline fallback, foundation: if this screen loses internet, it keeps showing the last info, with a last-updated stamp, and never goes blank. In this demo the last info is the sample data above. Validity: every announcement, sponsorship, and dedication shows only inside its start and end window. Preview: the gabbai admin shows the exact TV view before publishing, including the Shabbat view. Change history: a previous announcement or message can be restored from the admin history.</small></p>
+      <p><small>Shabbat-safe mechanism, foundation: weekday-only content, payment text, and donation QR are hidden by the system on Shabbat and Yom Tov, not by relying on a gabbai remembering to flag them. See src/engines/shabbat-safe.js.</small></p>
+      <p id="offlineNote"><small>Last updated (demo): sample data. Online status is shown here in the live phase.</small></p>
+    </section>
+    <section class="col gold-frame">
+      <h2>Center / מרכז מתחלף</h2>
+      <div class="ornament">✦ ✦ ✦</div>
+      <div id="centerZone"></div>
+    </section>
+    <section class="col gold-frame">
+      <h2>Prayer Times / זמני תפילות</h2>
+      <p><small>Community times, edited by an authorized gabbai (mock data here).</small></p>
+      <div id="prayerList"></div>
+      <script>
+        document.getElementById("prayerList").innerHTML = window.TEST_DATA.prayerTimes.map(function (p) {
+          return '<div class="zman-row"><span><span class="he">' + p.nameHe + "</span> / " + p.nameEn + "</span><span>" + p.time + "</span></div>";
+        }).join("");
+      </script>
+      <div class="weekday-only">
+        <p><strong>Donation / תרומה (weekday only)</strong></p>
+        <p>TEST donation QR placeholder. TEST payment text placeholder.</p>
+        <p><small>Hidden in Shabbat mode, from Shabbat entry to Shabbat exit.</small></p>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <span class="ornament">✦</span>
+    <span class="dedication">Leilui Nishmat TEST Name (permanent dedication, sample) / לעילוי נשמת פלוני (בדיקה)</span>
+    <span class="dedication">Kiddush sponsored by TEST Family (sample)</span>
+    <span style="margin-left:auto"><small>Back to: <a href="../README.md" style="color:#e8c766">README</a> | <a href="../admin/index.html" style="color:#e8c766">Gabbai admin (mock)</a> | <a href="../finance/index.html" style="color:#e8c766">Finance (mock)</a></small></span>
+  </footer>
+</div>
+<div class="controls no-print"><button class="btn btn-gold" id="shabbatToggle">Shabbat preview (demo)</button></div>
+<script src="screen.js"></script>
+</body>
+</html>
