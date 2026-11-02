@@ -3,7 +3,6 @@
    Clock sync note: this demo uses the device clock. In the live phase the
    screen will note its sync source honestly (client clock sync); no
    atomic-clock claim is made from this demo code. */
-var D = window.TEST_DATA;
 function mins(t) {
   var p = t.split(":"); return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
 }
@@ -11,7 +10,7 @@ function nowMins() { var d = new Date(); return d.getHours() * 60 + d.getMinutes
 function fmtClock() {
   return new Date().toLocaleTimeString("en-US", { timeZone: "America/New_York", hour12: false });
 }
-var ROY_DAY = null, ROY_SOURCE = "sample";
+var ROY_DAY = null;
 function displayTime(t24){
   var parts = t24.split(":"); var h = parseInt(parts[0], 10), m = parts[1];
   var h12 = h % 12; if(h12 === 0) h12 = 12;
@@ -32,9 +31,9 @@ function royZmanimList(){
     ["shkiah", "שקיעה", "Shkiah"],
     ["tzeit", "צאת הכוכבים", "Tzeit HaKochavim"]
   ];
-  return map.map(function (m) { return { key: m[0], he: m[1], en: m[2], time: ROY_DAY[m[0]], source: "Roy" }; }).concat(
-    ROY_DAY.shabbatEndsMyZmanim ? [{ key: "shabbatEnds", he: "צאת שבת", en: "Shabbat ends", time: ROY_DAY.shabbatEndsMyZmanim, source: "MyZmanim" }] : [],
-    ROY_DAY.rabbeinuTamMyZmanim ? [{ key: "rabbeinuTam", he: "רבינו תם (המוקדם)", en: "Rabbeinu Tam (early)", time: ROY_DAY.rabbeinuTamMyZmanim, source: "MyZmanim" }] : []
+  return map.map(function (m) { return { key: m[0], he: m[1], en: m[2], time: ROY_DAY[m[0]] }; }).concat(
+    ROY_DAY.shabbatEndsMyZmanim ? [{ key: "shabbatEnds", he: "צאת שבת", en: "Shabbat ends", time: ROY_DAY.shabbatEndsMyZmanim }] : [],
+    ROY_DAY.rabbeinuTamMyZmanim ? [{ key: "rabbeinuTam", he: "רבינו תם (המוקדם)", en: "Rabbeinu Tam (early)", time: ROY_DAY.rabbeinuTamMyZmanim }] : []
   );
 }
 function todayKey(){
@@ -51,47 +50,31 @@ function todayKey(){
 try {
   fetch("../src/zmanim/roy-daily-5787.json").then(function (r) { return r.json(); }).then(function (j) {
     var day = j.days && j.days[todayKey()];
-    if(day){ ROY_DAY = day; ROY_SOURCE = "Roy (Zemaneh Yosef)"; var el = document.getElementById('zmanSource'); if(el) el.textContent = 'Daily zmanim source: Roy (Zemaneh Yosef), synagogue coordinates, candle 18 min, Shema Magen equal minutes, Shabbat ends and Rabbeinu Tam early from MyZmanim.'; renderZmanim(); }
+    if(day){ ROY_DAY = day; renderZmanim(); }
   }).catch(function () {});
 } catch (e) {}
 function renderZmanim() {
   var now = nowMins(), next = null, html = "";
-  var list = royZmanimList() || D.sampleDay.zmanim;
+  var list = royZmanimList() || [];
   list.forEach(function (z) {
     var t = mins(z.time);
     if (now > t + 5) return; /* hide-after rule: gone 5 minutes after it passes, for that day */
     if (next === null && t >= now) next = z.key;
-    var disp = (ROY_DAY && (z.source === "Roy" || z.source === "MyZmanim")) ? displayTime(z.time) : z.time;
-    html += '<div class="zman-row' + (next === z.key ? " next" : "") + '"><span><span class="he">' + z.he + "</span> / " + z.en + '</span><span>' + disp + ' <span class="src">' + z.source + "</span></span></div>";
+    var disp = ROY_DAY ? displayTime(z.time) : z.time;
+    html += '<div class="zman-row' + (next === z.key ? " next" : "") + '"><span><span class="he">' + z.he + "</span> / " + z.en + "</span><span>" + disp + "</span></div>";
   });
-  document.getElementById("zmanList").innerHTML = html || "<p>All sample zmanim for today have passed (hide-after rule).</p>";
-  var netz = ROY_DAY ? mins(ROY_DAY.netz) : mins("6:43"), box = document.getElementById("netzBox");
+  document.getElementById("zmanList").innerHTML = html || "<p>אין זמני יום טעונים כרגע / No daily times loaded yet.</p>";
+  var box = document.getElementById("netzBox"); if(!ROY_DAY){ box.style.display = "none"; return; } var netz = mins(ROY_DAY.netz);
   if (now >= netz - 5 && now < netz) {
     box.style.display = "block";
     var left = netz - now;
     box.textContent = "Netz in " + left + " minute" + (left === 1 ? "" : "s") + " (small window, in addition to Netz time; disappears after Netz)";
   } else { box.style.display = "none"; }
 }
-var zones = [
-  { t: "Announcements / הודעות", b: D.announcements[0].textEn + " / " + D.announcements[0].textHe },
-  { t: "Parsha and Haftarah / פרשה והפטרה", b: D.boards.parsha + " " + D.boards.specialShabbatot + " " + D.boards.roshChodesh },
-  { t: "Shiur Schedule / לוח שיעורים", b: D.boards.shiurim },
-  { t: "Hayom Yom and Daily Halacha / היום יום והלכה יומית", b: D.boards.hayomYom + " " + D.boards.dailyHalacha },
-  { t: "Seasonal Insertions / תוספות עונתיות", b: D.seasonal.prayerInsertions + " " + D.seasonal.eruvTavshilin + " " + D.seasonal.yomTovNote },
-  { t: "Fast Detail / פירוט צום", b: D.seasonal.fastDetail },
-  { t: "Hanukkah / חנוכה", b: D.seasonal.hanukkah + " " + D.boards.hanukkiah + '<div class="hanukkiah"><span class="lit">🕯🕯🕯</span>🕯🕯🕯🕯🕯</div><div>' + D.seasonal.kiddushLevana + "</div>" },
-  { t: "Holiday Customs / לוח מנהגי החג", b: D.boards.holidayCustoms + " " + D.boards.omer },
-  { t: "Sponsors and Dedications / נותני חסות והקדשות", b: D.boards.sponsors + " " + D.boards.parnasHayom + " " + D.boards.seudahShlishitDonor },
-  { t: "Community / קהילה", b: D.boards.mazalTov + " " + D.boards.hazkarot + " " + D.boards.rabbiMessage },
-  { t: "Flyers and Campaign / פליירים ומגבית", b: D.flyers[0].title + " (" + D.flyers[0].from + " to " + D.flyers[0].to + "). " + D.campaign.title + ": " + D.campaign.text },
-  { t: "Yahrzeit / יורצייט", b: D.yahrzeits[0].name + ", " + D.yahrzeits[0].hebrewDate + ". " + D.yahrzeits[0].note }
-];
-var zi = 0;
 function renderZone() {
-  var z = zones[zi % zones.length];
-  document.getElementById("centerZone").innerHTML = "<h3>" + z.t + "</h3><p>" + z.b + "</p><p><small>Zone " + ((zi % zones.length) + 1) + " of " + zones.length + ", rotating, one zone at a time.</small></p>";
-  try { localStorage.setItem("orHachaimLastZone", document.getElementById("centerZone").innerHTML); } catch (e) {}
-  zi++;
+  var el = document.getElementById("centerZone");
+  if(!el) return;
+  el.innerHTML = "<h3>ברוכים הבאים / Welcome</h3><p>אור החיים / Or Hachaim Congregation<br>321 Harold St, Staten Island, NY 10314</p><p>המסך מציג את זמני היום ואת זמני התפילות הקהילתיים, לאחר כניסה בלבד. / This screen shows daily times and community prayer times, after sign-in only.</p>";
 }
 /* Offline fallback, foundation: never a blank screen. If the
    browser reports offline, show the last rendered zone from
@@ -102,14 +85,8 @@ function updateOfflineNote() {
   var el = document.getElementById("offlineNote"); if (!el) return;
   var stamp = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
   el.textContent = navigator.onLine
-    ? "Last updated (demo): " + stamp + ". Online."
-    : "Offline: showing last info, never a blank screen. Last updated (demo): " + stamp + ".";
-  if (!navigator.onLine) {
-    try {
-      var last = localStorage.getItem("orHachaimLastZone");
-      if (last) document.getElementById("centerZone").innerHTML = last;
-    } catch (e) {}
-  }
+    ? "Last updated: " + stamp + ". Online."
+    : "Offline: showing last info, never a blank screen. Last updated: " + stamp + ".";
 }
 window.addEventListener("online", updateOfflineNote);
 window.addEventListener("offline", updateOfflineNote);
@@ -122,13 +99,12 @@ function tick() {
    cycling every 5 minutes through small pixel offsets. DISABLED
    completely on Shabbat and on holidays: no movement at all on
    those days. Shabbat is detected from the body class (preview
-   toggle in this demo; date logic in the Firebase phase). A
-   holiday is detected from the sample-day holiday flag (false
-   in this demo; date logic in the Firebase phase). When either
+   toggle for preview; date logic is a separate step). A
+   holiday is detected from the sample-day holiday flag (false; date logic is a separate step). When either
    is true, any shift is removed immediately and none is applied. */
 var burnStep = 0;
 function isNoMoveDay() {
-  return document.body.classList.contains("shabbat") || !!D.sampleDay.isHoliday;
+  return document.body.classList.contains("shabbat");
 }
 function applyBurnShift() {
   var main = document.querySelector(".tv main");
@@ -140,10 +116,9 @@ function applyBurnShift() {
 }
 document.getElementById("shabbatToggle").addEventListener("click", function () {
   document.body.classList.toggle("shabbat");
-  this.textContent = document.body.classList.contains("shabbat") ? "Exit Shabbat preview" : "Shabbat preview (demo)";
+  this.textContent = document.body.classList.contains("shabbat") ? "צא מתצוגת שבת / Exit Shabbat preview" : "תצוגת שבת / Shabbat preview";
   applyBurnShift(); /* entering Shabbat removes the shift at once */
 });
 tick(); renderZone(); applyBurnShift(); updateOfflineNote();
 setInterval(tick, 1000);
-setInterval(renderZone, 12000);
 setInterval(applyBurnShift, 300000);
