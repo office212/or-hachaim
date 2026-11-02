@@ -1,0 +1,60 @@
+/* Cloud Storage security rules DRAFT, NOT deployed, local only.
+   Bucket: or-hachaim.firebasestorage.app (created by the owner
+   2026-11-02, empty, currently production-mode deny-all rules).
+   This draft is NOT deployed and does NOT replace those deny-all
+   rules until the items below are proven.
+
+   Design, deny by default:
+   - Everything not listed below is denied, for everyone, including
+     the super admin's client calls (super admin management is via
+     the console, not via a client upload).
+   - Screen images are public display content once published, but
+     upload is the sensitive action, so read and write are separated.
+
+   IMPORTANT LIMIT, do not hide it:
+   Storage rules CANNOT read Firestore documents, so they cannot
+   look up a gabbai's permissions in users/{uid} the way Firestore
+   rules do. "Only authorized gabbaim upload" therefore cannot be
+   enforced by Storage rules alone from the Firestore role document.
+   It requires custom claims on the Auth token, set by a trusted
+   admin process (Admin SDK or a trusted function), for example:
+     - token.screenEdit == true : gabbai allowed to upload screen images
+     - token.screenViewer == true : dedicated screen viewer, read only
+   Until those claims are actually set and tested, the bucket must
+   STAY on deny-all production rules, and the admin page must stay
+   on local preview only. Deploying this draft without claims set
+   would deny every upload (safe, but useless) and must not be
+   presented as "gabbaim can now upload".
+
+   Draft rules below, for review only:
+*/
+
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSuperAdmin() {
+      return request.auth != null && request.auth.token.email == 'hanochhason@gmail.com';
+    }
+    function canUploadScreen() {
+      return isSuperAdmin() || (request.auth != null && request.auth.token.screenEdit == true);
+    }
+    function canReadScreen() {
+      return request.auth != null && (isSuperAdmin() || request.auth.token.screenViewer == true || request.auth.token.screenEdit == true);
+    }
+
+    /* Screen images and graphics, uploaded by gabbaim with screen
+       permission (via custom claim, see note above). Read by the
+       dedicated screen viewer, screen gabbaim, and super admin.
+       No finance-only access is granted here. */
+    match /screen/{allPaths=**} {
+      allow read: if canReadScreen();
+      allow write: if canUploadScreen();
+    }
+
+    /* Everything else: deny by default. No public upload, no
+       public read, no delete by a client that is not covered above. */
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

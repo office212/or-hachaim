@@ -1,4 +1,4 @@
-/* Firestore security rules DRAFT, not deployed, no project created yet.
+/* Firestore security rules, FIXED 2026-11-02: exists() guard before every get().data, so a missing users or congregants document returns false instead of a null error, and a congregant without a users document can still read their own record. Based on the 2026-11-02 05:41 published rules, no other rule changed.
    Purpose: enforce the append-only ledger in the database itself, not
    only in the user interface. A user interface rule can be bypassed;
    these rules cannot be bypassed by a normal client call.
@@ -63,20 +63,23 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
+    function userDocExists() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
     function userDoc() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+      return userDocExists() ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data : null;
     }
     function isSuperAdmin() {
       return isSignedIn() && request.auth.token.email == 'hanochhason@gmail.com';
     }
     function hasFinance() {
-      return isSuperAdmin() || (isSignedIn() && (userDoc().permissions == 'finance' || userDoc().permissions == 'both'));
+      return isSuperAdmin() || (userDocExists() && (userDoc().permissions == 'finance' || userDoc().permissions == 'both'));
     }
     function hasScreen() {
-      return isSuperAdmin() || (isSignedIn() && (userDoc().permissions == 'screen' || userDoc().permissions == 'both'));
+      return isSuperAdmin() || (userDocExists() && (userDoc().permissions == 'screen' || userDoc().permissions == 'both'));
     }
     function isScreenViewer() {
-      return isSignedIn() && userDoc().screenViewer == true;
+      return isSignedIn() && userDocExists() && userDoc().screenViewer == true;
     }
 
     /* Users and roles: super admin only writes. Nobody else can
@@ -124,7 +127,7 @@ service cloud.firestore {
        including the super admin. This is the database enforcement
        of the append-only ledger, decision 5. */
     match /ledgerEntries/{id} {
-      allow read: if hasFinance() || (isSignedIn() && get(/databases/$(database)/documents/congregants/$(resource.data.congregantId)).data.email == request.auth.token.email);
+      allow read: if hasFinance() || (isSignedIn() && exists(/databases/$(database)/documents/congregants/$(resource.data.congregantId)) && get(/databases/$(database)/documents/congregants/$(resource.data.congregantId)).data.email == request.auth.token.email);
       allow create: if hasFinance();
       allow update, delete: if false;
     }

@@ -3,6 +3,8 @@
 <title>Finance / כספים (TEST)</title>
 <link rel="stylesheet" href="../src/theme.css">
 <script src="../src/data/test-data.js"></script>
+<script src="../src/firebase/firebase-config.js"></script>
+<script src="../src/firebase/firebase-app.js"></script>
 <script src="../src/engines/idempotency.js"></script>
 <script src="../src/engines/finance-states.js"></script>
 <style>@media print { .page > :not(#printArea) { display: none; } }</style></head>
@@ -76,6 +78,11 @@ function addEntry(id){
   /* Correction entries are stored as their own entries and never delete
      an earlier entry. Their amount is a signed delta to the balance. */
   c.ledger.push({ date: new Date().toISOString().slice(0,10), operationId: opId, type: type, amount: type === "payment" ? amt : amt, description: document.getElementById("eDesc").value + " (MOCK)", enteredBy: "TEST gabbai (mock)" });
+  if (window.OH_FIREBASE && window.OH_FIREBASE.saveLedgerEntry) {
+    window.OH_FIREBASE.saveLedgerEntry({ congregantId: id, date: new Date().toISOString().slice(0,10), type: type, amount: amt, description: document.getElementById("eDesc").value, operationId: opId }).then(function (r) {
+      if (r && r.saved) { var m = document.getElementById("printArea"); if (m) { var n = document.createElement("p"); n.textContent = "Also saved to Firestore (append-only)."; m.appendChild(n); } }
+    }).catch(function () {});
+  }
   logActivity("TEST gabbai (mock)", "Added " + type + " entry, $" + amt + ", for " + c.name, "ledger");
   showCard(id); renderList();
 }
@@ -118,6 +125,9 @@ function addNeder(){
   if(!opStore.tryClaim(opId)){ document.getElementById("nederMsg").textContent = "Duplicate neder submission rejected (same operationId)."; return; }
   window.TEST_DATA.pledges.push({ id: "pledge-mock-" + Date.now(), congregantId: id, name: name, amount: amt, aliyah: aliyah, date: new Date().toISOString().slice(0,10), status: "converted" });
   c.ledger.push({ date: new Date().toISOString().slice(0,10), operationId: opId, type: "charge", amount: amt, description: "Neder converted to charge: " + name + ", Aliyah: " + aliyah + " (MOCK)", enteredBy: "TEST gabbai (mock)" });
+  if (window.OH_FIREBASE && window.OH_FIREBASE.saveLedgerEntry) {
+    window.OH_FIREBASE.saveLedgerEntry({ congregantId: id, date: new Date().toISOString().slice(0,10), type: "charge", amount: amt, description: "Neder converted to charge: " + name + ", Aliyah: " + aliyah, operationId: opId, source: "neder" }).catch(function () {});
+  }
   logActivity("TEST gabbai (mock)", "Added neder, $" + amt + ", " + name + ", Aliyah: " + aliyah + ", for " + c.name, "ledger");
   document.getElementById("nederMsg").textContent = "Neder added as a ledger charge for " + c.name + " (mock).";
   renderList(); renderNederCong();
