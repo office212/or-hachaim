@@ -13,7 +13,7 @@
 <div class="gate-card" id="signInGate">
   <h2>כניסה נדרשת / Sign-in required</h2>
   <p>מסך בית הכנסת מוצג רק לאחר כניסה. / The synagogue screen is shown only after sign-in.</p>
-  <button class="btn" onclick="signInFromGate()">התחברות עם Google / Sign in with Google</button>
+  <button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>Sign in with Google / התחברות עם Google</span></button>
   <p class="hint" id="gateMsg"></p>
 </div>
 <div class="tv">
@@ -25,7 +25,9 @@
     </div>
     <div class="meta">
       <div id="clock">--:--:--</div>
+      <div id="hebrewDateLine"></div>
       <div id="dateLine"></div>
+      <div id="nextHeroLine"></div>
     </div>
   </header>
   <main>
@@ -36,20 +38,31 @@
       <p id="offlineNote"><small>Last updated: shown when online.</small></p>
     </section>
     <section class="col">
-      <h2>ברוכים הבאים / Welcome</h2>
+      <h2>הזמן הבא / Next Zman</h2>
+      <div class="next-hero" id="nextHero"><div class="next-name" id="nextHeroName">טוען / Loading</div><div class="next-time" id="nextHeroTime">--:--</div><div id="nextHeroCountdown"></div></div>
+      <h2 style="margin-top:14px">לוח מתחלף / Rotating Boards</h2>
       <div id="centerZone"></div>
+      <p class="hint" id="boardIndex"></p>
     </section>
     <section class="col">
       <h2>זמני תפילות / Prayer Times</h2>
       <div id="prayerList"></div>
+      <h2 style="margin-top:14px">שבת / Shabbat</h2>
+      <div id="shabbatBlock"><p>PLACEHOLDER / פליסהולדר: Friday candle, Shabbat ends, and Rabbeinu Tam early will appear here on Friday and Saturday from the daily data, once the Shabbat block is filled for the current week.</p></div>
+      <div class="weekday-only">
+        <h3>תרומה / Donation</h3>
+        <p>PLACEHOLDER / פליסהולדר: donation text and QR code to be provided by the synagogue. This block is hidden automatically on Shabbat and holidays.</p>
+      </div>
     </section>
   </main>
   <footer>
     <span class="ornament">✦</span>
     <span>אור החיים / Or Hachaim Congregation, 321 Harold St, Staten Island, NY 10314</span>
+    <span id="ticker">PLACEHOLDER / פליסהולדר: permanent dedications and campaign board, to be entered by a gabbai.</span>
     <span style="margin-left:auto"><small><a href="../admin/index.html">ממשק גבאי / Gabbai admin</a> | <a href="../finance/index.html">פיננסים / Finance</a></small></span>
   </footer>
 </div>
+<p class="hint no-print" style="text-align:center">תצוגה מקדימה לפני פרסום / Preview before publish: a gabbai sees this exact TV view, including the Shabbat view, before publishing. היסטוריית שינויים / Change history: previous announcements and messages can be restored from the admin history once history storage is wired; history is not yet stored live, see admin page.</p>
 <div class="controls no-print"><button class="btn btn-gold" id="shabbatToggle">תצוגת שבת / Shabbat preview</button></div>
 <script>
 function signInFromGate(){
