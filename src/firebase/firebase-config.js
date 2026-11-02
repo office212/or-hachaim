@@ -1,31 +1,18 @@
-/* Firebase web client config for project or-hachaim, TEST phase.
-   WARNING: apiKey and appId are NOT SET in this build. They were not
-   available in the local scaffold workspace when this wiring layer was
-   written, and they are NOT guessed here. Until a follow-up fills them
-   from the Firebase console (Project settings, web app or-hachaim-site),
-   firebase-app.js stays in test-only mode and every page keeps using
-   the existing TEST / SAMPLE data. Do NOT invent a key.
-   Known, non-secret project fields:
+/* Firebase web client config for project or-hachaim.
+   Config is complete from the Firebase console web app or-hachaim-site.
+   Security is enforced by Firestore rules, not by keeping the web config secret.
+   Storage is not used in this build: storageBucket stays null and Storage stays on deny-all.
+   Known project fields:
    - projectId: or-hachaim
    - authDomain: or-hachaim.firebaseapp.com
    - messagingSenderId: 1030831668431 (project number)
-   - storageBucket: NOT USED in this build. Bucket
-     or-hachaim.firebasestorage.app was created by the owner
-     2026-11-02, empty, with production-mode deny-all rules.
-     A Storage rules draft is present locally at
-     src/firebase/storage.rules (deny by default, upload only for
-     authorized gabbaim via custom claims, see that file), but it
-     is NOT deployed, and images stay local preview only until
-     custom claims are set and tested.
-   How to complete: replace apiKey and appId below with the values from
-   the Firebase console, keep Google as the only Auth provider, and
-   re-verify locally before pushing. */
+*/
 window.FIREBASE_CONFIG = {
-  apiKey: null,
+  apiKey: "AIzaSyA4Uqe0TlUmc6QcQ-7LOv4lVuxXhH4j2q4",
   authDomain: "or-hachaim.firebaseapp.com",
   projectId: "or-hachaim",
   storageBucket: null,
   messagingSenderId: "1030831668431",
-  appId: null
+  appId: "1:1030831668431:web:33dd5e70c8c634e98b0bba"
 };
-window.FIREBASE_CONFIG_COMPLETE = false;
+window.FIREBASE_CONFIG_COMPLETE = true;
