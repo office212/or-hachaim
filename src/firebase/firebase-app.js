@@ -84,6 +84,7 @@
     /* Return Firestore congregants mapped to the TEST_DATA shape, or
        null when Firestore is unavailable/empty, so callers fall back
        to TEST_DATA. Never throws. */
+    _db: function () { return state.db; },
     loadCongregants: async function () {
       if (!state.ready || !state.db) return null;
       try {
