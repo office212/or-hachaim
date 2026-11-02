@@ -3,28 +3,29 @@
    restyle the site. Data and logic live elsewhere.
    Variable names are kept for compatibility with screen.css. */
 :root {
-  --navy: #1b365d;
-  --navy-deep: #0f233f;
-  --navy-soft: #33475e;
-  --gold: #c9a86a;
+  --navy: #0a1f3d;
+  --navy-deep: #060f22;
+  --navy-soft: #1e3a5f;
+  --gold: #c9a227;
   --gold-light: #e8c766;
   --gold-dark: #8a6d1b;
   --stone: #efe8da;
-  --stone-dark: #e2d9c4;
-  --marble: #f7f3ea;
+  --stone-dark: #d8c9a3;
+  --marble: #faf6ec;
   --sky: #7fb3d5;
-  --sky-deep: #4a90b8;
-  --sky-pale: #e8f2f8;
-  --sky-soft: #e8f2f8;
-  --ink: #1b365d;
+  --sky-deep: #0a1f3d;
+  --sky-pale: #e8eef5;
+  --sky-soft: #e8eef5;
+  --ink: #0a1f3d;
   --white: #ffffff;
   --font-hebrew: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
   --font-latin: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-  --frame: 1px solid var(--stone-dark);
-  --frame-thin: 1px solid var(--stone-dark);
+  --frame: 1px solid var(--gold);
+  --frame-thin: 1px solid var(--gold);
   --radius: 18px;
-  --shadow: 0 6px 24px rgba(27, 54, 93, 0.08);
+  --shadow: 0 10px 32px rgba(6, 15, 34, 0.18);
 }
+
 * { box-sizing: border-box; }
 body {
   margin: 0;
@@ -32,7 +33,7 @@ body {
   font-size: 18px;
   line-height: 1.5;
   color: var(--ink);
-  background: linear-gradient(180deg, #f7f3ea 0%, #efe8da 55%, #e8f2f8 100%);
+  background: linear-gradient(180deg, #faf6ec 0%, #efe8da 60%, #e6dcc3 100%);
 }
 h1 { font-size: 30px; line-height: 1.15; }
 h2 { font-size: 28px; }
@@ -47,15 +48,15 @@ h3 { font-size: 22px; }
 }
 .ornament { color: var(--gold); letter-spacing: 0.35em; text-align: center; }
 .btn, button.btn {
-  background: var(--sky-deep); color: var(--white); border: 0;
+  background: var(--navy); color: var(--white); border: 2px solid var(--gold);
   border-radius: 14px; padding: 18px 20px; cursor: pointer;
   font-size: 21px; font-weight: 700; font-family: inherit;
   min-height: 60px; width: 100%;
 }
-.btn-gold { background: var(--sky-deep); color: var(--white); font-weight: 700; }
+.btn-gold { background: var(--gold); color: var(--navy-deep); font-weight: 800; border: 2px solid var(--gold-dark); }
 .btn.secondary, button.btn.secondary { background: var(--white); color: var(--ink); border: 2px solid var(--stone-dark); }
 .btn:hover { filter: brightness(1.08); }
-.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid var(--sky-deep); outline-offset: 3px; }
+.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
 input, select, textarea {
   font: inherit; font-size: 19px; padding: 16px; border: 2px solid var(--stone-dark);
   border-radius: 12px; background: var(--white); color: var(--ink); width: 100%; min-height: 60px;
@@ -66,10 +67,11 @@ table { border-collapse: collapse; width: 100%; font-size: 18px; }
 th { background: var(--navy); color: var(--white); padding: 12px 8px; text-align: left; }
 td { padding: 12px 8px; border-bottom: 1px solid var(--stone-dark); }
 .topbar {
-  background: var(--white); color: var(--ink); padding: 16px;
+  background: linear-gradient(90deg, var(--navy-deep), var(--navy)); color: var(--white); padding: 16px;
   border-bottom: 3px solid var(--gold); display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
+  box-shadow: 0 6px 20px rgba(6, 15, 34, 0.25);
 }
-.topbar a { color: var(--sky-deep); }
+.topbar a { color: var(--gold-light); }
 .topbar strong { font-size: 20px; }
 .page { max-width: 1180px; margin: 0 auto; padding: 8px 20px 40px; }
 .badge-sample { display: none; }
@@ -87,3 +89,16 @@ body.gated .page > .gate-card { display: block !important; }
   .no-print, .topbar, .btn { display: none !important; }
   body { background: #fff; }
 }
+
+/* Luxurious demo, 2026-11-02: deep navy, gold, light marble. */
+.gold-frame { border: 1px solid var(--gold); box-shadow: 0 10px 32px rgba(6, 15, 34, 0.14); }
+h2 { border-bottom: 2px solid var(--gold); padding-bottom: 6px; }
+.placeholder { display: inline-block; background: #fff3cd; border: 1px solid var(--gold); color: #5a4300; border-radius: 999px; padding: 4px 12px; font-size: 15px; font-weight: 700; }
+.next-hero { background: linear-gradient(135deg, var(--navy-deep), var(--navy)); color: #fff; border: 2px solid var(--gold); border-radius: 18px; padding: 18px; text-align: center; box-shadow: 0 10px 32px rgba(6, 15, 34, 0.30); }
+.next-hero .next-time { font-size: 44px; font-weight: 800; color: var(--gold-light); line-height: 1.1; }
+.next-hero .next-name { font-size: 24px; font-weight: 700; }
+/* Branded Sign in with Google button, Level 1 only. No hosting migration. */
+button.gsi-btn, .gsi-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: auto; min-width: 280px; background: #fff; color: #1f1f1f; border: 1px solid #dadce0; border-radius: 999px; padding: 14px 24px; font-size: 19px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+button.gsi-btn:hover, .gsi-btn:hover { filter: none; background: #f8f9fa; box-shadow: 0 4px 14px rgba(0,0,0,0.16); }
+.gsi-btn svg { width: 22px; height: 22px; flex: none; }
+#ohFirebaseStatusBar .gsi-btn { min-width: 0; padding: 8px 16px; font-size: 15px; }
