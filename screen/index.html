@@ -3,88 +3,88 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Or Hachaim Screen / מסך אור החיים (TEST)</title>
+<title>מסך אור החיים / Or Hachaim Screen</title>
 <link rel="stylesheet" href="screen.css">
-<script src="../src/data/test-data.js"></script>
 <script src="../src/firebase/firebase-config.js"></script>
 <script src="../src/firebase/firebase-app.js"></script>
 <script src="../src/engines/shabbat-safe.js"></script>
 </head>
-<body>
+<body class="gated">
+<div class="gate-card" id="signInGate">
+  <h2>כניסה נדרשת / Sign-in required</h2>
+  <p>מסך בית הכנסת מוצג רק לאחר כניסה. / The synagogue screen is shown only after sign-in.</p>
+  <button class="btn" onclick="signInFromGate()">התחברות עם Google / Sign in with Google</button>
+  <p class="hint" id="gateMsg"></p>
+</div>
 <div class="tv">
   <header>
     <img class="logo" src="../src/assets/logo-4k-transparent.png" alt="Or Hachaim logo, unchanged">
     <div>
       <h1><span class="he">אור החיים</span> / Or Hachaim Congregation</h1>
-      <div>321 Harold St, Staten Island, NY 10314 <span class="badge-sample">TEST / SAMPLE DATA ONLY</span></div>
+      <div>321 Harold St, Staten Island, NY 10314</div>
     </div>
     <div class="meta">
       <div id="clock">--:--:--</div>
       <div id="dateLine"></div>
-      <div><span class="he">פרשת תולדות</span> / Parashat Toldot (sample)</div>
     </div>
   </header>
   <main>
-    <section class="col gold-frame">
-      <h2>Daily Zmanim / זמני היום</h2>
-      <p id="zmanSource"><small>Daily zmanim source: sample anchors (fallback, until Roy data loads).</small></p><p><small>Plan order. Anchor values are labeled sample anchors; other times are labeled demo, not Roy output. Each zman disappears 5 minutes after it passes, for that day. Next zman is highlighted.</small></p>
+    <section class="col">
+      <h2>זמני היום / Daily Zmanim</h2>
       <div id="zmanList"></div>
       <div id="netzBox"></div>
-      <p><small>Candles (sample anchor): 4:22, which is 18 minutes before sunset (decision 2026-11-01, NOT Roy default 20). Shema Magen Avraham (sample anchor): 8:35, equal minutes (decision 2026-11-01, NOT Roy seasonal). Shabbat ends (sample anchor): 5:23. Rabbeinu Tam (sample anchor): 5:52. Shabbat ends and Rabbeinu Tam early in production are from the MyZmanim 5787 file, per owner decision 2026-11-02; the 8.5 degree angle calculation is retained as fallback only.</small></p>
-      <p><small>Screen account: this TV screen runs on a dedicated synagogue viewer account, screen-read-only, NEVER the super admin account. No finance, no admin, no editing from this screen. Super admin hanochhason@gmail.com is management only.</small></p>
-      <p><small>Burn-in prevention: content shifts gently on weekdays to protect a TV that runs 24/7. On Shabbat and holidays there is NO movement at all, including this shift.</small></p>
-      <p class="note"><small>Offline fallback, foundation: if this screen loses internet, it keeps showing the last info, with a last-updated stamp, and never goes blank. In this demo the last info is the sample data above. Validity: every announcement, sponsorship, and dedication shows only inside its start and end window. Preview: the gabbai admin shows the exact TV view before publishing, including the Shabbat view. Change history: a previous announcement or message can be restored from the admin history.</small></p>
-      <p><small>Shabbat-safe mechanism, foundation: weekday-only content, payment text, and donation QR are hidden by the system on Shabbat and Yom Tov, not by relying on a gabbai remembering to flag them. See src/engines/shabbat-safe.js.</small></p>
-      <p id="offlineNote"><small>Last updated (demo): sample data. Online status is shown here in the live phase.</small></p>
+      <p id="offlineNote"><small>Last updated: shown when online.</small></p>
     </section>
-    <section class="col gold-frame">
-      <h2>Center / מרכז מתחלף</h2>
-      <div class="ornament">✦ ✦ ✦</div>
+    <section class="col">
+      <h2>ברוכים הבאים / Welcome</h2>
       <div id="centerZone"></div>
     </section>
-    <section class="col gold-frame">
-      <h2>Prayer Times / זמני תפילות</h2>
-      <p><small>Community times, edited by an authorized gabbai (mock data here).</small></p>
-      <p id="prayerSource"><small>Source: TEST data (mock, signed out)</small></p>
+    <section class="col">
+      <h2>זמני תפילות / Prayer Times</h2>
       <div id="prayerList"></div>
-      <script>
-        function renderPrayer(list){
-          document.getElementById("prayerList").innerHTML = list.map(function (p) {
-            return '<div class="zman-row"><span><span class="he">' + (p.nameHe || p.nameEn || '') + "</span> / " + (p.nameEn || '') + "</span><span>" + (p.time || '') + "</span></div>";
-          }).join("");
-        }
-        renderPrayer(window.TEST_DATA.prayerTimes);
-        var _lastPrayerUser = null;
-        async function refreshPrayer(){
-          try {
-            var fb = window.OH_FIREBASE;
-            if(!fb || !fb.ready || !fb.user){ if(_lastPrayerUser !== null){ _lastPrayerUser = null; document.getElementById('prayerSource').textContent = 'Source: TEST data (mock, signed out)'; renderPrayer(window.TEST_DATA.prayerTimes); } return; }
-            var email = fb.user.email || '';
-            if(email === _lastPrayerUser) return;
-            _lastPrayerUser = email;
-            var live = await fb.loadScreenData();
-            if(live && live.prayerTimes && live.prayerTimes.length){ document.getElementById('prayerSource').textContent = 'Source: Firestore (live TEST docs), signed in as ' + email; renderPrayer(live.prayerTimes); }
-            else { document.getElementById('prayerSource').textContent = 'Source: TEST data (mock), Firestore load returned no live docs, signed in as ' + email; }
-          } catch(e) {}
-        }
-        setInterval(refreshPrayer, 1000);
-        refreshPrayer();
-      </script>
-      <div class="weekday-only">
-        <p><strong>Donation / תרומה (weekday only)</strong></p>
-        <p>TEST donation QR placeholder. TEST payment text placeholder.</p>
-        <p><small>Hidden in Shabbat mode, from Shabbat entry to Shabbat exit.</small></p>
-      </div>
     </section>
   </main>
   <footer>
     <span class="ornament">✦</span>
-    <span class="dedication">Leilui Nishmat TEST Name (permanent dedication, sample) / לעילוי נשמת פלוני (בדיקה)</span>
-    <span class="dedication">Kiddush sponsored by TEST Family (sample)</span>
-    <span style="margin-left:auto"><small>Back to: <a href="../README.md" style="color:#e8c766">README</a> | <a href="../admin/index.html" style="color:#e8c766">Gabbai admin (mock)</a> | <a href="../finance/index.html" style="color:#e8c766">Finance (mock)</a></small></span>
+    <span>אור החיים / Or Hachaim Congregation, 321 Harold St, Staten Island, NY 10314</span>
+    <span style="margin-left:auto"><small><a href="../admin/index.html">ממשק גבאי / Gabbai admin</a> | <a href="../finance/index.html">פיננסים / Finance</a></small></span>
   </footer>
 </div>
-<div class="controls no-print"><button class="btn btn-gold" id="shabbatToggle">Shabbat preview (demo)</button></div>
+<div class="controls no-print"><button class="btn btn-gold" id="shabbatToggle">תצוגת שבת / Shabbat preview</button></div>
+<script>
+function signInFromGate(){
+  var fb = window.OH_FIREBASE;
+  if(!fb || !fb.signIn){ document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.'; return; }
+  var r = fb.signIn();
+  if(r && r.catch) r.catch(function(e){ document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e); });
+}
+function renderPrayer(list){
+  if(!list || !list.length){ document.getElementById("prayerList").innerHTML = "<p>אין זמני תפילה עדיין / No prayer times yet.</p>"; return; }
+  document.getElementById("prayerList").innerHTML = list.map(function (p) {
+    return '<div class="zman-row"><span><span class="he">' + (p.nameHe || p.nameEn || '') + "</span> / " + (p.nameEn || '') + "</span><span>" + (p.time || '') + "</span></div>";
+  }).join("");
+}
+var _lastPrayerUser = null;
+async function refreshPrayer(){
+  try {
+    var fb = window.OH_FIREBASE;
+    if(!fb || !fb.ready || !fb.user){
+      if(_lastPrayerUser !== null){ _lastPrayerUser = null; }
+      document.body.classList.add('gated');
+      return;
+    }
+    document.body.classList.remove('gated');
+    var email = fb.user.email || '';
+    if(email === _lastPrayerUser) return;
+    _lastPrayerUser = email;
+    var live = await fb.loadScreenData();
+    if(live && live.prayerTimes && live.prayerTimes.length){ renderPrayer(live.prayerTimes); }
+    else { renderPrayer([]); }
+  } catch(e) {}
+}
+setInterval(refreshPrayer, 1000);
+refreshPrayer();
+</script>
 <script src="screen.js"></script>
 </body>
 </html>
