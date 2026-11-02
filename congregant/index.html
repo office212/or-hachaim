@@ -1,38 +1,45 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My Account / החשבון שלי (TEST)</title>
+<title>החשבון שלי / My Account</title>
 <link rel="stylesheet" href="../src/theme.css">
-<script src="../src/data/test-data.js"></script>
 <script src="../src/firebase/firebase-config.js"></script>
 <script src="../src/firebase/firebase-app.js"></script></head>
-<body>
-<div class="topbar"><strong>Or Hachaim / אור החיים</strong><span>Own-data-only dashboard (TEST)</span><a href="../screen/index.html">Screen</a></div>
+<body class="gated">
+<div class="topbar"><strong>אור החיים / Or Hachaim</strong><span>נתונים אישיים בלבד / Own-data-only dashboard</span><a href="../screen/index.html">מסך / Screen</a></div>
 <div class="page">
-<p><span class="badge-sample">TEST CONGREGANT ONLY</span> This page shows only one congregant's own balance and history.</p>
-<div class="note"><strong>Real access rule (not wired yet):</strong> in the Firebase phase, a congregant signs in with Google using the email the super admin added to their existing record, and sees only their own record. No other congregant's data is ever shown here.</div>
-<p id="congSource">Source: TEST data (mock, signed out)</p>
+<div class="gate-card" id="signInGate"><h2>כניסה נדרשת / Sign-in required</h2><p>החשבון האישי מוצג רק לאחר כניסה. / Your account is shown only after sign-in.</p><button class="btn" onclick="signInFromGate()">התחברות עם Google / Sign in with Google</button><p class="hint" id="gateMsg"></p></div>
+<p>דף זה מציג רק את היתרה וההיסטוריה של המתפלל המחובר, לעולם לא נתונים של מתפלל אחר. / This page shows only the signed-in congregant's own balance and history, never another congregant's data.</p>
+<div class="note"><strong>כלל גישה / Access rule:</strong> a congregant signs in with Google using the email the super admin added to their existing record, and sees only their own record. No other congregant's data is ever shown here.</div>
+<p id="congSource">כניסה נדרשת / Sign-in required</p>
 <div id="card"></div>
 <script>
 function renderCong(c, sourceLabel){
   var t = window.ledgerTotals(c);
   document.getElementById("card").innerHTML = '<div class="gold-frame" style="padding:1rem"><h2>' + c.name + '</h2>' +
-  '<p>Charges total: $' + t.charges + ' | Payments total: $' + t.payments + ' | <strong>Balance owed: $' + t.balance + '</strong></p>' +
-  '<table><tr><th>Date</th><th>Type</th><th>Amount</th><th>Description</th></tr>' +
+  '<p>סך חיובים / Charges total: $' + t.charges + ' | סך תשלומים / Payments total: $' + t.payments + ' | <strong>יתרה לתשלום / Balance owed: $' + t.balance + '</strong></p>' +
+  '<table><tr><th>תאריך / Date</th><th>סוג / Type</th><th>סכום / Amount</th><th>תיאור / Description</th></tr>' +
   c.ledger.map(function(e){ return "<tr><td>" + e.date + "</td><td>" + e.type + "</td><td>$" + e.amount + "</td><td>" + e.description + "</td></tr>"; }).join("") +
   '</table><p><small>' + sourceLabel + '</small></p></div>';
 }
-renderCong(window.TEST_DATA.congregants[0], 'TEST data (mock, signed out). In production this is the signed-in congregant only.');
+document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>';
 var _lastCongUser = null;
+function signInFromGate(){
+  var fb = window.OH_FIREBASE;
+  if(!fb || !fb.signIn){ document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.'; return; }
+  var r = fb.signIn();
+  if(r && r.catch) r.catch(function(e){ document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e); });
+}
 async function refreshCong(){
   try {
     var fb = window.OH_FIREBASE;
-    if(!fb || !fb.ready || !fb.user){ if(_lastCongUser !== null){ _lastCongUser = null; document.getElementById('congSource').textContent = 'Source: TEST data (mock, signed out)'; renderCong(window.TEST_DATA.congregants[0], 'TEST data (mock, signed out). In production this is the signed-in congregant only.'); } return; }
+    if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); if(_lastCongUser !== null){ _lastCongUser = null; document.getElementById('congSource').textContent = 'כניסה נדרשת / Sign-in required'; document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>'; } return; }
     var email = fb.user.email || '';
     if(email === _lastCongUser) return;
+    document.body.classList.remove('gated');
     _lastCongUser = email;
     var own = await fb.loadOwnCongregant();
-    if(own){ document.getElementById('congSource').textContent = 'Source: Firestore (live TEST docs), signed in as ' + email; renderCong(own, 'Live TEST data, signed-in congregant only.'); }
-    else { document.getElementById('congSource').textContent = 'Source: Firestore (live TEST docs), signed in as ' + email + ', no own congregant record found for this email'; document.getElementById('card').innerHTML = '<div class="gold-frame" style="padding:1rem"><p>No congregant record found for ' + email + '. This page never shows another congregant\'s data.</p></div>'; }
+    if(own){ document.getElementById('congSource').textContent = 'Signed in as ' + email; renderCong(own, 'Signed-in congregant only.'); }
+    else { document.getElementById('congSource').textContent = 'Signed in as ' + email + ', no own congregant record found for this email'; document.getElementById('card').innerHTML = '<div class="gold-frame" style="padding:1rem"><p>No congregant record found for ' + email + '. This page never shows another congregant\'s data.</p></div>'; }
   } catch(e) {}
 }
 setInterval(refreshCong, 1000);
