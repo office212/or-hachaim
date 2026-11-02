@@ -10,13 +10,32 @@
 <div class="page">
 <p><span class="badge-sample">TEST CONGREGANT ONLY</span> This page shows only one congregant's own balance and history.</p>
 <div class="note"><strong>Real access rule (not wired yet):</strong> in the Firebase phase, a congregant signs in with Google using the email the super admin added to their existing record, and sees only their own record. No other congregant's data is ever shown here.</div>
+<p id="congSource">Source: TEST data (mock, signed out)</p>
 <div id="card"></div>
 <script>
-var c = window.TEST_DATA.congregants[0]; var t = window.ledgerTotals(c);
-document.getElementById("card").innerHTML = '<div class="gold-frame" style="padding:1rem"><h2>' + c.name + '</h2>' +
-'<p>Charges total: $' + t.charges + ' | Payments total: $' + t.payments + ' | <strong>Balance owed: $' + t.balance + '</strong></p>' +
-'<table><tr><th>Date</th><th>Type</th><th>Amount</th><th>Description</th></tr>' +
-c.ledger.map(function(e){ return "<tr><td>" + e.date + "</td><td>" + e.type + "</td><td>$" + e.amount + "</td><td>" + e.description + "</td></tr>"; }).join("") +
-'</table><p><small>TEST data. In production this is the signed-in congregant only.</small></p></div>';
+function renderCong(c, sourceLabel){
+  var t = window.ledgerTotals(c);
+  document.getElementById("card").innerHTML = '<div class="gold-frame" style="padding:1rem"><h2>' + c.name + '</h2>' +
+  '<p>Charges total: $' + t.charges + ' | Payments total: $' + t.payments + ' | <strong>Balance owed: $' + t.balance + '</strong></p>' +
+  '<table><tr><th>Date</th><th>Type</th><th>Amount</th><th>Description</th></tr>' +
+  c.ledger.map(function(e){ return "<tr><td>" + e.date + "</td><td>" + e.type + "</td><td>$" + e.amount + "</td><td>" + e.description + "</td></tr>"; }).join("") +
+  '</table><p><small>' + sourceLabel + '</small></p></div>';
+}
+renderCong(window.TEST_DATA.congregants[0], 'TEST data (mock, signed out). In production this is the signed-in congregant only.');
+var _lastCongUser = null;
+async function refreshCong(){
+  try {
+    var fb = window.OH_FIREBASE;
+    if(!fb || !fb.ready || !fb.user){ if(_lastCongUser !== null){ _lastCongUser = null; document.getElementById('congSource').textContent = 'Source: TEST data (mock, signed out)'; renderCong(window.TEST_DATA.congregants[0], 'TEST data (mock, signed out). In production this is the signed-in congregant only.'); } return; }
+    var email = fb.user.email || '';
+    if(email === _lastCongUser) return;
+    _lastCongUser = email;
+    var own = await fb.loadOwnCongregant();
+    if(own){ document.getElementById('congSource').textContent = 'Source: Firestore (live TEST docs), signed in as ' + email; renderCong(own, 'Live TEST data, signed-in congregant only.'); }
+    else { document.getElementById('congSource').textContent = 'Source: Firestore (live TEST docs), signed in as ' + email + ', no own congregant record found for this email'; document.getElementById('card').innerHTML = '<div class="gold-frame" style="padding:1rem"><p>No congregant record found for ' + email + '. This page never shows another congregant\'s data.</p></div>'; }
+  } catch(e) {}
+}
+setInterval(refreshCong, 1000);
+refreshCong();
 </script>
 </div></body></html>
