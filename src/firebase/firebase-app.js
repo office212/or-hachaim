@@ -103,6 +103,26 @@
         return out;
       } catch (e) { return null; }
     },
+    /* Load only the signed-in user's own congregant record, by email,
+       plus that congregant's ledger entries. Returns the congregant
+       object, or null when signed out, no matching record, or denied.
+       Never returns another congregant's data. Never throws. */
+    loadOwnCongregant: async function () {
+      if (!state.ready || !state.db || !state.user || !state.user.email) return null;
+      try {
+        var snap = await state.db.collection("congregants").where("email", "==", state.user.email).get();
+        if (snap.empty) return null;
+        var doc = snap.docs[0];
+        var d = doc.data() || {};
+        var out = { id: doc.id, name: d.name || doc.id, phone: d.phone || "", email: d.email || "", ledger: [] };
+        var led = await state.db.collection("ledgerEntries").where("congregantId", "==", doc.id).get();
+        led.forEach(function (e) {
+          var ed = e.data() || {};
+          out.ledger.push({ date: ed.date || "", operationId: ed.operationId || e.id, type: ed.type || "charge", amount: ed.amount || 0, description: ed.description || "", enteredBy: ed.enteredBy || "" });
+        });
+        return out;
+      } catch (e) { return null; }
+    },
     loadScreenData: async function () {
       if (!state.ready || !state.db) return null;
       try {
