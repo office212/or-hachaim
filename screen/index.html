@@ -27,7 +27,7 @@
   <main>
     <section class="col gold-frame">
       <h2>Daily Zmanim / זמני היום</h2>
-      <p><small>Plan order. Anchor values are labeled sample anchors; other times are labeled demo, not Roy output. Each zman disappears 5 minutes after it passes, for that day. Next zman is highlighted.</small></p>
+      <p id="zmanSource"><small>Daily zmanim source: sample anchors (fallback, until Roy data loads).</small></p><p><small>Plan order. Anchor values are labeled sample anchors; other times are labeled demo, not Roy output. Each zman disappears 5 minutes after it passes, for that day. Next zman is highlighted.</small></p>
       <div id="zmanList"></div>
       <div id="netzBox"></div>
       <p><small>Candles (sample anchor): 4:22, which is 18 minutes before sunset (decision 2026-11-01, NOT Roy default 20). Shema Magen Avraham (sample anchor): 8:35, equal minutes (decision 2026-11-01, NOT Roy seasonal). Shabbat ends (sample anchor): 5:23. Rabbeinu Tam (sample anchor): 5:52. Shabbat ends in production is angle-based (8.5 degrees), not fixed minutes; see src/zmanim/shabbat-ends.js.</small></p>
