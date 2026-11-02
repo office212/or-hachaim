@@ -11,16 +11,58 @@ function nowMins() { var d = new Date(); return d.getHours() * 60 + d.getMinutes
 function fmtClock() {
   return new Date().toLocaleTimeString("en-US", { timeZone: "America/New_York", hour12: false });
 }
+var ROY_DAY = null, ROY_SOURCE = "sample";
+function displayTime(t24){
+  var parts = t24.split(":"); var h = parseInt(parts[0], 10), m = parts[1];
+  var h12 = h % 12; if(h12 === 0) h12 = 12;
+  return h12 + ":" + m;
+}
+function royZmanimList(){
+  if(!ROY_DAY) return null;
+  var map = [
+    ["alot", "עלות השחר (שוות)", "Alot (equal minutes)"],
+    ["talis", "זמן טלית ותפילין", "Talis and Tefillin"],
+    ["netz", "נץ החמה", "Netz"],
+    ["shemaMagen", "סוף זמן קריאת שמע מגן אברהם (שוות)", "Shema, Magen Avraham (equal minutes)"],
+    ["shemaGra", "סוף זמן קריאת שמע גרא", "Shema, Gra"],
+    ["tefillah", "סוף זמן תפילה", "Sof Zman Tefillah"],
+    ["chatzot", "חצות יום", "Chatzot"],
+    ["minchaGedola", "מנחה גדולה", "Mincha Gedola"],
+    ["plag", "פלג המנחה", "Plag HaMincha"],
+    ["shkiah", "שקיעה", "Shkiah"],
+    ["tzeit", "צאת הכוכבים", "Tzeit HaKochavim"]
+  ];
+  return map.map(function (m) { return { key: m[0], he: m[1], en: m[2], time: ROY_DAY[m[0]], source: "Roy" }; });
+}
+function todayKey(){
+  try {
+    var parts = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date());
+    var o = {}; parts.forEach(function (x) { o[x.type] = x.value; });
+    return o.year + "-" + o.month + "-" + o.day;
+  } catch (e) {
+    var d = new Date();
+    var y = d.getFullYear(), mo = String(d.getMonth() + 1).padStart(2, "0"), da = String(d.getDate()).padStart(2, "0");
+    return y + "-" + mo + "-" + da;
+  }
+}
+try {
+  fetch("../src/zmanim/roy-daily-5787.json").then(function (r) { return r.json(); }).then(function (j) {
+    var day = j.days && j.days[todayKey()];
+    if(day){ ROY_DAY = day; ROY_SOURCE = "Roy (Zemaneh Yosef)"; var el = document.getElementById('zmanSource'); if(el) el.textContent = 'Daily zmanim source: Roy (Zemaneh Yosef), synagogue coordinates, candle 18 min, Shema Magen equal minutes, Shabbat ends 8.5 deg angle.'; renderZmanim(); }
+  }).catch(function () {});
+} catch (e) {}
 function renderZmanim() {
   var now = nowMins(), next = null, html = "";
-  D.sampleDay.zmanim.forEach(function (z) {
+  var list = royZmanimList() || D.sampleDay.zmanim;
+  list.forEach(function (z) {
     var t = mins(z.time);
     if (now > t + 5) return; /* hide-after rule: gone 5 minutes after it passes, for that day */
     if (next === null && t >= now) next = z.key;
-    html += '<div class="zman-row' + (next === z.key ? " next" : "") + '"><span><span class="he">' + z.he + "</span> / " + z.en + '</span><span>' + z.time + ' <span class="src">' + z.source + "</span></span></div>";
+    var disp = (ROY_DAY && z.source === "Roy") ? displayTime(z.time) : z.time;
+    html += '<div class="zman-row' + (next === z.key ? " next" : "") + '"><span><span class="he">' + z.he + "</span> / " + z.en + '</span><span>' + disp + ' <span class="src">' + z.source + "</span></span></div>";
   });
   document.getElementById("zmanList").innerHTML = html || "<p>All sample zmanim for today have passed (hide-after rule).</p>";
-  var netz = mins("6:43"), box = document.getElementById("netzBox");
+  var netz = ROY_DAY ? mins(ROY_DAY.netz) : mins("6:43"), box = document.getElementById("netzBox");
   if (now >= netz - 5 && now < netz) {
     box.style.display = "block";
     var left = netz - now;
