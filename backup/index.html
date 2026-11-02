@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backup Export / גיבוי (TEST)</title>
+<link rel="stylesheet" href="../src/theme.css">
+<script src="../src/firebase/firebase-config.js"></script>
+<script src="../src/firebase/firebase-app.js"></script></head>
+<body>
+<div class="topbar"><strong>Or Hachaim / אור החיים</strong><span>Backup export (TEST)</span></div>
+<div class="page">
+<p><span class="badge-sample">TEST DATA ONLY</span> This page exports Firestore TEST docs as a JSON file, for off-Firebase backup. It never deletes anything, and it never imports anything. Super admin only in practice, because finance cannot read prayerTimes.</p>
+<button class="btn" onclick="runBackup()">Export backup JSON</button>
+<p id="backupMsg"></p>
+<pre id="backupOut" style="white-space:pre-wrap"></pre>
+<script>
+async function runBackup(){
+  var fb = window.OH_FIREBASE;
+  if(!fb || !fb.ready || !fb.user){ document.getElementById('backupMsg').textContent = 'Sign in first.'; return; }
+  document.getElementById('backupMsg').textContent = 'Exporting...';
+  var out = { exportedAt: new Date().toISOString(), exportedBy: fb.user.email, collections: {}, denied: [] };
+  var cols = ['congregants','ledgerEntries','prayerTimes','operationIds','users'];
+  for(var i=0;i<cols.length;i++){
+    var col = cols[i];
+    try {
+      var snap = await fb._db().collection(col).get();
+      var docs = [];
+      snap.forEach(function(d){ var o = d.data() || {}; o._id = d.id; docs.push(o); });
+      out.collections[col] = docs;
+    } catch(e) { out.denied.push(col); out.collections[col] = []; }
+  }
+  var counts = cols.map(function(c){ return c + ': ' + out.collections[c].length; }).join(', ');
+  document.getElementById('backupMsg').textContent = 'Exported. ' + counts + (out.denied.length ? ' Denied: ' + out.denied.join(', ') : '');
+  document.getElementById('backupOut').textContent = JSON.stringify(out, null, 2).slice(0, 4000);
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], {type: 'application/json'}));
+  a.download = 'or-hachaim-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+</script>
+</div></body></html>
