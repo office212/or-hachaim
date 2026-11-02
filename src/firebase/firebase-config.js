@@ -11,7 +11,7 @@ window.FIREBASE_CONFIG = {
   apiKey: "AIzaSyA4Uqe0TlUmc6QcQ-7LOv4lVuxXhH4j2q4",
   authDomain: "or-hachaim.firebaseapp.com",
   projectId: "or-hachaim",
-  storageBucket: null,
+  storageBucket: "or-hachaim.firebasestorage.app",
   messagingSenderId: "1030831668431",
   appId: "1:1030831668431:web:33dd5e70c8c634e98b0bba"
 };
