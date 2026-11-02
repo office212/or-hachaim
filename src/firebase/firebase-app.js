@@ -24,6 +24,7 @@
     reason: complete ? "config present, SDK loading" : "firebase-config-incomplete",
     user: null,
     db: null,
+  storage: null,
     auth: null,
     ready: false
   };
@@ -143,6 +144,21 @@
         return { saved: false, reason: String(e && e.message ? e.message : e) };
       }
     },
+    uploadScreenImage: async function (file, name) {
+      if (!state.ready || !state.storage || !file) return { saved: false, reason: 'test-only' };
+      try {
+        var path = 'screen/' + (name || ('test-' + Date.now() + '-' + file.name));
+        var ref = state.storage.ref(path);
+        await ref.put(file);
+        var url = await ref.getDownloadURL();
+        return { saved: true, path: path, url: url };
+      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e) }; }
+    },
+    getScreenImageUrl: async function (path) {
+      if (!state.ready || !state.storage || !path) return { ok: false, reason: 'test-only' };
+      try { var url = await state.storage.ref(path).getDownloadURL(); return { ok: true, url: url }; }
+      catch (e) { return { ok: false, reason: String(e && e.message ? e.message : e) }; }
+    },
     savePrayerTime: async function (item) {
       if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
       try {
@@ -177,10 +193,12 @@
   loadScript(base + "firebase-app-compat.js")
     .then(function () { return loadScript(base + "firebase-auth-compat.js"); })
     .then(function () { return loadScript(base + "firebase-firestore-compat.js"); })
+    .then(function () { return loadScript(base + "firebase-storage-compat.js"); })
     .then(function () {
       window.firebase.initializeApp(cfg);
       state.auth = window.firebase.auth();
       state.db = window.firebase.firestore();
+      state.storage = window.firebase.storage();
       state.ready = true;
       state.mode = "firebase";
       state.auth.onAuthStateChanged(function (u) {
