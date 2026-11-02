@@ -10,7 +10,7 @@
 <div class="page">
 <p><span class="badge-sample">MOCK ONLY</span> No login is wired yet (placeholder). No data is saved to a live backend. In the Firebase phase, Google login gates this page and Firestore stores every change.</p>
 <div class="note"><strong>Permissions model (documented, not enforced here yet):</strong> super admin hanochhason@gmail.com chooses per gabbai: finance only, times/screen only, or both. A gabbai with screen permission edits the items below; a gabbai with finance permission only does not see this page. Every change here is recorded in the activity log in the Firebase phase (who, what, when). The TV screen itself never uses the super admin account: it uses a dedicated synagogue viewer account, screen-read-only, with no finance and no editing access.</div>
-<h2>Prayer times / זמני תפילות</h2>
+<h2>Prayer times / זמני תפילות</h2><p id="ptSource">Source: TEST data (mock, signed out)</p>
 <div class="gold-frame" style="padding:1rem"><div id="ptList"></div>
 <label>New prayer time (mock)</label><input id="ptName" placeholder="Name, e.g. Shacharit">
 <label>Time</label><input id="ptTime" placeholder="e.g. 7:00 AM">
@@ -32,7 +32,22 @@
 <script>
 var pts = window.TEST_DATA.prayerTimes.slice();
 function renderPT(){ document.getElementById("ptList").innerHTML = pts.map(function(p){ return "<p>" + p.nameEn + " / " + p.nameHe + ": " + p.time + "</p>"; }).join(""); }
-function addPT(){ var n = document.getElementById("ptName").value, t = document.getElementById("ptTime").value; if(!n || !t){ document.getElementById("ptMsg").textContent = "Enter a name and a time."; return; } pts.push({nameEn: n, nameHe: n, time: t + " (MOCK)"}); renderPT(); document.getElementById("ptMsg").textContent = "Added locally (mock, not saved)."; }
+function addPT(){ var n = document.getElementById("ptName").value, t = document.getElementById("ptTime").value; if(!n || !t){ document.getElementById("ptMsg").textContent = "Enter a name and a time."; return; } pts.push({nameEn: n, nameHe: n, time: t + " (MOCK)"}); renderPT(); document.getElementById("ptMsg").textContent = "Added locally (mock, not saved)."; if(window.OH_FIREBASE && window.OH_FIREBASE.savePrayerTime){ window.OH_FIREBASE.savePrayerTime({nameEn: n, nameHe: n, time: t + " TEST"}).then(function(r){ if(r && r.saved){ document.getElementById("ptMsg").textContent = "Also saved to Firestore (append-only). Reload the screen page to see it."; } else { document.getElementById("ptMsg").textContent = "Local only: Firestore save failed or denied (" + (r && r.reason ? r.reason : "unknown") + ")."; } }).catch(function(e){ document.getElementById("ptMsg").textContent = "Local only: Firestore save error."; }); } }
+var _lastPTUser = null;
+async function refreshPT(){
+  try {
+    var fb = window.OH_FIREBASE;
+    if(!fb || !fb.ready || !fb.user){ if(_lastPTUser !== null){ _lastPTUser = null; document.getElementById('ptSource').textContent = 'Source: TEST data (mock, signed out)'; pts = window.TEST_DATA.prayerTimes.slice(); renderPT(); } return; }
+    var email = fb.user.email || '';
+    if(email === _lastPTUser) return;
+    _lastPTUser = email;
+    var live = await fb.loadScreenData();
+    if(live && live.prayerTimes && live.prayerTimes.length){ document.getElementById('ptSource').textContent = 'Source: Firestore (live TEST docs), signed in as ' + email; pts = live.prayerTimes; renderPT(); }
+    else { document.getElementById('ptSource').textContent = 'Source: TEST data (mock), Firestore load returned no live docs, signed in as ' + email; }
+  } catch(e) {}
+}
+setInterval(refreshPT, 1000);
+refreshPT();
 function mockSave(m){ document.getElementById("anMsg").textContent = m; }
 function mockSave2(){ document.getElementById("dedMsg").textContent = "Saved locally (mock, not saved). Window: " + document.getElementById("dedFrom").value + " to " + document.getElementById("dedTo").value; }
 function mockSave3(){ document.getElementById("flyMsg").textContent = "Flyer saved locally (mock). Shown only " + document.getElementById("flyFrom").value + " to " + document.getElementById("flyTo").value; }
