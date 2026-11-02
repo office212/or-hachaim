@@ -203,12 +203,12 @@ var _lastUserEmail = null;
 async function refreshFromFirestore(){
   try {
     var fb = window.OH_FIREBASE;
-    if(!fb || !fb.ready || !fb.user) { if(_lastUserEmail !== null){ _lastUserEmail = null; cons = window.TEST_DATA.congregants.slice(); document.getElementById('dataSource').textContent = 'Source: TEST data (mock, signed out)'; renderList(); } return; }
+    if(!fb || !fb.ready || !fb.user) { if(_lastUserEmail !== null){ _lastUserEmail = null; cons = window.TEST_DATA.congregants.slice(); document.getElementById('dataSource').textContent = 'Source: TEST data (mock, signed out)'; renderList(); renderNederCong(); } return; }
     var email = fb.user.email || '';
     if(email === _lastUserEmail) return;
     _lastUserEmail = email;
     var live = await fb.loadCongregants();
-    if(live && live.length){ cons = live; document.getElementById('dataSource').textContent = 'Source: Firestore (live TEST docs), signed in as ' + email; renderList(); }
+    if(live && live.length){ cons = live; document.getElementById('dataSource').textContent = 'Source: Firestore (live TEST docs), signed in as ' + email; renderList(); renderNederCong(); }
     else { document.getElementById('dataSource').textContent = 'Source: TEST data (mock), Firestore load returned no live docs, signed in as ' + email; }
   } catch(e) {}
 }
