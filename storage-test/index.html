@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Storage Test / בדיקת Storage (TEST ONLY)</title>
+<link rel="stylesheet" href="../src/theme.css">
+<script src="../src/firebase/firebase-config.js"></script>
+<script src="../src/firebase/firebase-app.js"></script>
+<style>body{font-family:system-ui,Arial,sans-serif;margin:0;padding:20px;background:#faf7f1;color:#1b365d}.page{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e5dcc9;border-radius:14px;padding:24px}button{padding:10px 18px;border-radius:999px;border:1px solid #1b365d;background:#1b365d;color:#fff;cursor:pointer}img{max-width:100%;margin-top:12px}</style></head>
+<body>
+<div class="page">
+<h1>Storage Test, TEST ONLY</h1>
+<p><strong>TEST DATA ONLY.</strong> Uploads go only under /screen/ in bucket or-hachaim.firebasestorage.app, under the interim TEST rules: super admin read/write, temporary viewer read only, everyone else denied, no public access. Use only a TEST image, never a real synagogue image, until the final rules and viewer account are set.</p>
+<p id="who">Waiting for Firebase...</p>
+<h2>1. Upload (super admin only, expected)</h2>
+<p><input type="file" id="file" accept="image/*"></p>
+<p><button onclick="doUpload()">Upload TEST image to /screen/</button></p>
+<p id="uploadResult"></p>
+<div id="preview"></div>
+<h2>2. Read a path (viewer and super admin expected ALLOW, others DENY)</h2>
+<p><label>Storage path, e.g. screen/test-....png</label><br><input id="path" style="width:100%" placeholder="screen/test-..."></p>
+<p><button onclick="doRead()">Try read this path</button></p>
+<p id="readResult"></p>
+<div id="readPreview"></div>
+<p><small>Expected: super admin upload ALLOW and read ALLOW. Temporary viewer upload DENY, read ALLOW for a path uploaded by super admin. Finance and congregant upload DENY and read DENY. If upload fails for super admin, the result text here shows the exact error, do not guess.</small></p>
+</div>
+<script>
+async function doUpload(){
+  var fb = window.OH_FIREBASE;
+  var f = document.getElementById('file').files[0];
+  if(!fb || !fb.ready || !fb.user){ document.getElementById('uploadResult').textContent = 'Not signed in or Firebase not ready.'; return; }
+  if(!f){ document.getElementById('uploadResult').textContent = 'Choose a TEST image first.'; return; }
+  document.getElementById('uploadResult').textContent = 'Uploading...';
+  var r = await fb.uploadScreenImage(f, 'test-' + Date.now() + '-' + f.name);
+  if(r.saved){
+    document.getElementById('uploadResult').textContent = 'ALLOW, uploaded path: ' + r.path;
+    document.getElementById('path').value = r.path;
+    document.getElementById('preview').innerHTML = '<img src="' + r.url + '" alt="TEST upload preview">';
+  } else {
+    document.getElementById('uploadResult').textContent = 'DENY/FAILED: ' + r.reason;
+  }
+}
+async function doRead(){
+  var fb = window.OH_FIREBASE;
+  var path = document.getElementById('path').value.trim();
+  if(!fb || !fb.ready || !fb.user){ document.getElementById('readResult').textContent = 'Not signed in or Firebase not ready.'; return; }
+  if(!path){ document.getElementById('readResult').textContent = 'Enter a storage path first.'; return; }
+  var r = await fb.getScreenImageUrl(path);
+  if(r.ok){
+    document.getElementById('readResult').textContent = 'ALLOW, read succeeded for ' + path;
+    document.getElementById('readPreview').innerHTML = '<img src="' + r.url + '" alt="TEST read preview">';
+  } else {
+    document.getElementById('readResult').textContent = 'DENY/FAILED: ' + r.reason;
+  }
+}
+setInterval(function(){
+  var fb = window.OH_FIREBASE;
+  if(fb && fb.user) document.getElementById('who').textContent = 'Signed in as ' + fb.user.email;
+  else if(fb) document.getElementById('who').textContent = fb.statusText();
+}, 1000);
+</script>
+</body></html>
