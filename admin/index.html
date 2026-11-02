@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gabbai Admin / ממשק גבאי (MOCK)</title>
+<title>Gabbai Admin / ממשק גבאי (TEST)</title>
 <link rel="stylesheet" href="../src/theme.css">
 <script src="../src/data/test-data.js"></script>
 <script src="../src/firebase/firebase-config.js"></script>
 <script src="../src/firebase/firebase-app.js"></script></head>
 <body>
-<div class="topbar"><strong>Or Hachaim / אור החיים</strong><span>Gabbai editing interface (MOCK, local state only)</span><a href="../screen/index.html">Screen</a><a href="../finance/index.html">Finance</a></div>
+<div class="topbar"><strong>Or Hachaim / אור החיים</strong><span>Gabbai editing interface (TEST, prayer times live when signed in)</span><a href="../screen/index.html">Screen</a><a href="../finance/index.html">Finance</a></div>
 <div class="page">
-<p><span class="badge-sample">MOCK ONLY</span> No login is wired yet (placeholder). No data is saved to a live backend. In the Firebase phase, Google login gates this page and Firestore stores every change.</p>
+<p><span class="badge-sample">TEST DATA ONLY</span> Prayer times below are live Firestore TEST docs when signed in, mock when signed out. Other sections on this page (announcements, dedications, flyers, yahrzeit, images) are still local mock only, not saved.</p>
 <div class="note"><strong>Permissions model (documented, not enforced here yet):</strong> super admin hanochhason@gmail.com chooses per gabbai: finance only, times/screen only, or both. A gabbai with screen permission edits the items below; a gabbai with finance permission only does not see this page. Every change here is recorded in the activity log in the Firebase phase (who, what, when). The TV screen itself never uses the super admin account: it uses a dedicated synagogue viewer account, screen-read-only, with no finance and no editing access.</div>
 <h2>Prayer times / זמני תפילות</h2><p id="ptSource">Source: TEST data (mock, signed out)</p>
 <div class="gold-frame" style="padding:1rem"><div id="ptList"></div>
