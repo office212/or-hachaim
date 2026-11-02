@@ -45,11 +45,30 @@
     <section class="col gold-frame">
       <h2>Prayer Times / זמני תפילות</h2>
       <p><small>Community times, edited by an authorized gabbai (mock data here).</small></p>
+      <p id="prayerSource"><small>Source: TEST data (mock, signed out)</small></p>
       <div id="prayerList"></div>
       <script>
-        document.getElementById("prayerList").innerHTML = window.TEST_DATA.prayerTimes.map(function (p) {
-          return '<div class="zman-row"><span><span class="he">' + p.nameHe + "</span> / " + p.nameEn + "</span><span>" + p.time + "</span></div>";
-        }).join("");
+        function renderPrayer(list){
+          document.getElementById("prayerList").innerHTML = list.map(function (p) {
+            return '<div class="zman-row"><span><span class="he">' + (p.nameHe || p.nameEn || '') + "</span> / " + (p.nameEn || '') + "</span><span>" + (p.time || '') + "</span></div>";
+          }).join("");
+        }
+        renderPrayer(window.TEST_DATA.prayerTimes);
+        var _lastPrayerUser = null;
+        async function refreshPrayer(){
+          try {
+            var fb = window.OH_FIREBASE;
+            if(!fb || !fb.ready || !fb.user){ if(_lastPrayerUser !== null){ _lastPrayerUser = null; document.getElementById('prayerSource').textContent = 'Source: TEST data (mock, signed out)'; renderPrayer(window.TEST_DATA.prayerTimes); } return; }
+            var email = fb.user.email || '';
+            if(email === _lastPrayerUser) return;
+            _lastPrayerUser = email;
+            var live = await fb.loadScreenData();
+            if(live && live.prayerTimes && live.prayerTimes.length){ document.getElementById('prayerSource').textContent = 'Source: Firestore (live TEST docs), signed in as ' + email; renderPrayer(live.prayerTimes); }
+            else { document.getElementById('prayerSource').textContent = 'Source: TEST data (mock), Firestore load returned no live docs, signed in as ' + email; }
+          } catch(e) {}
+        }
+        setInterval(refreshPrayer, 1000);
+        refreshPrayer();
       </script>
       <div class="weekday-only">
         <p><strong>Donation / תרומה (weekday only)</strong></p>
