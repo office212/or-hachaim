@@ -51,8 +51,12 @@
       btn.textContent = "Sign in with Google";
       btn.style.cssText = "margin-left:12px;padding:6px 14px;border-radius:999px;border:1px solid #1b365d;background:#fff;color:#1b365d;cursor:pointer";
       btn.onclick = function () {
-        if (state.user) { window.OH_FIREBASE.signOut(); }
-        else { window.OH_FIREBASE.signIn(); }
+        if (state.user) { window.OH_FIREBASE.signOut(); return; }
+        var r = window.OH_FIREBASE.signIn();
+        if (r && r.catch) r.catch(function (e) {
+          var el = document.getElementById("ohFirebaseStatus");
+          if (el) el.textContent = "Firebase sign-in failed: " + (e && e.message ? e.message : e) + " (code: " + (e && e.code ? e.code : "unknown") + ")";
+        });
       };
       bar.appendChild(btn);
       state._btn = btn;
