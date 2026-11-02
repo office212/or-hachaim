@@ -15,6 +15,7 @@
 async function runBackup(){
   var fb = window.OH_FIREBASE;
   if(!fb || !fb.ready || !fb.user){ document.getElementById('backupMsg').textContent = 'Sign in first.'; return; }
+  if(typeof fb._db !== 'function'){ document.getElementById('backupMsg').textContent = 'Backup code outdated: _db missing, hard-reload the page and try again. Do not trust a denied list from an old cached script.'; return; }
   document.getElementById('backupMsg').textContent = 'Exporting...';
   var out = { exportedAt: new Date().toISOString(), exportedBy: fb.user.email, collections: {}, denied: [] };
   var cols = ['congregants','ledgerEntries','prayerTimes','operationIds','users'];
@@ -25,7 +26,7 @@ async function runBackup(){
       var docs = [];
       snap.forEach(function(d){ var o = d.data() || {}; o._id = d.id; docs.push(o); });
       out.collections[col] = docs;
-    } catch(e) { out.denied.push(col); out.collections[col] = []; }
+    } catch(e) { out.denied.push(col + ' (' + (e && e.code ? e.code : (e && e.message ? e.message : e)) + ')'); out.collections[col] = []; }
   }
   var counts = cols.map(function(c){ return c + ': ' + out.collections[c].length; }).join(', ');
   document.getElementById('backupMsg').textContent = 'Exported. ' + counts + (out.denied.length ? ' Denied: ' + out.denied.join(', ') : '');
