@@ -30,8 +30,8 @@
   };
 
   function statusText() {
-    if (!complete) return "Firebase: not configured, TEST DATA ONLY";
-    if (!state.user) return "Firebase: signed out, showing TEST DATA";
+    if (!complete) return "Firebase: not configured, sign-in required";
+    if (!state.user) return "Firebase: signed out, sign-in required";
     return "Firebase: signed in as " + (state.user.email || state.user.uid);
   }
   function renderStatus() {
