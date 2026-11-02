@@ -32,7 +32,10 @@ function royZmanimList(){
     ["shkiah", "שקיעה", "Shkiah"],
     ["tzeit", "צאת הכוכבים", "Tzeit HaKochavim"]
   ];
-  return map.map(function (m) { return { key: m[0], he: m[1], en: m[2], time: ROY_DAY[m[0]], source: "Roy" }; });
+  return map.map(function (m) { return { key: m[0], he: m[1], en: m[2], time: ROY_DAY[m[0]], source: "Roy" }; }).concat(
+    ROY_DAY.shabbatEndsMyZmanim ? [{ key: "shabbatEnds", he: "צאת שבת", en: "Shabbat ends", time: ROY_DAY.shabbatEndsMyZmanim, source: "MyZmanim" }] : [],
+    ROY_DAY.rabbeinuTamMyZmanim ? [{ key: "rabbeinuTam", he: "רבינו תם (המוקדם)", en: "Rabbeinu Tam (early)", time: ROY_DAY.rabbeinuTamMyZmanim, source: "MyZmanim" }] : []
+  );
 }
 function todayKey(){
   try {
@@ -48,7 +51,7 @@ function todayKey(){
 try {
   fetch("../src/zmanim/roy-daily-5787.json").then(function (r) { return r.json(); }).then(function (j) {
     var day = j.days && j.days[todayKey()];
-    if(day){ ROY_DAY = day; ROY_SOURCE = "Roy (Zemaneh Yosef)"; var el = document.getElementById('zmanSource'); if(el) el.textContent = 'Daily zmanim source: Roy (Zemaneh Yosef), synagogue coordinates, candle 18 min, Shema Magen equal minutes, Shabbat ends 8.5 deg angle.'; renderZmanim(); }
+    if(day){ ROY_DAY = day; ROY_SOURCE = "Roy (Zemaneh Yosef)"; var el = document.getElementById('zmanSource'); if(el) el.textContent = 'Daily zmanim source: Roy (Zemaneh Yosef), synagogue coordinates, candle 18 min, Shema Magen equal minutes, Shabbat ends and Rabbeinu Tam early from MyZmanim.'; renderZmanim(); }
   }).catch(function () {});
 } catch (e) {}
 function renderZmanim() {
@@ -58,7 +61,7 @@ function renderZmanim() {
     var t = mins(z.time);
     if (now > t + 5) return; /* hide-after rule: gone 5 minutes after it passes, for that day */
     if (next === null && t >= now) next = z.key;
-    var disp = (ROY_DAY && z.source === "Roy") ? displayTime(z.time) : z.time;
+    var disp = (ROY_DAY && (z.source === "Roy" || z.source === "MyZmanim")) ? displayTime(z.time) : z.time;
     html += '<div class="zman-row' + (next === z.key ? " next" : "") + '"><span><span class="he">' + z.he + "</span> / " + z.en + '</span><span>' + disp + ' <span class="src">' + z.source + "</span></span></div>";
   });
   document.getElementById("zmanList").innerHTML = html || "<p>All sample zmanim for today have passed (hide-after rule).</p>";
