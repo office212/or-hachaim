@@ -20,7 +20,11 @@ task) or `validation/` (also owned by that task).
 
 ## Structure
 
-- `screen/index.html`, `screen/screen.css`, `screen/screen.js`: the TV screen.
+- `tv/index.html`: the TV screen (public, no login). It loads the shared
+  files `screen/screen.css`, `screen/screen.js`, `screen/content.css` and
+  `screen/content-board.js`. `screen/index.html` (the signed-in screen) was
+  deleted on Nov 3, 2026 (commit 3371366); the shared files stay because
+  `/tv/` loads them.
   Landscape 16:9 first, three columns (daily zmanim, rotating center, prayer
   times), header with the official logo, date, clock with seconds, and
   parsha, bottom dedications strip, no long vertical scroll at 1920x1080.
@@ -90,10 +94,12 @@ task) or `validation/` (also owned by that task).
 - Shabbat-adapted screen: from Shabbat entry to Shabbat exit, weekday-only
   items (donation QR placeholder and payment text) are hidden. A Shabbat
   preview toggle on the screen is provided for demo and testing.
-- Screen account, decision 4: the TV screen runs on a DEDICATED
-  synagogue viewer account, screen-read-only, NEVER the super
-  admin account. No finance, no admin, no editing from the
-  screen. Super admin hanochhason@gmail.com is management only.
+- Screen account, decision 4 (updated in stage 2, 2026-11-03): the
+  read-only screen account role is abolished. The TV page /tv/ is
+  public and needs no account at all; it reads only prayerTimes and
+  published content items (announcements, dedications, sponsors,
+  flyers, yahrzeits with status published), never finance. Super admin
+  hanochhason@gmail.com is management only.
   This supersedes the earlier note about a super admin profile
   on the screen device.
 - Burn-in prevention, decision 7: the screen content shifts
@@ -182,8 +188,9 @@ chooses each gabbai's permissions: finance only, times and screen
 only, or both. A gabbai touches only the collections their permission
 covers. A congregant, signed in with Google using the email added to their
 existing record, reads only their own record and its ledger entries. The
-screen viewer account reads screen content only and never reads
-finance data. Ledger entries, nedarim, and activity log entries can
+public /tv/ page reads only prayer times and published public screen
+items, and never reads finance data (stage 2: there is no separate
+screen account any more). Ledger entries, nedarim, and activity log entries can
 be created but never updated or deleted, by anyone.
 
 Firebase project: CREATED 2026-11-02, empty. Name or-hachaim,
@@ -204,7 +211,7 @@ cd ~/workspace/or-hachaim-site
 python3 -m http.server 8000
 ```
 
-Then open: `http://localhost:8000/screen/index.html`,
+Then open: `http://localhost:8000/tv/`,
 `http://localhost:8000/admin/index.html`,
 `http://localhost:8000/finance/index.html`,
 `http://localhost:8000/congregant/index.html`.
