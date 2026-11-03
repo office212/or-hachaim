@@ -39,12 +39,12 @@
 <img class="logo" src="src/assets/logo-4k-transparent.png" alt="Or Hachaim logo, unchanged">
 <h1>אור החיים / Or Hachaim Congregation</h1>
 <p class="ornament">✦</p>
-<p class="address">321 Harold St, Staten Island, NY 10314</p>
+<p class="address" dir="ltr">321 Harold St, Staten Island, NY 10314</p>
 </section>
 
 <section class="gold-frame landing-section">
 <h2>מפה / Map</h2>
-<p class="hint">321 Harold St, Staten Island, NY 10314</p>
+<p class="hint" dir="ltr">321 Harold St, Staten Island, NY 10314</p>
 <div class="map-frame">
 <iframe src="https://www.google.com/maps?q=321%20Harold%20St%2C%20Staten%20Island%2C%20NY%2010314&amp;output=embed" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Or Hachaim Congregation map, 321 Harold St, Staten Island, NY 10314"></iframe>
 </div>
@@ -62,7 +62,7 @@
 <div class="contact-row"><span>טלפון / Phone</span><span class="placeholder">PLACEHOLDER / פליסהולדר</span></div>
 <div class="contact-row"><span>דוא״ל / Email</span><span class="placeholder">PLACEHOLDER / פליסהולדר</span></div>
 <div class="contact-row"><span>WhatsApp Business</span><span class="placeholder">PLACEHOLDER / פליסהולדר</span></div>
-<p class="hint">כתובת / Address: 321 Harold St, Staten Island, NY 10314</p>
+<p class="hint">כתובת / Address: <span dir="ltr">321 Harold St, Staten Island, NY 10314</span></p>
 </section>
 
 <section class="gold-frame landing-section signin-box">
@@ -71,11 +71,13 @@
 <button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>Sign in with Google / התחברות עם Google</span></button>
 <p class="hint" id="gateMsg"></p>
 <p class="signed-in-note" id="signedInNote">נכנסת בהצלחה / Signed in successfully.</p>
+<div id="roleMenu" style="display:none;margin-top:16px"></div>
+<p class="hint" id="unauthMsg" style="display:none"></p>
 </section>
 </main>
 <footer class="landing-footer">
 <span class="gold-line">✦</span>
-<span>אור החיים / Or Hachaim Congregation, 321 Harold St, Staten Island, NY 10314</span>
+<span>אור החיים / Or Hachaim Congregation, <span dir="ltr">321 Harold St, Staten Island, NY 10314</span></span>
 </footer>
 <script>
 function signInFromGate() {
@@ -84,19 +86,64 @@ function signInFromGate() {
     document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.';
     return;
   }
+  if (fb.user) { fb.signOut(); return; }
   var r = fb.signIn();
   if (r && r.catch) r.catch(function (e) {
     document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e);
   });
 }
-setInterval(function () {
+function landingButtonLabel(signedIn) {
+  var btn = document.querySelector('.signin-box .gsi-btn span');
+  if (btn) btn.textContent = signedIn ? 'Sign out / התנתקות' : 'Sign in with Google / התחברות עם Google';
+}
+async function refreshRoleMenu() {
   try {
     var fb = window.OH_FIREBASE;
+    var menu = document.getElementById('roleMenu');
     var note = document.getElementById('signedInNote');
-    if (fb && fb.user && note) { note.style.display = 'block'; }
-    else if (note) { note.style.display = 'none'; }
+    var unauth = document.getElementById('unauthMsg');
+    if (!fb || !fb.ready || !fb.user) {
+      landingButtonLabel(false);
+      if (menu) { menu.style.display = 'none'; menu.innerHTML = ''; }
+      if (note) note.style.display = 'none';
+      if (unauth) unauth.style.display = 'none';
+      return;
+    }
+    landingButtonLabel(true);
+    var role = await fb.resolveRole();
+    if (!role) return; /* still resolving: show nothing yet, never a link */
+    if (!role.authorized) {
+      if (menu) { menu.style.display = 'none'; menu.innerHTML = ''; }
+      if (note) note.style.display = 'none';
+      if (unauth) {
+        unauth.style.display = 'block';
+        unauth.textContent = fb.unauthMessage ? fb.unauthMessage() : 'חשבון זה אינו מורשה למערכת / This account is not authorized for the system.';
+      }
+      return;
+    }
+    if (unauth) unauth.style.display = 'none';
+    if (note) note.style.display = 'block';
+    var links = [];
+    if (role.isSuperAdmin) {
+      /* Task list for super admin, exactly: Screen, Finance, Admin. */
+      links.push('<a href="screen/index.html">מסך / Screen</a>');
+      links.push('<a href="finance/index.html">פיננסים / Finance</a>');
+      links.push('<a href="admin/index.html">ממשק גבאי / Gabbai admin</a>');
+    } else {
+      /* Otherwise the union of what this role allows, and nothing else. */
+      if (role.canScreen) links.push('<a href="screen/index.html">מסך / Screen</a>');
+      if (role.canFinance) links.push('<a href="finance/index.html">פיננסים / Finance</a>');
+      if (role.canAdmin) links.push('<a href="admin/index.html">ממשק גבאי / Gabbai admin</a>');
+      if (role.canCongregant) links.push('<a href="congregant/index.html">החשבון שלי / My Account</a>');
+    }
+    if (menu) {
+      menu.style.display = 'block';
+      menu.innerHTML = '<h3>כניסה לפי הרשאה / Your sections</h3><p>' + links.join(' | ') + '</p>';
+    }
   } catch (e) {}
-}, 1000);
+}
+setInterval(refreshRoleMenu, 1000);
+refreshRoleMenu();
 </script>
 </body>
 </html>
