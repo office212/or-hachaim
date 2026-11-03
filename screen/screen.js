@@ -1,3 +1,9 @@
+/* Role gate: daily times, Shabbat block and rotating boards are rendered
+   only when the page is ungated by a role check in screen/index.html.
+   An unauthorized signed-in account stays gated, so even though the
+   daily JSON is public, no TV content is rendered for it, and no
+   offline fallback is restored for it. */
+function isScreenGated() { return document.body.classList.contains("gated"); }
 /* Screen logic, luxurious demo 2026-11-02.
    Live: daily times from the local daily JSON (11 times, plus Shabbat
    ends and Rabbeinu Tam early on Saturdays only, candle 18 minutes,
@@ -88,6 +94,7 @@ function nextZman(list, now) {
   return null;
 }
 function renderShabbatBlock() {
+  if (isScreenGated()) return;
   var el = document.getElementById("shabbatBlock"); if (!el || !ROY_JSON) return;
   var wd = nyWeekday(), fri, sat;
   if (wd === 5) { fri = ROY_JSON.days[dateKeyOffset(0)]; sat = ROY_JSON.days[dateKeyOffset(1)]; }
@@ -105,6 +112,7 @@ function renderShabbatBlock() {
     '<div class="zman-row"><span>רבינו תם (המוקדם) / Rabbeinu Tam (early)</span><span>' + rt + '</span></div>';
 }
 function renderZmanim() {
+  if (isScreenGated()) return;
   var now = nowMinsNY(), next = null, html = "";
   var list = royZmanimList() || [];
   list.forEach(function (z) {
@@ -175,6 +183,7 @@ function visibleBoards() {
   return BOARDS.filter(function (b) { return !b.weekdayOnly; });
 }
 function renderZone() {
+  if (isScreenGated()) return;
   var el = document.getElementById("centerZone"); if (!el) return;
   var boards = visibleBoards();
   if (!boards.length) boards = BOARDS.slice(0, 1);
@@ -191,7 +200,7 @@ function updateOfflineNote() {
   el.textContent = navigator.onLine
     ? "Last updated: " + stamp + ". Online."
     : "Offline: showing last info, never a blank screen. Last updated: " + stamp + ".";
-  if (!navigator.onLine) {
+  if (!navigator.onLine && !isScreenGated()) {
     try {
       var last = localStorage.getItem("orHachaimLastZone");
       if (last) document.getElementById("centerZone").innerHTML = last;
