@@ -1,57 +1,177 @@
 @import url("../src/theme.css");
-/* TV screen: landscape 16:9 first. Fits 1920x1080 with no long vertical scroll.
-   Phone/portrait is secondary only. Modern demo style: light header/footer,
-   thin gold line, large type. All look comes from theme.css. */
+/* TV screen, classic luxury edition (proposal 2026-11-03).
+   Landscape 16:9 first, fits 1920x1080 with no scroll, readable from
+   the back of the room: rows 28 to 34px, the next zman 110px.
+   Jerusalem stone and marble base, navy and gold from the logo, thin
+   double gold rules. All brand colours come from theme.css. Sizes use
+   vh so a 1366x768 or a 4K TV keep the same proportions. */
 html, body { height: 100%; overflow: hidden; }
-.tv { height: 100vh; width: 100vw; display: flex; flex-direction: column; background: linear-gradient(180deg, #faf6ec, #efe8da); }
+body { background: var(--navy-deep); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.tv {
+  height: 100vh; width: 100vw; display: flex; flex-direction: column;
+  background-color: var(--marble);
+  background-image:
+    radial-gradient(1400px 700px at 50% 0%, rgba(255, 255, 255, 0.85), transparent 60%),
+    radial-gradient(1000px 800px at 100% 100%, rgba(217, 203, 176, 0.5), transparent 65%),
+    linear-gradient(180deg, #f9f6ef 0%, #efe7d7 100%);
+  transition: transform 4s var(--ease), filter 3s var(--ease);
+}
+
+/* Header: logo plaque, Hebrew date, clock */
 .tv header {
-  background: linear-gradient(90deg, var(--navy-deep), var(--navy)); color: #fff; border-bottom: 3px solid var(--gold);
-  display: flex; align-items: center; gap: 1.2rem; padding: 0.9rem 1.2rem;
+  position: relative; z-index: 1;
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 3vh;
+  padding: 1.6vh 3vh;
+  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%); color: #f4ead6;
+  border-bottom: 1px solid var(--gold);
+  box-shadow: 0 0.35vh 0 var(--navy-deep), 0 0.45vh 0 var(--gold-hair), 0 1.5vh 3vh -1.5vh rgba(8, 27, 48, 0.7);
 }
-.tv header img.logo { height: 74px; width: auto; background: #fff; border: 1px solid var(--stone-dark); border-radius: 14px; padding: 6px; }
-.tv header h1 { margin: 0; font-size: 1.9rem; }
-.tv header .meta { margin-left: auto; text-align: right; line-height: 1.3; }
-#clock { font-size: 2rem; font-weight: 800; color: var(--gold-light); font-variant-numeric: tabular-nums; }
-.tv main { flex: 1; display: grid; grid-template-columns: 1fr 1.2fr 1fr; gap: 0.9rem; padding: 0.9rem; min-height: 0; }
-.col { overflow: hidden; padding: 1.1rem; display: flex; flex-direction: column; background: #fff; border: 1px solid var(--stone-dark); border-radius: 18px; box-shadow: 0 6px 24px rgba(27, 54, 93, 0.08); }
-.col h2 { margin: 0 0 0.4rem; color: var(--navy); border-bottom: 2px solid var(--gold); padding-bottom: 0.3rem; }
-.zman-row { display: flex; justify-content: space-between; padding: 0.32rem 0; border-bottom: 1px solid var(--stone-dark); font-size: 1.12rem; }
-.zman-row.next { background: var(--sky-pale); border: 2px solid var(--sky); font-weight: bold; border-radius: 14px; padding-left: 0.5rem; padding-right: 0.5rem; }
+.logo-plaque { background: linear-gradient(180deg, #fffdf8, #f5edda); border: 1px solid var(--gold); border-radius: 3px; padding: 0.9vh 1.8vh; box-shadow: inset 0 0 0 0.45vh #fffaf0, inset 0 0 0 0.55vh rgba(180, 142, 86, 0.55); }
+.tv header img.logo { display: block; height: 8.6vh; width: auto; }
+.tv header .dates { text-align: center; line-height: 1.15; }
+#hebrewDateLine { font-family: var(--font-display-he); font-size: 4.3vh; font-weight: 600; color: var(--gold-light); letter-spacing: 0.01em; }
+#dateLine { font-size: 2.2vh; color: rgba(244, 234, 214, 0.82); letter-spacing: 0.06em; margin-top: 0.4vh; }
+.tv header .meta { text-align: end; }
+#clock { font-size: 6.2vh; font-weight: 700; color: #fbf3e2; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; line-height: 1; }
+
+/* Three columns */
+.tv main { flex: 1; display: grid; grid-template-columns: 1fr 1.12fr 1fr; gap: 2.2vh; padding: 2.4vh 3vh 2vh; min-height: 0; }
+.col {
+  overflow: hidden; display: flex; flex-direction: column; min-height: 0;
+  padding: 2vh 2.6vh 1.6vh; background: var(--paper);
+  border: 1px solid var(--gold-hair); border-radius: 4px;
+  box-shadow: inset 0 0 0 0.5vh var(--paper), inset 0 0 0 0.6vh rgba(180, 142, 86, 0.32), 0 2.4vh 4vh -3vh rgba(8, 27, 48, 0.55);
+}
+.col h2 {
+  margin: 0 0 1vh; padding: 0 0 1.1vh; text-align: center; color: var(--navy);
+  background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--gold) 70%, transparent) center bottom / 70% 1px no-repeat;
+  line-height: 1.05;
+}
+.col h2 .h-he { display: block; font-family: var(--font-display-he); font-size: 3.7vh; font-weight: 600; }
+.col h2 .h-en { display: block; font-family: var(--font-display); font-size: 1.45vh; font-weight: 600; letter-spacing: 0.34em; text-transform: uppercase; color: var(--gold-text); margin-top: 0.5vh; }
+
+/* Rows: Hebrew name, English under it, time at the far side */
+.zman-row { display: flex; align-items: center; gap: 1.2vh; padding: 0.62vh 0.8vh; border-bottom: 1px dotted rgba(180, 142, 86, 0.5); }
+.zman-row:last-child { border-bottom: 0; }
+.zman-row .zn { display: flex; flex-direction: column; min-width: 0; line-height: 1.12; }
+.zman-row .zn .he { font-size: 2.65vh; font-weight: 600; color: var(--navy); }
+.zman-row .zn .en { font-size: 1.35vh; color: var(--muted); letter-spacing: 0.06em; margin-top: 0.15vh; direction: ltr; text-align: end; }
+[dir="rtl"] .zman-row .zn .en { text-align: right; }
+.zman-row .zt { margin-inline-start: auto; font-size: 3.15vh; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .zman-row .src { display: none; }
-#netzBox { display: none; background: var(--navy); color: #fff; border: 2px solid var(--gold); border-radius: 8px; padding: 0.5rem; text-align: center; margin-top: 0.6rem; }
-#centerZone { flex: 1; overflow: hidden; font-size: 1.15rem; line-height: 1.5; text-align: center; }
-#centerZone h3 { color: var(--navy); margin-top: 0; font-size: 30px; }
-.hanukkiah { font-size: 2.4rem; letter-spacing: 0.3em; text-align: center; }
-.hanukkiah .lit { color: var(--gold-dark); text-shadow: 0 0 12px var(--gold); }
-.tv footer {
-  background: linear-gradient(90deg, var(--navy-deep), var(--navy)); color: #fff; border-top: 3px solid var(--gold);
-  padding: 0.55rem 1.2rem; display: flex; gap: 2rem; align-items: center; white-space: nowrap; overflow: hidden;
+.zman-row.next { background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%); border-radius: 3px; border-bottom-color: transparent; box-shadow: inset 0 0 0 0.25vh var(--navy), inset 0 0 0 0.35vh rgba(218, 179, 104, 0.6); padding: 0.9vh 1.4vh; margin: 0.3vh 0; }
+.zman-row.next .zn .he { color: #fbf3e2; }
+.zman-row.next .zn .en { color: rgba(244, 234, 214, 0.7); }
+.zman-row.next .zt { color: var(--gold-light); }
+#netzBox { display: none; margin-top: 1vh; padding: 1vh; text-align: center; font-size: 2.4vh; font-weight: 700; color: #fbf3e2; background: var(--navy); border: 1px solid var(--gold); border-radius: 3px; box-shadow: inset 0 0 0 0.3vh var(--navy), inset 0 0 0 0.4vh rgba(218, 179, 104, 0.55); }
+
+/* Prayer times: the most read block, one step larger */
+#prayerList .zman-row { padding: 0.75vh 0.8vh; }
+#prayerList .zman-row .zn .he { font-size: 3.2vh; }
+#prayerList .zman-row .zt { font-size: 3.7vh; }
+.col h2.h-shabbat { margin-top: 1.6vh; }
+/* Late in the day only a few zmanim remain: let them grow to fill the column. */
+#zmanList:has(> .zman-row:nth-child(-n+5):last-child) .zman-row { padding: 1.3vh 1vh; }
+#zmanList:has(> .zman-row:nth-child(-n+5):last-child) .zman-row.next { padding: 1.5vh 1.6vh; }
+#zmanList:has(> .zman-row:nth-child(-n+5):last-child) .zn .he { font-size: 3.4vh; }
+#zmanList:has(> .zman-row:nth-child(-n+5):last-child) .zn .en { font-size: 1.6vh; }
+#zmanList:has(> .zman-row:nth-child(-n+5):last-child) .zt { font-size: 4.2vh; }
+
+/* Centre: next zman */
+.next-hero {
+  padding: 2.2vh 2vh 2vh; border-radius: 3px;
+  background: radial-gradient(120% 140% at 50% 0%, var(--navy-soft) 0%, var(--navy) 42%, var(--navy-deep) 100%);
+  border: 1px solid var(--gold);
+  box-shadow: inset 0 0 0 0.55vh var(--navy-deep), inset 0 0 0 0.65vh rgba(218, 179, 104, 0.55), 0 2vh 4vh -2.6vh rgba(8, 27, 48, 0.9);
 }
-.tv footer .dedication { font-size: 1.05rem; }
-.weekday-only { border: 1px dashed var(--gold); padding: 0.5rem; margin-top: 0.6rem; }
-.tv main.burn-shift-1 { transform: translate(4px, 3px); }
-.tv main.burn-shift-2 { transform: translate(-4px, 3px); }
-.tv main.burn-shift-3 { transform: translate(-4px, -3px); }
-.tv main.burn-shift-4 { transform: translate(4px, -3px); }
+.next-hero .next-label { display: flex; justify-content: center; align-items: baseline; gap: 1.2vh; color: var(--gold-light); font-weight: 600; }
+.next-hero .next-label .he { font-size: 2vh; letter-spacing: 0.02em; }
+.next-hero .next-label .en { font-family: var(--font-display); font-size: 1.5vh; letter-spacing: 0.34em; text-transform: uppercase; }
+.next-hero .next-name { color: #fbf3e2; margin-top: 0.8vh; line-height: 1.2; }
+.next-hero .next-name .he { display: block; font-size: 3.3vh; font-weight: 600; }
+.next-hero .next-name .en { display: block; font-size: 1.7vh; color: rgba(244, 234, 214, 0.7); letter-spacing: 0.05em; margin-top: 0.3vh; }
+.next-hero .next-time {
+  font-size: 11vh; font-weight: 700; line-height: 1; margin: 0.6vh 0 0.4vh; font-variant-numeric: tabular-nums; letter-spacing: 0.01em;
+  background: var(--gold-grad); -webkit-background-clip: text; background-clip: text; color: var(--gold-light); -webkit-text-fill-color: transparent;
+}
+.next-hero .next-countdown { font-size: 2.2vh; color: rgba(244, 234, 214, 0.82); }
+
+/* Centre: rotating community board */
+.col h2.board-title { margin-top: 2.2vh; }
+#centerZone { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; text-align: center; padding: 0 1vh; }
+#centerZone > * { animation: boardIn 1.1s var(--ease) both; }
+#centerZone h3 { margin: 0 0 1.4vh; font-family: var(--font-display-he); font-size: 4.2vh; font-weight: 600; color: var(--navy); line-height: 1.15; }
+#centerZone h3 .en { display: block; font-family: var(--font-display); font-size: 1.6vh; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold-text); margin-top: 0.8vh; }
+#centerZone .board-body { font-size: 2.5vh; line-height: 1.55; color: var(--ink); margin: 0; }
+.board-index { text-align: center; color: var(--muted); font-size: 1.4vh; letter-spacing: 0.2em; margin: 0.6vh 0 0; direction: ltr; }
+@keyframes boardIn { from { opacity: 0; transform: translateY(0.8vh); } to { opacity: 1; transform: none; } }
+
+.hanukkiah { font-size: 4.4vh; letter-spacing: 0.3em; text-align: center; }
+.hanukkiah .lit { color: var(--gold-dark); text-shadow: 0 0 1.2vh var(--gold-light); }
+
+/* Donation block (weekday only) */
+.weekday-only { margin-top: auto; padding: 1.1vh 1.6vh; border: 1px solid var(--gold-hair); border-radius: 3px; background: var(--parchment); box-shadow: inset 0 0 0 0.35vh var(--parchment), inset 0 0 0 0.45vh rgba(180, 142, 86, 0.3); }
+.weekday-only h3 { margin: 0 0 0.6vh; font-size: 2.4vh; text-align: center; }
+.weekday-only p { margin: 0; font-size: 1.7vh; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+#shabbatBlock > p { font-size: 1.7vh; color: var(--muted); }
+
+/* Footer: dedications strip */
+.tv footer {
+  position: relative; display: flex; align-items: center; gap: 2.4vh; padding: 1.3vh 3vh; white-space: nowrap; overflow: hidden;
+  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%); color: #f4ead6;
+  border-top: 1px solid var(--gold); box-shadow: 0 -0.35vh 0 var(--navy-deep), 0 -0.45vh 0 var(--gold-hair);
+  font-size: 2.1vh;
+}
+.tv footer .f-name .he { font-family: var(--font-display-he); font-size: 2.6vh; color: var(--gold-light); }
+.tv footer .f-addr { color: rgba(244, 234, 214, 0.7); font-size: 1.8vh; margin-inline-start: 1vh; }
+.tv footer .ornament { color: var(--gold); letter-spacing: 0; }
+#ticker { flex: 1; overflow: hidden; text-overflow: ellipsis; color: #fbf3e2; unicode-bidi: plaintext; }
+.tv footer .dedication { font-size: 2.1vh; }
+.offline-note { display: none; font-size: 1.7vh; color: var(--gold-light); border: 1px solid var(--gold-hair); border-radius: 3px; padding: 0.3vh 1vh; }
+.offline-note.is-offline { display: inline-block; }
+.tv footer a { color: var(--gold-light); }
+
+/* Burn-in: the whole screen drifts a few pixels every 5 minutes, and
+   dims at night. No movement on Shabbat (screen.js). */
+.tv.burn-shift-1 { transform: translate(4px, 3px); }
+.tv.burn-shift-2 { transform: translate(-4px, 3px); }
+.tv.burn-shift-3 { transform: translate(-4px, -3px); }
+.tv.burn-shift-4 { transform: translate(4px, -3px); }
+body.night .tv { filter: brightness(0.42) saturate(0.85); }
+
+/* Shabbat: warmer stone, weekday items hidden */
 body.shabbat .weekday-only { display: none !important; }
-body.shabbat .tv { background: #f7ead0; }
-body.shabbat .col h2::after { content: " Shabbat"; color: var(--gold-dark); font-size: 0.85rem; }
-.controls { position: fixed; bottom: 70px; right: 14px; z-index: 50; opacity: 0.85; }
+body.shabbat .tv, body.shabbat-time .tv { background-color: #f4ead6; background-image: radial-gradient(1400px 700px at 50% 0%, rgba(255, 250, 238, 0.9), transparent 60%), linear-gradient(180deg, #f7efdf 0%, #ecdfc6 100%); }
+
+/* Gabbai preview controls: only with ?preview in the address */
+.controls { display: none; position: fixed; bottom: 9vh; inset-inline-end: 2vh; z-index: 50; opacity: 0.92; }
+body.preview .controls { display: block; }
 .controls .btn { width: auto; }
+
 body.gated .tv { display: none !important; }
+body.gated { overflow: auto; background: var(--marble); }
 body.gated .gate-card { display: block; }
-.gate-card { max-width: 760px; margin: 40px auto; }
+.gate-card { max-width: 760px; margin: 60px auto; }
+
 @media (max-width: 900px) {
   html, body { overflow: auto; }
   .tv { height: auto; min-height: 100vh; }
-  .tv main { grid-template-columns: 1fr; }
-  .tv header img.logo { height: 52px; }
+  .tv header { grid-template-columns: 1fr; text-align: center; gap: 12px; padding: 14px; }
+  .logo-plaque { justify-self: center; }
+  .tv header img.logo { height: 56px; }
+  .tv header .meta { text-align: center; }
+  #clock { font-size: 34px; }
+  #hebrewDateLine { font-size: 24px; }
+  #dateLine { font-size: 15px; }
+  .tv main { grid-template-columns: 1fr; padding: 14px; gap: 14px; }
+  .col h2 .h-he { font-size: 26px; } .col h2 .h-en { font-size: 11px; }
+  .zman-row .zn .he, #prayerList .zman-row .zn .he { font-size: 19px; }
+  .zman-row .zn .en { font-size: 12px; }
+  .zman-row .zt, #prayerList .zman-row .zt { font-size: 22px; }
+  .next-hero .next-time { font-size: 64px; }
+  .next-hero .next-name { font-size: 20px; } .next-hero .next-label, .next-hero .next-countdown { font-size: 13px; }
+  #centerZone h3 { font-size: 26px; } #centerZone .board-body { font-size: 17px; }
+  .tv footer { flex-wrap: wrap; white-space: normal; font-size: 14px; }
 }
-
-.tv footer a { color: var(--gold-light); }
-.tv header .meta { color: #fff; }
-#hebrewDateLine { color: var(--gold-light); font-weight: 700; }
-.col { border-top: 3px solid var(--gold); }
-.zman-row.next { background: #fff3cd; border: 2px solid var(--gold); }
-#centerZone { text-align: center; }
-#centerZone .board-body { font-size: 19px; line-height: 1.55; }

@@ -18,14 +18,32 @@ function isScreenGated() { return document.body.classList.contains("gated"); }
    images are not yet wired to Firestore, so their boards stay
    placeholder until a gabbai enters real content through a live
    Firestore path. Do not treat a placeholder board as live data. */
+/* Hebrew date with Hebrew letters (כ״ג בחשוון תשפ״ז), the way a
+   synagogue writes it. Intl gives the Hebrew calendar but Arabic digits. */
+function hebrewNumeral(n) {
+  var ones = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"], tens = ["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"];
+  var hund = ["", "ק", "ר", "ש", "ת", "תק", "תר", "תש", "תת", "תתק"];
+  var s = hund[Math.floor(n / 100)]; n = n % 100;
+  if (n === 15) s += "טו"; else if (n === 16) s += "טז"; else s += tens[Math.floor(n / 10)] + ones[n % 10];
+  return s.length > 1 ? s.slice(0, -1) + "\u05F4" + s.slice(-1) : s + "\u05F3";
+}
+function hebrewDateText(date, withWeekday) {
+  var opts = { timeZone: "America/New_York", day: "numeric", month: "long", year: "numeric" };
+  if (withWeekday) opts.weekday = "long";
+  return new Intl.DateTimeFormat("he-IL-u-ca-hebrew", opts).formatToParts(date).map(function (p) {
+    if (p.type === "day") return hebrewNumeral(parseInt(p.value, 10));
+    if (p.type === "year") return hebrewNumeral(parseInt(p.value, 10) % 1000);
+    return p.value;
+  }).join("");
+}
 function mins(t) {
   var p = String(t).split(":"); return parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
 }
 function nowMinsNY() {
   try {
-    var parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "numeric", hour12: false }).formatToParts(new Date());
+    var parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date());
     var o = {}; parts.forEach(function (x) { o[x.type] = x.value; });
-    return parseInt(o.hour, 10) * 60 + parseInt(o.minute, 10);
+    return (parseInt(o.hour, 10) % 24) * 60 + parseInt(o.minute, 10); /* % 24: some engines print midnight as 24 */
   } catch (e) { var d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
 }
 function nyWeekday() {
@@ -34,13 +52,25 @@ function nyWeekday() {
     return { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }[wd];
   } catch (e) { return new Date().getDay(); }
 }
+/* Shabbat runs from Friday candle lighting until Shabbat ends on
+   Saturday, not by calendar day. Before the daily file loads, Friday
+   counts from 4:00 PM and Saturday stays Shabbat all day, the safe side.
+   Yom Tov still needs a holiday list (open item). */
 function isShabbatDay() {
-  return document.body.classList.contains("shabbat") || nyWeekday() === 6;
+  if (document.body.classList.contains("shabbat")) return true;
+  var wd = nyWeekday(), now = nowMinsNY();
+  if (wd === 5) return now >= (ROY_DAY && ROY_DAY.candle18 ? mins(ROY_DAY.candle18) : 16 * 60);
+  if (wd === 6) {
+    var ends = ROY_DAY && (ROY_DAY.shabbatEndsMyZmanim || ROY_DAY.shabbatEndsAngle85);
+    return ends ? now < mins(ends) : true;
+  }
+  return false;
 }
 function fmtClock() {
-  return new Date().toLocaleTimeString("en-US", { timeZone: "America/New_York", hour12: false });
+  /* 12-hour clock with seconds, like the zmanim beside it (they are 12-hour too). */
+  return new Date().toLocaleTimeString("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "2-digit", second: "2-digit", hour12: true }).replace(/\s?[AP]M$/, "");
 }
-var ROY_DAY = null, ROY_JSON = null;
+var ROY_DAY = null, ROY_JSON = null, ROY_DAY_KEY = null;
 function displayTime(t24) {
   if (!t24) return "";
   var parts = String(t24).split(":"); var h = parseInt(parts[0], 10), m = parts[1];
@@ -85,10 +115,25 @@ function todayKey() { return dateKeyOffset(0); }
 try {
   fetch("../src/zmanim/roy-daily-5787.json").then(function (r) { return r.json(); }).then(function (j) {
     ROY_JSON = j;
-    var day = j.days && j.days[todayKey()];
-    if (day) { ROY_DAY = day; renderZmanim(); renderShabbatBlock(); }
+    ensureToday();
   }).catch(function () {});
 } catch (e) {}
+/* Midnight rollover: a TV that runs for weeks must switch to the new
+   day by itself. Called on load and on every tick. */
+function ensureToday() {
+  if (!ROY_JSON || !ROY_JSON.days) return;
+  var key = todayKey();
+  if (key === ROY_DAY_KEY) return;
+  ROY_DAY_KEY = key;
+  ROY_DAY = ROY_JSON.days[key] || null;
+  renderZmanim(); renderShabbatBlock();
+}
+function countdownText(m) {
+  if (m <= 0) return "עכשיו · Now";
+  if (m < 60) return "בעוד " + m + " דקות · in " + m + " min";
+  var h = Math.floor(m / 60), r = m % 60;
+  return "בעוד " + h + ":" + (r < 10 ? "0" : "") + r + " שעות · in " + h + "h " + r + "m";
+}
 function nextZman(list, now) {
   for (var i = 0; i < list.length; i++) { if (mins(list[i].time) >= now) return list[i]; }
   return null;
@@ -107,9 +152,14 @@ function renderShabbatBlock() {
   var candle = fri && fri.candle18 ? displayTime(fri.candle18) : "PLACEHOLDER";
   var ends = sat && sat.shabbatEndsMyZmanim ? displayTime(sat.shabbatEndsMyZmanim) : "PLACEHOLDER";
   var rt = sat && sat.rabbeinuTamMyZmanim ? displayTime(sat.rabbeinuTamMyZmanim) : "PLACEHOLDER";
-  el.innerHTML = '<div class="zman-row"><span>הדלקת נרות / Candle lighting</span><span>' + candle + '</span></div>' +
-    '<div class="zman-row"><span>צאת שבת / Shabbat ends</span><span>' + ends + '</span></div>' +
-    '<div class="zman-row"><span>רבינו תם (המוקדם) / Rabbeinu Tam (early)</span><span>' + rt + '</span></div>';
+  el.innerHTML = zRow("הדלקת נרות", "Candle lighting", candle, false) +
+    zRow("צאת שבת", "Shabbat ends", ends, false) +
+    zRow("רבינו תם (המוקדם)", "Rabbeinu Tam (early)", rt, false);
+}
+/* One row: Hebrew name large, English small under it, time on the
+   far side. Same markup for zmanim, prayers and the Shabbat block. */
+function zRow(he, en, time, isNext) {
+  return '<div class="zman-row' + (isNext ? " next" : "") + '"><span class="zn"><span class="he">' + he + '</span><span class="en">' + en + '</span></span><span class="zt" dir="ltr">' + time + "</span></div>";
 }
 function renderZmanim() {
   if (isScreenGated()) return;
@@ -119,7 +169,7 @@ function renderZmanim() {
     var t = mins(z.time);
     if (now > t + 5) return; /* hide-after: gone 5 minutes after it passes, for that day */
     if (next === null && t >= now) next = z.key;
-    html += '<div class="zman-row' + (next === z.key ? " next" : "") + '"><span><span class="he">' + z.he + "</span> / " + z.en + "</span><span>" + displayTime(z.time) + "</span></div>";
+    html += zRow(z.he, z.en, displayTime(z.time), next === z.key);
   });
   var zl = document.getElementById("zmanList");
   if (zl) {
@@ -129,13 +179,17 @@ function renderZmanim() {
   /* Next-zman hero, with countdown in minutes. Never a past time. */
   var heroName = document.getElementById("nextHeroName"), heroTime = document.getElementById("nextHeroTime"), heroCd = document.getElementById("nextHeroCountdown"), heroLine = document.getElementById("nextHeroLine");
   var nz = nextZman(list, now), label = "", tText = "", cd = "";
-  if (nz) { label = nz.he + " / " + nz.en; tText = displayTime(nz.time); cd = (mins(nz.time) - now) + " minutes to go / דקות נותרו"; }
+  if (nz) { label = nz.he + " / " + nz.en; tText = displayTime(nz.time); cd = countdownText(mins(nz.time) - now); }
   else if (ROY_JSON) {
     var tom = ROY_JSON.days[dateKeyOffset(1)];
-    if (tom && tom.alot) { label = "עלות השחר מחר / Alot tomorrow"; tText = displayTime(tom.alot); cd = (1440 - now + mins(tom.alot)) + " minutes to go / דקות נותרו"; }
+    if (tom && tom.alot) { label = "עלות השחר מחר / Alot tomorrow"; tText = displayTime(tom.alot); cd = countdownText(1440 - now + mins(tom.alot)); }
     else { label = "אין זמנים נוספים היום / No more times today"; tText = ""; cd = ""; }
   }
-  if (heroName) heroName.textContent = label;
+  /* Hebrew name large, English small under it (label is "Hebrew / English"). */
+  if (heroName) {
+    var lp = label.split(" / ");
+    heroName.innerHTML = '<span class="he">' + lp[0] + "</span>" + (lp[1] ? '<span class="en">' + lp[1] + "</span>" : "");
+  }
   if (heroTime) heroTime.textContent = tText;
   if (heroCd) heroCd.textContent = cd;
   if (heroLine) heroLine.textContent = label && tText ? ("הזמן הבא: " + label + " " + tText) : "";
@@ -146,7 +200,7 @@ function renderZmanim() {
     if (now >= netz - 5 && now < netz) {
       box.style.display = "block";
       var left = netz - now;
-      box.textContent = "Netz in " + left + " minute" + (left === 1 ? "" : "s") + " (small window, in addition to Netz time; disappears after Netz)";
+      box.textContent = "הנץ בעוד " + left + (left === 1 ? " דקה" : " דקות") + " · Netz in " + left + " min";
     } else { box.style.display = "none"; }
   }
 }
@@ -188,18 +242,23 @@ function renderZone() {
   var boards = visibleBoards();
   if (!boards.length) boards = BOARDS.slice(0, 1);
   var z = boards[zi % boards.length];
-  el.innerHTML = "<h3>" + z.he + " / " + z.en + "</h3><p class=\"board-body\">" + z.body + "</p><p><small><span class=\"placeholder\">PLACEHOLDER</span></small></p>";
+  el.innerHTML = "<h3>" + z.he + '<span class="en">' + z.en + "</span></h3><p class=\"board-body\">" + z.body + "</p>";
   var idx = document.getElementById("boardIndex");
-  if (idx) idx.textContent = "Board " + ((zi % boards.length) + 1) + " of " + boards.length + ", rotating, one board at a time. / לוח " + ((zi % boards.length) + 1) + " מתוך " + boards.length;
+  if (idx) idx.textContent = ((zi % boards.length) + 1) + " / " + boards.length;
   try { localStorage.setItem("orHachaimLastZone", el.innerHTML); } catch (e) {}
   zi++;
 }
+/* The status line is visible only when the TV is offline. When online
+   there is nothing to say, so nothing is shown. */
+var lastOnlineStamp = "";
 function updateOfflineNote() {
   var el = document.getElementById("offlineNote"); if (!el) return;
-  var stamp = new Date().toLocaleString("en-US", { timeZone: "America/New_York" });
-  el.textContent = navigator.onLine
-    ? "Last updated: " + stamp + ". Online."
-    : "Offline: showing last info, never a blank screen. Last updated: " + stamp + ".";
+  var stamp = new Date().toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  if (navigator.onLine) { lastOnlineStamp = stamp; el.textContent = ""; el.classList.remove("is-offline"); }
+  else {
+    el.textContent = "אין חיבור, מוצג המידע האחרון · Offline" + (lastOnlineStamp ? ", " + lastOnlineStamp : "");
+    el.classList.add("is-offline");
+  }
   if (!navigator.onLine && !isScreenGated()) {
     try {
       var last = localStorage.getItem("orHachaimLastZone");
@@ -213,6 +272,7 @@ window.addEventListener("online", updateOfflineNote);
 window.addEventListener("offline", updateOfflineNote);
 function applyWeekdayHiding() {
   var shab = isShabbatDay();
+  document.body.classList.toggle("shabbat-time", shab); /* warmer Shabbat palette, automatic */
   document.querySelectorAll(".weekday-only").forEach(function (el) { el.style.display = shab ? "none" : ""; });
 }
 function tick() {
@@ -221,22 +281,37 @@ function tick() {
   if (dl) dl.textContent = new Date().toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long", year: "numeric", month: "long", day: "numeric" });
   var hd = document.getElementById("hebrewDateLine");
   if (hd) {
-    try { hd.textContent = new Intl.DateTimeFormat("he-IL-u-ca-hebrew", { timeZone: "America/New_York", weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date()); }
+    try { hd.textContent = hebrewDateText(new Date(), true); }
     catch (e) { hd.textContent = ""; }
   }
+  ensureToday();
   applyWeekdayHiding();
+  applyNightDim();
   renderZmanim();
   updateOfflineNote();
 }
+/* Night dim, against burn-in: from NIGHT_DIM_FROM until 60 minutes
+   before Alot the whole screen dims. Automatic, also on Shabbat, so
+   nobody touches anything. Set NIGHT_DIM to false to turn it off. */
+var NIGHT_DIM = true, NIGHT_DIM_FROM = "23:30";
+function applyNightDim() {
+  if (!NIGHT_DIM) return;
+  var now = nowMinsNY(), from = mins(NIGHT_DIM_FROM);
+  var wake = ROY_DAY && ROY_DAY.alot ? mins(ROY_DAY.alot) - 60 : 4 * 60;
+  document.body.classList.toggle("night", now >= from || now < wake);
+}
 var burnStep = 0;
 function applyBurnShift() {
-  var main = document.querySelector(".tv main");
+  var main = document.querySelector(".tv"); /* the whole screen moves, header and footer too */
   if (!main) return;
   main.classList.remove("burn-shift-1", "burn-shift-2", "burn-shift-3", "burn-shift-4");
   if (isShabbatDay()) return; /* No movement on Shabbat. Holiday detection is not yet wired: holidays require a holiday list, see report. */
   burnStep = (burnStep % 4) + 1;
   main.classList.add("burn-shift-" + burnStep);
 }
+/* The Shabbat preview button is for gabbaim, not for the TV: it shows
+   only when the page is opened with ?preview in the address. */
+if (/[?&]preview\b/.test(location.search)) document.body.classList.add("preview");
 var shabToggle = document.getElementById("shabbatToggle");
 if (shabToggle) shabToggle.addEventListener("click", function () {
   document.body.classList.toggle("shabbat");
@@ -247,3 +322,10 @@ tick(); renderZone(); applyBurnShift(); updateOfflineNote();
 setInterval(tick, 1000);
 setInterval(renderZone, 12000);
 setInterval(applyBurnShift, 300000);
+/* Pick up an updated daily file without anyone touching the TV. */
+setInterval(function () {
+  if (!navigator.onLine) return;
+  fetch("../src/zmanim/roy-daily-5787.json", { cache: "no-store" }).then(function (r) { return r.json(); }).then(function (j) {
+    if (j && j.days) { ROY_JSON = j; ROY_DAY_KEY = null; ensureToday(); }
+  }).catch(function () {});
+}, 6 * 60 * 60 * 1000);
