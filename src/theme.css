@@ -1,105 +1,233 @@
-/* Or Hachaim theme layer, modern demo style (approved 2026-11-02).
-   The ONLY place for colors, fonts and frames. Change this file to
-   restyle the site. Data and logic live elsewhere.
-   Variable names are kept for compatibility with screen.css. */
+/* Or Hachaim theme layer, classic luxury edition (proposal 2026-11-03).
+   The ONLY place for colours, fonts, frames and shared components.
+   Data and logic live elsewhere. Every variable name of the previous
+   theme is kept, so screen.css, admin, finance and congregant keep
+   working without edits. Colours are taken from the logo itself
+   (logo.svg: navy #0e2c4c, gold gradient #987444 to #dab368) and from
+   the plan: Jerusalem stone, marble and tchelet as the base, gold
+   frames, dignified typography. The logo is never recoloured. */
+
+/* Fonts are self-hosted (SIL Open Font License, see fonts/OFL.txt):
+   the TV keeps its typography when the internet drops, nothing is
+   sent to a third-party font server, and no layout jump on load. */
+@font-face {
+  font-family: "Assistant";
+  src: url("assets/fonts/assistant-var.woff2") format("woff2");
+  font-weight: 200 800; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Frank Ruhl Libre";
+  src: url("assets/fonts/frank-ruhl-libre-var.woff2") format("woff2");
+  font-weight: 300 900; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("assets/fonts/cormorant-garamond-var.woff2") format("woff2");
+  font-weight: 300 700; font-style: normal; font-display: swap;
+  size-adjust: 112%; /* Cormorant runs small next to Frank Ruhl Libre */
+}
+
 :root {
-  --navy: #0a1f3d;
-  --navy-deep: #060f22;
-  --navy-soft: #1e3a5f;
-  --gold: #c9a227;
-  --gold-light: #e8c766;
-  --gold-dark: #8a6d1b;
-  --stone: #efe8da;
-  --stone-dark: #d8c9a3;
-  --marble: #faf6ec;
-  --sky: #7fb3d5;
-  --sky-deep: #0a1f3d;
-  --sky-pale: #e8eef5;
-  --sky-soft: #e8eef5;
-  --ink: #0a1f3d;
+  /* Brand, from the logo */
+  --navy: #0e2c4c;
+  --navy-deep: #081b30;
+  --navy-soft: #2a4a6e;
+  --gold: #b48e56;
+  --gold-light: #dab368;
+  --gold-dark: #8a6a3d;
+  --gold-text: #7a5c32;          /* gold that passes contrast on cream */
+  --gold-grad: linear-gradient(100deg, #987444 0%, #ab854f 22%, #cda665 42%, #dab368 50%, #c39b5d 62%, #ab834e 80%, #987444 100%);
+  --gold-hair: rgba(180, 142, 86, 0.55);
+  /* Surfaces: Jerusalem stone and marble */
+  --stone: #ede4d3;
+  --stone-dark: #d9cbb0;
+  --marble: #f8f4ec;
+  --paper: #fffdf8;
+  --parchment: #f6efe0;
+  /* Tchelet, used sparingly */
+  --sky: #5b84a8;
+  --sky-deep: #0e2c4c;
+  --sky-pale: #e9eff5;
+  --sky-soft: #e9eff5;
+  /* Text */
+  --ink: #13253d;
+  --muted: #56627a;
   --white: #ffffff;
-  --font-hebrew: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-  --font-latin: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-  --frame: 1px solid var(--gold);
-  --frame-thin: 1px solid var(--gold);
-  --radius: 18px;
-  --shadow: 0 10px 32px rgba(6, 15, 34, 0.18);
+  /* Type */
+  --font-body: "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
+  --font-display: "Cormorant Garamond", "Frank Ruhl Libre", "David Libre", Georgia, serif;
+  --font-display-he: "Frank Ruhl Libre", "David Libre", "Times New Roman", serif;
+  --font-hebrew: var(--font-body);
+  --font-latin: var(--font-body);
+  /* Frames, radius, depth */
+  --frame: 1px solid var(--gold-hair);
+  --frame-thin: 1px solid var(--gold-hair);
+  --radius: 6px;
+  --shadow: 0 1px 0 rgba(255, 255, 255, 0.7), 0 22px 44px -30px rgba(8, 27, 48, 0.55), 0 4px 14px -8px rgba(8, 27, 48, 0.18);
+  --double-rule: inset 0 0 0 5px var(--paper), inset 0 0 0 6px rgba(180, 142, 86, 0.35);
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 * { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; background-color: var(--marble); }
 body {
   margin: 0;
-  font-family: var(--font-latin);
+  font-family: var(--font-body);
   font-size: 18px;
-  line-height: 1.5;
+  line-height: 1.6;
   color: var(--ink);
-  background: linear-gradient(180deg, #faf6ec 0%, #efe8da 60%, #e6dcc3 100%);
+  background-color: var(--marble);
+  /* Soft stone light, no images, no noise files */
+  background-image:
+    radial-gradient(1200px 600px at 85% -10%, rgba(255, 255, 255, 0.9), transparent 60%),
+    radial-gradient(900px 700px at 0% 110%, rgba(217, 203, 176, 0.45), transparent 65%),
+    linear-gradient(180deg, #faf7f1 0%, #f3ede1 100%);
+  background-repeat: no-repeat;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
-h1 { font-size: 30px; line-height: 1.15; }
-h2 { font-size: 28px; }
-h3 { font-size: 22px; }
+/* Mixed Hebrew and English: each paragraph takes the direction of its
+   first strong letter, so "Saved." never renders as ".Saved". */
+p, li, td, th, label, dd, dt, figcaption, .hint, .note, h1, h2, h3, h4 { unicode-bidi: plaintext; }
+
+h1, h2, h3, h4 { font-family: var(--font-display); color: var(--navy); font-weight: 600; letter-spacing: 0.005em; font-variant-numeric: lining-nums; }
+h1 { font-size: 34px; line-height: 1.15; }
+h2 { font-size: 28px; line-height: 1.25; }
+h3 { font-size: 22px; line-height: 1.3; }
 .he { font-family: var(--font-hebrew); direction: rtl; }
+a { color: var(--navy); text-decoration-color: var(--gold); text-underline-offset: 3px; }
+a:hover { color: var(--gold-text); }
+a[href^="mailto:"] { text-decoration: none; } /* email addresses are never underlined */
+::selection { background: rgba(218, 179, 104, 0.35); }
+
+/* Gold frame: hairline gold border plus an inner double rule,
+   like the letterhead. */
 .gold-frame {
   border: var(--frame);
   border-radius: var(--radius);
-  background: var(--white);
-  box-shadow: var(--shadow);
-  padding: 22px;
+  background: var(--paper);
+  box-shadow: var(--double-rule), var(--shadow);
+  padding: 28px;
 }
+/* Section heading: serif, with a fading gold hairline */
+h2 {
+  border-bottom: 0;
+  padding-bottom: 10px;
+  margin-top: 0;
+  background: linear-gradient(90deg, var(--gold) 0%, rgba(180, 142, 86, 0.25) 55%, transparent 100%) left bottom / 100% 1px no-repeat;
+}
+[dir="rtl"] h2 { background-image: linear-gradient(270deg, var(--gold) 0%, rgba(180, 142, 86, 0.25) 55%, transparent 100%); background-position: right bottom; }
+
 .ornament { color: var(--gold); letter-spacing: 0.35em; text-align: center; }
+/* Divider: hairline, small diamond, hairline */
+.divider { display: flex; align-items: center; justify-content: center; gap: 14px; color: var(--gold); margin: 14px auto; max-width: 320px; }
+.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
+.divider::after { background: linear-gradient(270deg, transparent, var(--gold)); }
+.divider span { width: 7px; height: 7px; transform: rotate(45deg); border: 1px solid var(--gold); display: block; }
+.eyebrow { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.32em; font-size: 14px; color: var(--gold-text); font-weight: 600; }
+
+/* Buttons: navy with a gold hairline inside, classic not glossy */
 .btn, button.btn {
-  background: var(--navy); color: var(--white); border: 2px solid var(--gold);
-  border-radius: 14px; padding: 18px 20px; cursor: pointer;
-  font-size: 21px; font-weight: 700; font-family: inherit;
-  min-height: 60px; width: 100%;
+  background: var(--navy); color: #f7efdd; border: 1px solid var(--gold);
+  border-radius: 4px; padding: 16px 22px; cursor: pointer;
+  font-size: 20px; font-weight: 600; font-family: inherit; letter-spacing: 0.02em;
+  min-height: 58px; width: 100%;
+  box-shadow: inset 0 0 0 2px var(--navy), inset 0 0 0 3px rgba(218, 179, 104, 0.45), 0 8px 18px -12px rgba(8, 27, 48, 0.6);
+  transition: background-color 0.2s var(--ease), transform 0.2s var(--ease);
 }
-.btn-gold { background: var(--gold); color: var(--navy-deep); font-weight: 800; border: 2px solid var(--gold-dark); }
-.btn.secondary, button.btn.secondary { background: var(--white); color: var(--ink); border: 2px solid var(--stone-dark); }
-.btn:hover { filter: brightness(1.08); }
-.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.btn:hover { background: var(--navy-soft); box-shadow: inset 0 0 0 2px var(--navy-soft), inset 0 0 0 3px rgba(218, 179, 104, 0.6), 0 10px 22px -12px rgba(8, 27, 48, 0.6); }
+.btn:active { transform: translateY(1px); }
+.btn-gold, button.btn-gold { background: var(--gold-grad); color: var(--navy-deep); font-weight: 700; border: 1px solid var(--gold-dark); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 8px 18px -12px rgba(122, 92, 50, 0.8); }
+.btn-gold:hover { background: var(--gold-grad); filter: brightness(1.05); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 10px 22px -12px rgba(122, 92, 50, 0.9); }
+.btn.secondary, button.btn.secondary { background: var(--paper); color: var(--navy); border: 1px solid var(--stone-dark); box-shadow: none; }
+.btn.secondary:hover { border-color: var(--gold); background: #fff; }
+.btn:disabled, button:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible, button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+
+/* Forms: large targets for older gabbaim, quiet styling */
 input, select, textarea {
-  font: inherit; font-size: 19px; padding: 16px; border: 2px solid var(--stone-dark);
-  border-radius: 12px; background: var(--white); color: var(--ink); width: 100%; min-height: 60px;
+  font: inherit; font-size: 19px; padding: 14px 16px; border: 1px solid var(--stone-dark);
+  border-radius: 4px; background: var(--paper); color: var(--ink); width: 100%; min-height: 56px;
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
+input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(218, 179, 104, 0.25); outline: none; }
+input[type="email"], input[type="number"], input[type="date"], input[type="tel"] { direction: ltr; text-align: start; }
 textarea { min-height: 120px; }
-label { font-weight: 700; display: block; margin: 14px 0 6px; font-size: 18px; }
-table { border-collapse: collapse; width: 100%; font-size: 18px; }
-th { background: var(--navy); color: var(--white); padding: 12px 8px; text-align: left; }
-td { padding: 12px 8px; border-bottom: 1px solid var(--stone-dark); }
+label { font-weight: 600; display: block; margin: 16px 0 6px; font-size: 17px; color: var(--navy); }
+
+/* Tables */
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 17px; font-variant-numeric: tabular-nums; border: 1px solid var(--stone-dark); border-radius: 4px; overflow: hidden; }
+th { background: var(--navy); color: #f4ead6; padding: 12px 10px; text-align: start; font-weight: 600; letter-spacing: 0.02em; border-bottom: 2px solid var(--gold); }
+td { padding: 11px 10px; border-bottom: 1px solid rgba(217, 203, 176, 0.7); text-align: start; }
+tr:nth-child(even) td { background: rgba(237, 228, 211, 0.35); }
+tr:last-child td { border-bottom: 0; }
+
+/* Top bar: navy with a thin gold double rule, letterhead style */
 .topbar {
-  background: linear-gradient(90deg, var(--navy-deep), var(--navy)); color: var(--white); padding: 16px;
-  border-bottom: 3px solid var(--gold); display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
-  box-shadow: 0 6px 20px rgba(6, 15, 34, 0.25);
+  position: relative;
+  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%); color: #f4ead6; padding: 14px 24px;
+  display: flex; gap: 0.6rem 1.4rem; align-items: center; flex-wrap: wrap;
+  border-bottom: 1px solid var(--gold);
+  box-shadow: 0 3px 0 var(--navy-deep), 0 4px 0 var(--gold-hair), 0 14px 30px -18px rgba(8, 27, 48, 0.7);
+  margin-bottom: 8px;
 }
-.topbar a { color: var(--gold-light); }
-.topbar strong { font-size: 20px; }
-.page { max-width: 1180px; margin: 0 auto; padding: 8px 20px 40px; }
+.topbar strong { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: #fbf3e2; letter-spacing: 0.02em; }
+.topbar span { color: rgba(244, 234, 214, 0.75); font-size: 16px; }
+.topbar a { color: var(--gold-light); text-decoration: none; font-size: 16px; font-weight: 600; letter-spacing: 0.02em; padding: 4px 0; border-bottom: 1px solid transparent; transition: border-color 0.2s var(--ease); }
+.topbar a:hover { color: #f3dca4; border-bottom-color: var(--gold-light); }
+
+.page { max-width: 1180px; margin: 0 auto; padding: 18px 24px 56px; }
+.page > .gold-frame { margin: 22px 0; }
 .badge-sample { display: none; }
-.note { background: var(--sky-pale); border-left: 5px solid var(--navy); padding: 0.8rem; margin: 1rem 0; }
-.hint { font-size: 16px; color: var(--navy-soft); }
+.note { background: var(--parchment); border: 1px solid rgba(217, 203, 176, 0.8); border-inline-start: 3px solid var(--gold); border-radius: 4px; padding: 0.9rem 1rem; margin: 1rem 0; }
+.hint { font-size: 16px; color: var(--muted); }
+
+/* Status bar injected by firebase-app.js on signed-in pages */
+.status-bar, #ohFirebaseStatusBar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 14px; margin: 6px 0 4px; border: 1px solid rgba(217, 203, 176, 0.9); border-radius: 4px; background: rgba(255, 253, 248, 0.8); color: var(--navy); font-size: 15px; }
+
+/* Sign-in gate: the logo, untouched, above the card text */
 .gate-card {
-  display: none; background: var(--white); border: 1px solid var(--stone-dark);
-  border-radius: 18px; padding: 28px; box-shadow: var(--shadow); text-align: center; margin: 20px 0;
+  display: none; background: var(--paper); border: var(--frame);
+  border-radius: var(--radius); padding: 40px 32px 34px; box-shadow: var(--double-rule), var(--shadow); text-align: center; margin: 48px auto; max-width: 680px;
 }
-.gate-card h2 { margin-top: 0; }
+.gate-card::before {
+  content: ""; display: block; height: 112px; margin: 0 auto 18px; max-width: 300px;
+  background: url("assets/logo-4k-transparent.png") center / contain no-repeat;
+}
+.gate-card h2 { margin-top: 0; background-position: center bottom; background-image: linear-gradient(90deg, transparent, var(--gold), transparent); display: inline-block; padding: 0 24px 10px; }
+.gate-card p { color: var(--muted); }
 body.gated .gate-card { display: block; }
 body.gated .topbar { display: none !important; } /* Gated page shows only the sign-in gate, no navigation. */
 body.gated .page > :not(.gate-card) { display: none !important; }
 body.gated .page > .gate-card { display: block !important; }
+
+.placeholder { display: inline-block; background: transparent; border: 1px dashed var(--gold); color: var(--gold-text); border-radius: 3px; padding: 2px 10px; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; }
+
+/* Next-zman card (screen.css refines it for the TV) */
+.next-hero { background: radial-gradient(120% 140% at 50% 0%, var(--navy-soft) 0%, var(--navy) 45%, var(--navy-deep) 100%); color: #fbf3e2; border: 1px solid var(--gold); border-radius: var(--radius); padding: 20px; text-align: center; box-shadow: inset 0 0 0 5px var(--navy-deep), inset 0 0 0 6px rgba(218, 179, 104, 0.5), 0 18px 40px -24px rgba(8, 27, 48, 0.8); }
+.next-hero .next-time { font-size: 48px; font-weight: 700; color: var(--gold-light); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.next-hero .next-name { font-size: 24px; font-weight: 600; }
+
+/* Branded Sign in with Google button, per Google branding rules. */
+button.gsi-btn, .gsi-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: auto; min-width: 280px; background: #fff; color: #1f1f1f; border: 1px solid #dadce0; border-radius: 999px; padding: 13px 24px; font-family: inherit; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(60, 64, 67, 0.2), 0 2px 8px rgba(60, 64, 67, 0.08); transition: box-shadow 0.2s var(--ease); }
+button.gsi-btn:hover, .gsi-btn:hover { filter: none; background: #f8f9fa; box-shadow: 0 2px 4px rgba(60, 64, 67, 0.25), 0 6px 16px rgba(60, 64, 67, 0.12); }
+.gsi-btn svg { width: 22px; height: 22px; flex: none; }
+#ohFirebaseStatusBar .gsi-btn { min-width: 0; padding: 7px 16px; font-size: 15px; }
+
+@media (max-width: 640px) {
+  body { font-size: 17px; }
+  h1 { font-size: 28px; }
+  h2 { font-size: 24px; }
+  .gold-frame { padding: 20px 18px; }
+  .page { padding: 12px 14px 40px; }
+  .topbar { padding: 12px 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
 @media print {
   .no-print, .topbar, .btn { display: none !important; }
   body { background: #fff; }
+  .gold-frame { box-shadow: none; }
 }
-
-/* Luxurious demo, 2026-11-02: deep navy, gold, light marble. */
-.gold-frame { border: 1px solid var(--gold); box-shadow: 0 10px 32px rgba(6, 15, 34, 0.14); }
-h2 { border-bottom: 2px solid var(--gold); padding-bottom: 6px; }
-.placeholder { display: inline-block; background: #fff3cd; border: 1px solid var(--gold); color: #5a4300; border-radius: 999px; padding: 4px 12px; font-size: 15px; font-weight: 700; }
-.next-hero { background: linear-gradient(135deg, var(--navy-deep), var(--navy)); color: #fff; border: 2px solid var(--gold); border-radius: 18px; padding: 18px; text-align: center; box-shadow: 0 10px 32px rgba(6, 15, 34, 0.30); }
-.next-hero .next-time { font-size: 44px; font-weight: 800; color: var(--gold-light); line-height: 1.1; }
-.next-hero .next-name { font-size: 24px; font-weight: 700; }
-/* Branded Sign in with Google button, Level 1 only. No hosting migration. */
-button.gsi-btn, .gsi-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: auto; min-width: 280px; background: #fff; color: #1f1f1f; border: 1px solid #dadce0; border-radius: 999px; padding: 14px 24px; font-size: 19px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
-button.gsi-btn:hover, .gsi-btn:hover { filter: none; background: #f8f9fa; box-shadow: 0 4px 14px rgba(0,0,0,0.16); }
-.gsi-btn svg { width: 22px; height: 22px; flex: none; }
-#ohFirebaseStatusBar .gsi-btn { min-width: 0; padding: 8px 16px; font-size: 15px; }
