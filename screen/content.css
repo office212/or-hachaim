@@ -1,0 +1,57 @@
+/* Screen content boards, stage v4 (2026-11-03). Same stone + gold +
+   logo navy materials as screen.css (v3). Loaded after screen.css on
+   /screen/ and /tv/. No crown, no ornaments beyond the existing gold
+   hairline and the ✦ separator already used in the footer. */
+
+/* the next-zman countdown is off (plan 1.1-1.3) */
+.next-countdown:empty { display: none; }
+
+/* centre board: content wrapper that can scroll when long */
+#centerZone .cb-inner { width: 100%; }
+#centerZone.is-long { justify-content: flex-start; }
+#centerZone .cb-sub { margin: -0.6vh 0 1.2vh; font-family: var(--font-display-he); font-size: 2.9vh; font-weight: 600; color: var(--gold-text, #8a6a2f); }
+#centerZone .board-body { white-space: normal; overflow-wrap: anywhere; }
+#centerZone .board-body.en-body { margin-top: 1.2vh; font-size: 2.1vh; color: var(--muted); unicode-bidi: plaintext; }
+
+/* grouped lists: sponsors, parnas hayom, mazal tov, hazkarot, yahrzeit, dedications */
+#centerZone .cb-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1.3vh; }
+#centerZone .cb-line { display: flex; flex-direction: column; align-items: center; gap: 0.3vh; padding: 1.1vh 1.4vh 1.2vh;
+  border-bottom: 1px solid rgba(180, 142, 86, 0.35); }
+#centerZone .cb-line:last-child { border-bottom: 0; }
+#centerZone .ln-tag { font-size: 1.7vh; font-weight: 700; letter-spacing: 0.06em; color: #fff; background: var(--navy); border-radius: 0.5vh; padding: 0.25vh 1vh; }
+#centerZone .ln-title { font-family: var(--font-display-he); font-size: 3.1vh; font-weight: 600; color: var(--navy); line-height: 1.2; }
+#centerZone .ln-body { font-size: 2.4vh; line-height: 1.45; color: var(--ink); overflow-wrap: anywhere; }
+#centerZone .ln-en { font-size: 1.9vh; color: var(--muted); unicode-bidi: plaintext; }
+#centerZone .ln-when { font-size: 2.2vh; font-weight: 700; color: var(--gold-text, #8a6a2f); }
+
+/* flyer: the image is the board */
+#centerZone.is-flyer .cb-inner { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+#centerZone.is-flyer h3 { margin-bottom: 1vh; font-size: 3.2vh; }
+#centerZone .cb-flyer { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+#centerZone .cb-flyer img { max-width: 100%; max-height: 100%; object-fit: contain; border: 1px solid rgba(180, 142, 86, 0.55); border-radius: 0.8vh; box-shadow: 0 0.4vh 1.4vh rgba(14, 44, 76, 0.12); background: #fff; }
+#centerZone.is-flyer .board-body { margin-top: 1vh; font-size: 2.1vh; }
+
+/* v5: the next zman is always one slim line now (screen.css .next-strip), so a flyer gets the height anyway */
+.col-center.has-flyer h2.board-title { margin-top: 1.2vh; }
+.col-center.has-flyer h2.board-title .h-en { display: none; }
+
+/* campaign progress */
+#centerZone .cb-progress { margin: 2vh auto 0.8vh; width: 82%; height: 1.6vh; border-radius: 1vh; background: rgba(14, 44, 76, 0.12); overflow: hidden; border: 1px solid rgba(180, 142, 86, 0.5); }
+#centerZone .cb-progress span { display: block; height: 100%; background: var(--navy-fill); }
+#centerZone .cb-progress-nums { margin: 0; font-size: 2.2vh; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
+
+/* footer strip: permanent dedications, v5 endless ticker (rules in screen.css) */
+#ticker { white-space: nowrap; }
+
+/* donation board (v5: a centre board, weekday only; hidden by the system on Shabbat / Yom Tov) */
+#centerZone .cb-donation { display: flex; flex-direction: column; align-items: center; gap: 2vh; }
+#centerZone .cb-donation .cb-qr { width: 24vh; height: 24vh; object-fit: contain; background: #fff; border: 1px solid rgba(180, 142, 86, 0.55); border-radius: 1vh; padding: 1vh; box-shadow: 0 0.4vh 1.4vh rgba(14, 44, 76, 0.12); }
+
+/* editor preview inside the admin page */
+.embed-preview .controls { display: none !important; }
+.embed-preview body { cursor: default; }
+
+/* calendar module (src/calendar/) inside the v3 design */
+#centerZone.is-cal .cal-rows { text-align: start; }
+#centerZone.is-cal .zman-row .zn .he { font-size: 2.6vh; }
+/* v5: the weekly Shabbat block moved to the right column, its rules are in screen.css (.shabbat-sec) */
