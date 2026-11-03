@@ -1,0 +1,24 @@
+{
+ "slot": "3.9 הלכה יומית, מחזור 365",
+ "status": "PLACEHOLDER: התוכן יגיע מחנוך בלבד. אין כאן טקסט אמיתי, ומסך לא מציג רשומה שמכילה PLACEHOLDER.",
+ "keying": "cycleDay",
+ "cycleLength": 365,
+ "cycleStart": "2026-11-03",
+ "cycleStartNote": "התאריך שבו מוצגת רשומה 1. חנוך קובע אותו; 2026-11-03 הוא ערך לדוגמה בלבד.",
+ "alternativeKeying": "אפשר גם keying=civilDate עם מפתחות MM-DD, או keying=hebrewDate כמו בהיום יום.",
+ "hideOnShabbat": false,
+ "entries": {
+  "1": {
+   "text": "PLACEHOLDER",
+   "source": ""
+  },
+  "2": {
+   "text": "PLACEHOLDER",
+   "source": ""
+  },
+  "365": {
+   "text": "PLACEHOLDER",
+   "source": ""
+  }
+ }
+}
