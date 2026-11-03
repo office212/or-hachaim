@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>בית הכנסת אור החיים | Or Hachaim Congregation, Staten Island</title>
 <meta name="description" content="בית הכנסת אור החיים, 321 Harold St, Staten Island, NY 10314. זמני היום, מפה, ניווט ויצירת קשר. Or Hachaim Congregation, Staten Island: daily zmanim, directions and contact.">
@@ -391,15 +391,15 @@ async function refreshRoleMenu() {
     var links = [];
     if (role.isSuperAdmin) {
       /* Task list for super admin, exactly: Screen, Finance, Admin. */
-      links.push('<a href="screen/index.html">מסך / Screen</a>');
-      links.push('<a href="finance/index.html">פיננסים / Finance</a>');
-      links.push('<a href="admin/index.html">ממשק גבאי / Gabbai admin</a>');
+      links.push('<a href="screen/">מסך / Screen</a>');
+      links.push('<a href="finance/">פיננסים / Finance</a>');
+      links.push('<a href="admin/">ממשק גבאי / Gabbai admin</a>');
     } else {
       /* Otherwise the union of what this role allows, and nothing else. */
-      if (role.canScreen) links.push('<a href="screen/index.html">מסך / Screen</a>');
-      if (role.canFinance) links.push('<a href="finance/index.html">פיננסים / Finance</a>');
-      if (role.canAdmin) links.push('<a href="admin/index.html">ממשק גבאי / Gabbai admin</a>');
-      if (role.canCongregant) links.push('<a href="congregant/index.html">החשבון שלי / My Account</a>');
+      if (role.canScreen) links.push('<a href="screen/">מסך / Screen</a>');
+      if (role.canFinance) links.push('<a href="finance/">פיננסים / Finance</a>');
+      if (role.canAdmin) links.push('<a href="admin/">ממשק גבאי / Gabbai admin</a>');
+      if (role.canCongregant) links.push('<a href="congregant/">החשבון שלי / My Account</a>');
     }
     if (menu) {
       menu.style.display = 'block';
