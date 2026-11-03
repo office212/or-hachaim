@@ -203,14 +203,17 @@ var _lastUserEmail = null;
 function signInFromGate(){
   var fb = window.OH_FIREBASE;
   if(!fb || !fb.signIn){ document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.'; return; }
+  if(fb.user){ fb.signOut(); return; }
   var r = fb.signIn();
   if(r && r.catch) r.catch(function(e){ document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e); });
 }
 async function refreshFromFirestore(){
   try {
     var fb = window.OH_FIREBASE;
-    if(!fb || !fb.ready || !fb.user) { document.body.classList.add('gated'); if(_lastUserEmail !== null){ _lastUserEmail = null; cons = []; document.getElementById('dataSource').textContent = 'כניסה נדרשת / Sign-in required'; renderList(); renderNederCong(); } return; }
-    document.body.classList.remove('gated');
+    if(!fb || !fb.ready || !fb.user) { document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastUserEmail !== null){ _lastUserEmail = null; cons = []; document.getElementById('dataSource').textContent = 'כניסה נדרשת / Sign-in required'; renderList(); renderNederCong(); } return; }
+    var role = await fb.resolveRole();
+    if(!role || !fb.canAccess('finance')) { document.body.classList.add('gated'); if(role) document.getElementById('gateMsg').textContent = 'חשבון זה אינו מורשה למערכת / This account is not authorized for the system. פנה לגבאי או למנהל העל כדי לקבל הרשאה. / Contact a gabbai or the super admin for authorization.'; _lastUserEmail = null; cons = []; document.getElementById('dataSource').textContent = 'כניסה נדרשת / Sign-in required'; renderList(); renderNederCong(); return; }
+    document.body.classList.remove('gated'); document.getElementById('gateMsg').textContent = '';
     var email = fb.user.email || '';
     if(email === _lastUserEmail) return;
     _lastUserEmail = email;
