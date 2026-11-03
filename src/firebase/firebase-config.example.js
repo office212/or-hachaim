@@ -27,7 +27,8 @@ window.FIREBASE_CONFIG_EXAMPLE = {
    - prayerTimes: { nameHe, nameEn, time, order, updatedBy, updatedAt }
    - announcements, dedications, sponsors, flyers { from, to }, yahrzeits
    - users: { email, role: superAdmin|gabbai, permissions: finance|screen|both,
-       screenViewer: true only for the dedicated screen viewer account }
+       imageUpload } (screen = Content and Times; stage 2 abolished the
+       read-only screen account role)
    Storage: images/graphics uploaded by gabbaim with screen permission.
    Security-rule intent (draft in firestore.rules, not deployed):
    - Super admin is hanochhason@gmail.com only, management only;
@@ -37,11 +38,9 @@ window.FIREBASE_CONFIG_EXAMPLE = {
    - A congregant, signed in with Google using the email the super admin
      added to their existing record, may read ONLY their own congregant
      record and its ledger entries, nothing else.
-   - The TV screen runs on a DEDICATED synagogue viewer account,
-     screen-read-only, NEVER the super admin account. That account
-     reads prayer times, announcements, dedications, sponsors,
-     flyers and yahrzeits only. It never reads finance data, never
-     edits anything, and has no admin access.
+   - The TV page /tv/ is public and uses no account (stage 2). It
+     reads prayer times and published public screen items only. It
+     never reads finance data and edits nothing.
    - Finance backup is a day-one requirement: full export from the
      start, plus a periodic export in the Firebase phase. See
      backup-design.md. */
