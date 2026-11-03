@@ -137,7 +137,7 @@ window.TEST_DATA = {
     { when: "2026-11-01", who: "TEST super admin", action: "Set TEST gabbai permission to finance only", area: "permissions" }
   ],
   screenAccount: {
-    note: "TV screen uses a dedicated synagogue viewer account, screen-read-only, NEVER the super admin account. No finance, no admin, no editing. Super admin hanochhason@gmail.com is management only."
+    note: "TV screen /tv/ is public and uses no account (stage 2). It reads prayer times and published public screen items only. No finance, no admin, no editing. Super admin hanochhason@gmail.com is management only."
   }
 };
 /* Ledger check for TEST Congregant One: charges 180 + 120 = 300;
