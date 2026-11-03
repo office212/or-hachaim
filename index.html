@@ -12,12 +12,11 @@
 .landing-hero .logo { width: 220px; max-width: 70vw; height: auto; }
 .landing-hero h1 { font-size: 38px; margin: 12px 0 6px; }
 .address { font-size: 20px; font-weight: 700; }
-.map-link { display: inline-block; margin-top: 16px; padding: 14px 28px; border: 2px solid var(--gold); border-radius: 999px; background: var(--navy); color: #fff; text-decoration: none; font-weight: 700; }
-.map-link:hover { filter: brightness(1.08); }
 .map-frame { height: 450px; border-radius: 24px; overflow: hidden; border: 1px solid #e5dcc9; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
 .map-frame iframe { width: 100%; height: 100%; border: 0; }
-.map-caption { text-align: center; margin-top: 14px; }
-.map-caption a { color: var(--navy); font-weight: 700; }
+.map-caption { text-align: center; margin-top: 14px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.map-caption a { display: inline-block; padding: 14px 28px; border-radius: 999px; background: var(--navy); color: #fff; text-decoration: none; font-weight: 700; }
+.map-caption a.waze { background: #fff; color: var(--navy); border: 2px solid var(--gold); }
 .contact-row { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--stone-dark); }
 .contact-row:last-child { border-bottom: none; }
 .signin-box { text-align: center; }
@@ -41,7 +40,6 @@
 <h1>אור החיים / Or Hachaim Congregation</h1>
 <p class="ornament">✦</p>
 <p class="address">321 Harold St, Staten Island, NY 10314</p>
-<a class="map-link" href="https://www.google.com/maps/search/?api=1&amp;query=321+Harold+St%2C+Staten+Island%2C+NY+10314">מפה / Map</a>
 </section>
 
 <section class="gold-frame landing-section">
@@ -50,7 +48,7 @@
 <div class="map-frame">
 <iframe src="https://www.google.com/maps?q=321%20Harold%20St%2C%20Staten%20Island%2C%20NY%2010314&amp;output=embed" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Or Hachaim Congregation map, 321 Harold St, Staten Island, NY 10314"></iframe>
 </div>
-<p class="map-caption"><a href="https://www.google.com/maps/search/?api=1&amp;query=321+Harold+St%2C+Staten+Island%2C+NY+10314">פתח במפות גוגל / Open in Google Maps</a></p>
+<p class="map-caption"><a href="https://www.google.com/maps/dir/?api=1&amp;destination=321+Harold+St%2C+Staten+Island%2C+NY+10314">נווט עם גוגל מפות / Navigate with Google Maps</a><a class="waze" href="https://www.waze.com/ul?ll=40.60155%2C-74.13206&amp;navigate=yes">נווט עם Waze / Navigate with Waze</a></p>
 </section>
 
 <section class="gold-frame landing-section">
