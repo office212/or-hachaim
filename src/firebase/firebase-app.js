@@ -165,7 +165,7 @@
     if (document.getElementById("ohFirebaseStatus")) { renderStatus(); return; }
     var bar = document.createElement("div");
     bar.id = "ohFirebaseStatusBar";
-    bar.style.cssText = "padding:8px 12px;border:1px solid #e5dcc9;background:#fdf8f0;color:#1b365d;font-size:14px";
+    bar.className = "status-bar"; /* look lives in theme.css */
     var span = document.createElement("span");
     span.id = "ohFirebaseStatus";
     span.textContent = statusText();
@@ -267,36 +267,63 @@
         var prayerTimes = [];
         pt.forEach(function (doc) {
           var d = doc.data() || {};
-          prayerTimes.push({ nameHe: d.nameHe || d.nameEn || doc.id, nameEn: d.nameEn || doc.id, time: d.time || "" });
+          prayerTimes.push({ nameHe: d.nameHe || d.nameEn || doc.id, nameEn: d.nameEn || doc.id, time: d.time || "", order: typeof d.order === "number" ? d.order : 0 });
         });
+        /* Firestore returns documents by id, not by time: sort by the
+           order field the admin saves, so Shacharit comes before Mincha. */
+        prayerTimes.sort(function (a, b) { return a.order - b.order; });
         return { prayerTimes: prayerTimes };
       } catch (e) { return null; }
     },
     /* Append-only ledger write. Returns {saved:true} on success,
-       {saved:false, reason} otherwise. A duplicate operationId is
-       rejected here AND by the Firestore rules. Update/delete are
-       never attempted, by design. */
+       {saved:false, reason} otherwise. Changed 2026-11-03:
+       - ONE atomic batch: the operationIds claim and the ledger entry
+         are written together or not at all. Before, a network drop
+         between the two writes burned the operationId with no entry.
+       - The ledger document id IS the operationId, so a second write
+         with the same id is an update, and the rules deny every
+         ledger update: a duplicate is rejected by the database itself.
+       - enteredBy / enteredByUid / createdAt are set here and checked
+         by the rules (createdAt must be the server time).
+       - date defaults to today's date in New York, not UTC. */
     saveLedgerEntry: async function (entry) {
       if (!state.ready || !state.db || !entry || !entry.operationId) {
         return { saved: false, reason: "test-only" };
       }
+      if (!state.user) return { saved: false, reason: "not-signed-in" };
+      var amount = Number(entry.amount);
+      if (!isFinite(amount) || amount === 0) return { saved: false, reason: "invalid-amount" };
       try {
+        var ledgerRef = state.db.collection("ledgerEntries").doc(entry.operationId);
         var opRef = state.db.collection("operationIds").doc(entry.operationId);
-        var op = await opRef.get();
-        if (op.exists) return { saved: false, reason: "duplicate-operationId" };
-        await opRef.set({ createdAt: new Date().toISOString(), congregantId: entry.congregantId || "" });
-        await state.db.collection("ledgerEntries").add({
+        var ts = window.firebase.firestore.FieldValue.serverTimestamp();
+        var data = {
           congregantId: entry.congregantId || "",
-          date: entry.date || new Date().toISOString().slice(0, 10),
+          date: entry.date || (window.OH_UI ? window.OH_UI.nyDate() : new Date().toISOString().slice(0, 10)),
           type: entry.type || "charge",
-          amount: entry.amount || 0,
+          amount: Math.round(amount * 100) / 100,
           description: entry.description || "",
-          enteredBy: (state.user && state.user.email) || "",
+          enteredBy: state.user.email || "",
+          enteredByUid: state.user.uid,
           operationId: entry.operationId,
-          source: entry.source || "manual"
-        });
-        return { saved: true };
+          source: entry.source || "manual",
+          createdAt: ts
+        };
+        if (entry.method) data.method = String(entry.method);
+        if (entry.pledgeId) data.pledgeId = String(entry.pledgeId);
+        if (entry.aliyah) data.aliyah = String(entry.aliyah);
+        var batch = state.db.batch();
+        batch.set(opRef, { createdAt: ts, congregantId: data.congregantId, by: state.user.uid });
+        batch.set(ledgerRef, data);
+        await batch.commit();
+        return { saved: true, id: entry.operationId };
       } catch (e) {
+        /* permission-denied on an existing id means it was already saved:
+           report it as a duplicate so the caller does not save again. */
+        try {
+          var again = await state.db.collection("ledgerEntries").doc(entry.operationId).get();
+          if (again.exists) return { saved: false, reason: "duplicate-operationId" };
+        } catch (e2) {}
         return { saved: false, reason: String(e && e.message ? e.message : e) };
       }
     },
@@ -428,7 +455,8 @@
       try {
         await state.db.collection("prayerTimes").add({
           nameEn: item.nameEn || "", nameHe: item.nameHe || item.nameEn || "",
-          time: item.time || "", updatedBy: (state.user && state.user.email) || "",
+          time: item.time || "", order: typeof item.order === "number" ? item.order : Date.now(),
+          updatedBy: (state.user && state.user.email) || "",
           updatedAt: new Date().toISOString()
         });
         return { saved: true };
@@ -454,10 +482,16 @@
     });
   }
   var base = "https://www.gstatic.com/firebasejs/10.12.2/";
+  /* app-compat first (the others attach to it), then the rest in
+     parallel instead of one after another: faster first paint. */
   loadScript(base + "firebase-app-compat.js")
-    .then(function () { return loadScript(base + "firebase-auth-compat.js"); })
-    .then(function () { return loadScript(base + "firebase-firestore-compat.js"); })
-    .then(function () { return loadScript(base + "firebase-storage-compat.js"); })
+    .then(function () {
+      return Promise.all([
+        loadScript(base + "firebase-auth-compat.js"),
+        loadScript(base + "firebase-firestore-compat.js"),
+        loadScript(base + "firebase-storage-compat.js")
+      ]);
+    })
     .then(function () {
       window.firebase.initializeApp(cfg);
       state.auth = window.firebase.auth();
