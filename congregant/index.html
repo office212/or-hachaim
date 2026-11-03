@@ -1,9 +1,17 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>החשבון שלי / My Account</title>
 <link rel="stylesheet" href="../src/theme.css">
+<style>
+.balance-hero { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 10px 0 18px; padding: 20px; background: var(--navy); color: #f4ead6; border: 1px solid var(--gold); border-radius: 4px; box-shadow: inset 0 0 0 4px var(--navy), inset 0 0 0 5px rgba(218, 179, 104, 0.5); }
+.balance-hero .bh-label { font-size: 15px; letter-spacing: 0.04em; color: rgba(244, 234, 214, 0.8); }
+.balance-hero .bh-amount { font-size: 44px; font-weight: 700; color: var(--gold-light); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.ledger-summary { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 28px; color: var(--muted); }
+.ledger-summary span[dir="ltr"] { margin: 0 0.4em; font-weight: 600; color: var(--navy); }
+</style>
 <script src="../src/firebase/firebase-config.js"></script>
-<script src="../src/firebase/firebase-app.js"></script></head>
+<script src="../src/firebase/firebase-app.js"></script>
+<script src="../src/ui/oh-ui.js"></script></head>
 <body class="gated">
 <div class="topbar"><strong>אור החיים / Or Hachaim</strong><span>נתונים אישיים בלבד / Own-data-only dashboard</span><a href="../screen/index.html">מסך / Screen</a></div>
 <div class="page">
@@ -13,13 +21,21 @@
 <p id="congSource">כניסה נדרשת / Sign-in required</p>
 <div id="card"></div>
 <script>
+/* Own account view. ledgerTotals now comes from src/ui/oh-ui.js (it used
+   to exist only in test-data.js, which this page does not load, so a
+   real congregant saw an empty card). Values are escaped, amounts shown
+   as $1,234.50, newest entries first, and the balance is the hero. */
 function renderCong(c, sourceLabel){
-  var t = window.ledgerTotals(c);
-  document.getElementById("card").innerHTML = '<div class="gold-frame" style="padding:1rem"><h2>' + c.name + '</h2>' +
-  '<p>סך חיובים / Charges total: $' + t.charges + ' | סך תשלומים / Payments total: $' + t.payments + ' | <strong>יתרה לתשלום / Balance owed: $' + t.balance + '</strong></p>' +
+  var esc = OH_UI.esc, money = OH_UI.money;
+  var t = OH_UI.ledgerTotals(c);
+  var rows = (c.ledger || []).slice().sort(function(a, b){ return String(b.date).localeCompare(String(a.date)); });
+  var typeHe = { charge: "חיוב / Charge", payment: "תשלום / Payment", correction: "תיקון / Correction" };
+  document.getElementById("card").innerHTML = '<div class="gold-frame"><h2>' + esc(c.name) + '</h2>' +
+  '<div class="balance-hero"><span class="bh-label">יתרה לתשלום / Balance owed</span><span class="bh-amount" dir="ltr">' + money(t.balance) + '</span></div>' +
+  '<p class="ledger-summary"><span>סך חיובים / Charges total: <span dir="ltr">' + money(t.charges) + '</span></span><span>סך תשלומים / Payments total: <span dir="ltr">' + money(t.payments) + '</span></span></p>' +
   '<table><tr><th>תאריך / Date</th><th>סוג / Type</th><th>סכום / Amount</th><th>תיאור / Description</th></tr>' +
-  c.ledger.map(function(e){ return "<tr><td>" + e.date + "</td><td>" + e.type + "</td><td>$" + e.amount + "</td><td>" + e.description + "</td></tr>"; }).join("") +
-  '</table><p><small>' + sourceLabel + '</small></p></div>';
+  rows.map(function(e){ return "<tr><td>" + esc(e.date) + "</td><td>" + esc(typeHe[e.type] || e.type) + '</td><td dir="ltr">' + money(e.amount) + "</td><td>" + esc(e.description) + "</td></tr>"; }).join("") +
+  '</table><p><small>' + esc(sourceLabel) + '</small></p></div>';
 }
 document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>';
 var _lastCongUser = null;
@@ -42,7 +58,7 @@ async function refreshCong(){
     _lastCongUser = email;
     var own = await fb.loadOwnCongregant();
     if(own){ document.getElementById('congSource').textContent = 'Signed in as ' + email; renderCong(own, 'Signed-in congregant only.'); }
-    else { document.getElementById('congSource').textContent = 'Signed in as ' + email + ', no own congregant record found for this email'; document.getElementById('card').innerHTML = '<div class="gold-frame" style="padding:1rem"><p>No congregant record found for ' + email + '. This page never shows another congregant\'s data.</p></div>'; }
+    else { document.getElementById('congSource').textContent = 'Signed in as ' + email + ', no own congregant record found for this email'; document.getElementById('card').innerHTML = '<div class="gold-frame" style="padding:1rem"><p>No congregant record found for ' + OH_UI.esc(email) + '. This page never shows another congregant\'s data.</p></div>'; }
   } catch(e) {}
 }
 setInterval(refreshCong, 1000);
