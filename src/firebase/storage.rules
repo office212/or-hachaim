@@ -1,58 +1,63 @@
-/* Cloud Storage security rules DRAFT, NOT deployed, local only.
-   Bucket: or-hachaim.firebasestorage.app (created by the owner
-   2026-11-02, empty, currently production-mode deny-all rules).
-   This draft is NOT deployed and does NOT replace those deny-all
-   rules until the items below are proven.
+/* Cloud Storage security rules, STAGE 2, 2026-11-03.
+   Minimal delta over the live INTERIM TEST rules of 2026-11-02 (see
+   RULES_DELTA.md). Publish to the DEFAULT bucket only
+   (or-hachaim.firebasestorage.app). NEVER publish to or-hachaim-backups:
+   the daily backup bucket keeps its own settings; the guard below also
+   denies every client call there if this text is pasted there by mistake.
 
-   Design, deny by default:
-   - Everything not listed below is denied, for everyone, including
-     the super admin's client calls (super admin management is via
-     the console, not via a client upload).
-   - Screen images are public display content once published, but
-     upload is the sensitive action, so read and write are separated.
-
-   IMPORTANT LIMIT, do not hide it:
-   Storage rules CANNOT read Firestore documents, so they cannot
-   look up a gabbai's permissions in users/{uid} the way Firestore
-   rules do. "Only authorized gabbaim upload" therefore cannot be
-   enforced by Storage rules alone from the Firestore role document.
-   It requires custom claims on the Auth token, set by a trusted
-   admin process (Admin SDK or a trusted function), for example:
-     - token.screenEdit == true : gabbai allowed to upload screen images
-     - token.screenViewer == true : dedicated screen viewer, read only
-   Until those claims are actually set and tested, the bucket must
-   STAY on deny-all production rules, and the admin page must stay
-   on local preview only. Deploying this draft without claims set
-   would deny every upload (safe, but useless) and must not be
-   presented as "gabbaim can now upload".
-
-   Draft rules below, for review only:
-*/
-
+   Only /screen/ is open, as before, now for the images of the TV content
+   editor (flyers, donation QR, announcement and campaign images), saved
+   by the editor under screen/{type}/{itemId}/{file}.
+   - Upload: super admin, or a gabbai whose sign-in token carries BOTH
+     ohScreen (Content and Times, the claim the live Firestore rules read)
+     AND ohImageUpload. Storage rules cannot read the Firestore users
+     documents, so the claims set by the live claims function are the
+     only source. Finance only (ohFinance) never uploads.
+   - Limits on every upload: JPEG, PNG or WebP only, under 5 MB
+     (5 * 1024 * 1024 bytes). The editor resizes to 1920 px first.
+   - Delete: super admin only. The editor never deletes a file (removing
+     or replacing an image only changes the item), so no gabbai needs it.
+   - Read through these rules: super admin and Content and Times gabbaim
+     (the editor). The public /tv/ page shows a published image through
+     the download URL saved in the published content document; Cloud
+     Storage serves a download URL by its token, without these rules, so
+     /tv/ needs no public read rule here. A draft's URL sits in a draft
+     document, which the public cannot read (Firestore rules).
+   - Removed: the interim email grant of orhachaimcong (finance only now)
+     and the two old interim claims (nobody has them).
+   - Everything else: denied for everyone. */
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
+    function notBackupBucket() {
+      return bucket != 'or-hachaim-backups';
+    }
     function isSuperAdmin() {
-      return request.auth != null && request.auth.token.email == 'hanochhason@gmail.com';
+      return request.auth != null
+        && request.auth.token.get('email_verified', false) == true
+        && request.auth.token.get('email', '') == 'hanochhason@gmail.com';
     }
-    function canUploadScreen() {
-      return isSuperAdmin() || (request.auth != null && request.auth.token.screenEdit == true);
+    function hasClaim(name) {
+      return request.auth != null && request.auth.token.get(name, false) == true;
     }
-    function canReadScreen() {
-      return request.auth != null && (isSuperAdmin() || request.auth.token.screenViewer == true || request.auth.token.screenEdit == true);
+    function canContent() {
+      return isSuperAdmin() || hasClaim('ohScreen');
+    }
+    function canUpload() {
+      return isSuperAdmin() || (hasClaim('ohScreen') && hasClaim('ohImageUpload'));
+    }
+    function isSmallImage() {
+      return request.resource.contentType.matches('image/(jpeg|png|webp)')
+        && request.resource.size < 5 * 1024 * 1024;
     }
 
-    /* Screen images and graphics, uploaded by gabbaim with screen
-       permission (via custom claim, see note above). Read by the
-       dedicated screen viewer, screen gabbaim, and super admin.
-       No finance-only access is granted here. */
-    match /screen/{allPaths=**} {
-      allow read: if canReadScreen();
-      allow write: if canUploadScreen();
+    match /screen/{type}/{itemId}/{file} {
+      allow read: if notBackupBucket() && canContent();
+      allow create, update: if notBackupBucket() && canUpload() && isSmallImage();
+      allow delete: if notBackupBucket() && isSuperAdmin();
     }
 
-    /* Everything else: deny by default. No public upload, no
-       public read, no delete by a client that is not covered above. */
+    /* Everything else: deny by default. */
     match /{allPaths=**} {
       allow read, write: if false;
     }
