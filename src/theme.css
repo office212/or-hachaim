@@ -1,15 +1,19 @@
-/* Or Hachaim theme layer, classic luxury edition (proposal 2026-11-03).
+/* Or Hachaim theme layer, Jerusalem stone edition (v2, 2026-11-03).
    The ONLY place for colours, fonts, frames and shared components.
-   Data and logic live elsewhere. Every variable name of the previous
-   theme is kept, so screen.css, admin, finance and congregant keep
-   working without edits. Colours are taken from the logo itself
-   (logo.svg: navy #0e2c4c, gold gradient #987444 to #dab368) and from
-   the plan: Jerusalem stone, marble and tchelet as the base, gold
-   frames, dignified typography. The logo is never recoloured. */
+   Data and logic live elsewhere. Every class and variable name of the
+   previous theme is kept, so screen.css, admin, finance, congregant,
+   backup and restore keep working without edits.
+   Direction chosen by the congregation (option D): warm Jerusalem stone
+   and gold, light and airy, modern and easy to use. Stone is used as a
+   material (hero, TV background), gold only as thin lines and small
+   accents, white space does the rest. No ornaments for their own sake,
+   no heavy frames, no bevels. The logo is never recoloured or covered.
+   Textures are small procedural images in assets/textures/ (no photos,
+   no AI). v3: the logo's navy returns as a quiet second colour
+   (headings, header bar, primary buttons, the next zman, footer);
+   stone and gold stay the base, navy is never a big velvet field. */
 
-/* Fonts are self-hosted (SIL Open Font License, see fonts/OFL.txt):
-   the TV keeps its typography when the internet drops, nothing is
-   sent to a third-party font server, and no layout jump on load. */
+/* Fonts are self-hosted (SIL Open Font License, see fonts/OFL.txt). */
 @font-face {
   font-family: "Assistant";
   src: url("assets/fonts/assistant-var.woff2") format("woff2");
@@ -24,47 +28,59 @@
   font-family: "Cormorant Garamond";
   src: url("assets/fonts/cormorant-garamond-var.woff2") format("woff2");
   font-weight: 300 700; font-style: normal; font-display: swap;
-  size-adjust: 112%; /* Cormorant runs small next to Frank Ruhl Libre */
+  size-adjust: 112%;
 }
 
 :root {
-  /* Brand, from the logo */
+  /* Brand. Navy is the logo's own colour (sampled from the logo file),
+     the second colour of the site: headings, the slim header bar,
+     primary buttons, the next zman, the footer. Never a big field. */
   --navy: #0e2c4c;
   --navy-deep: #081b30;
   --navy-soft: #2a4a6e;
+  --navy-hover: #173b62;
+  --navy-hair: rgba(14, 44, 76, 0.18);
+  --gold-on-navy: #e6cb92;       /* light gold, AAA contrast on navy */
   --gold: #b48e56;
   --gold-light: #dab368;
   --gold-dark: #8a6a3d;
-  --gold-text: #7a5c32;          /* gold that passes contrast on cream */
-  --gold-grad: linear-gradient(100deg, #987444 0%, #ab854f 22%, #cda665 42%, #dab368 50%, #c39b5d 62%, #ab834e 80%, #987444 100%);
-  --gold-hair: rgba(180, 142, 86, 0.55);
-  /* Surfaces: Jerusalem stone and marble */
-  --stone: #ede4d3;
-  --stone-dark: #d9cbb0;
-  --marble: #f8f4ec;
-  --paper: #fffdf8;
-  --parchment: #f6efe0;
-  /* Tchelet, used sparingly */
-  --sky: #5b84a8;
-  --sky-deep: #0e2c4c;
-  --sky-pale: #e9eff5;
-  --sky-soft: #e9eff5;
+  --gold-text: #7a5c32;          /* gold that passes contrast on stone */
+  --gold-grad: linear-gradient(180deg, #e7cd94 0%, #d2ad6c 45%, #b48e56 100%);
+  --gold-hair: rgba(180, 142, 86, 0.45);
+  --gold-tint: #f6ecd6;
+  /* Jerusalem stone */
+  --stone: #efe6d6;
+  --stone-dark: #e2d5bd;
+  --stone-deep: #cdb994;
+  --marble: #faf7f1;             /* page background, warm white */
+  --paper: #ffffff;
+  --parchment: #f7f1e5;
+  /* Kept for older code (tchelet), now warm neutrals */
+  --sky: #b48e56;
+  --sky-deep: #2e2a24;
+  --sky-pale: #f6efe2;
+  --sky-soft: #f6efe2;
   /* Text */
-  --ink: #13253d;
-  --muted: #56627a;
+  --ink: #2e2a24;                /* warm near-black */
+  --ink-soft: #4a4338;
+  --muted: #776d60;
+  --line: #e8dfcf;
   --white: #ffffff;
   /* Type */
   --font-body: "Assistant", "Segoe UI", "Arial Hebrew", Arial, sans-serif;
-  --font-display: "Cormorant Garamond", "Frank Ruhl Libre", "David Libre", Georgia, serif;
+  --font-display: "Frank Ruhl Libre", "Cormorant Garamond", "David Libre", Georgia, serif;
   --font-display-he: "Frank Ruhl Libre", "David Libre", "Times New Roman", serif;
+  --font-latin-display: "Cormorant Garamond", Georgia, serif;
   --font-hebrew: var(--font-body);
   --font-latin: var(--font-body);
-  /* Frames, radius, depth */
-  --frame: 1px solid var(--gold-hair);
-  --frame-thin: 1px solid var(--gold-hair);
-  --radius: 6px;
-  --shadow: 0 1px 0 rgba(255, 255, 255, 0.7), 0 22px 44px -30px rgba(8, 27, 48, 0.55), 0 4px 14px -8px rgba(8, 27, 48, 0.18);
-  --double-rule: inset 0 0 0 5px var(--paper), inset 0 0 0 6px rgba(180, 142, 86, 0.35);
+  /* Shape and depth: soft, modern, quiet */
+  --frame: 1px solid var(--line);
+  --frame-thin: 1px solid var(--line);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --shadow: 0 1px 2px rgba(60, 45, 25, 0.05), 0 12px 32px -18px rgba(60, 45, 25, 0.28);
+  --shadow-lift: 0 2px 4px rgba(60, 45, 25, 0.06), 0 20px 44px -22px rgba(60, 45, 25, 0.38);
+  --double-rule: 0 0 0 0 transparent;  /* retired: no inner double frames */
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
@@ -77,12 +93,6 @@ body {
   line-height: 1.6;
   color: var(--ink);
   background-color: var(--marble);
-  /* Soft stone light, no images, no noise files */
-  background-image:
-    radial-gradient(1200px 600px at 85% -10%, rgba(255, 255, 255, 0.9), transparent 60%),
-    radial-gradient(900px 700px at 0% 110%, rgba(217, 203, 176, 0.45), transparent 65%),
-    linear-gradient(180deg, #faf7f1 0%, #f3ede1 100%);
-  background-repeat: no-repeat;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -91,137 +101,161 @@ body {
    first strong letter, so "Saved." never renders as ".Saved". */
 p, li, td, th, label, dd, dt, figcaption, .hint, .note, h1, h2, h3, h4 { unicode-bidi: plaintext; }
 
-h1, h2, h3, h4 { font-family: var(--font-display); color: var(--navy); font-weight: 600; letter-spacing: 0.005em; font-variant-numeric: lining-nums; }
-h1 { font-size: 34px; line-height: 1.15; }
+h1, h2, h3, h4 { font-family: var(--font-display); color: var(--navy); font-weight: 500; letter-spacing: 0; font-variant-numeric: lining-nums; }
+h1 { font-size: 36px; line-height: 1.15; }
 h2 { font-size: 28px; line-height: 1.25; }
-h3 { font-size: 22px; line-height: 1.3; }
+h3 { font-size: 21px; line-height: 1.3; font-weight: 600; }
 .he { font-family: var(--font-hebrew); direction: rtl; }
-a { color: var(--navy); text-decoration-color: var(--gold); text-underline-offset: 3px; }
-a:hover { color: var(--gold-text); }
+a { color: var(--navy); text-decoration-color: var(--gold-hair); text-underline-offset: 4px; }
+a:hover { color: var(--gold-dark); }
 a[href^="mailto:"] { text-decoration: none; } /* email addresses are never underlined */
 ::selection { background: rgba(218, 179, 104, 0.35); }
 
-/* Gold frame: hairline gold border plus an inner double rule,
-   like the letterhead. */
+/* Card: white, soft edge, one hairline. (Class name kept from v1.) */
 .gold-frame {
-  border: var(--frame);
+  position: relative;
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--paper);
-  box-shadow: var(--double-rule), var(--shadow);
-  padding: 28px;
+  box-shadow: var(--shadow);
+  padding: 32px 36px;
 }
-/* Section heading: serif, with a fading gold hairline */
-h2 {
-  border-bottom: 0;
-  padding-bottom: 10px;
-  margin-top: 0;
-  background: linear-gradient(90deg, var(--gold) 0%, rgba(180, 142, 86, 0.25) 55%, transparent 100%) left bottom / 100% 1px no-repeat;
-}
-[dir="rtl"] h2 { background-image: linear-gradient(270deg, var(--gold) 0%, rgba(180, 142, 86, 0.25) 55%, transparent 100%); background-position: right bottom; }
+/* Section heading */
+h2 { border-bottom: 0; padding-bottom: 0; margin-top: 0; background: none; }
 
 .ornament { color: var(--gold); letter-spacing: 0.35em; text-align: center; }
-/* Divider: hairline, small diamond, hairline */
-.divider { display: flex; align-items: center; justify-content: center; gap: 14px; color: var(--gold); margin: 14px auto; max-width: 320px; }
-.divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--gold)); }
-.divider::after { background: linear-gradient(270deg, transparent, var(--gold)); }
-.divider span { width: 7px; height: 7px; transform: rotate(45deg); border: 1px solid var(--gold); display: block; }
-.eyebrow { font-family: var(--font-display); text-transform: uppercase; letter-spacing: 0.32em; font-size: 14px; color: var(--gold-text); font-weight: 600; }
+/* Divider: one short gold line */
+.divider { display: block; width: 56px; height: 2px; margin: 14px auto; background: var(--gold); border-radius: 2px; }
+.divider::before, .divider::after, .divider span { display: none; }
+.eyebrow { font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.24em; font-size: 13px; color: var(--gold-text); font-weight: 700; }
 
-/* Buttons: navy with a gold hairline inside, classic not glossy */
+/* Buttons: navy primary with light gold text, quiet outline secondary, big targets */
 .btn, button.btn {
-  background: var(--navy); color: #f7efdd; border: 1px solid var(--gold);
-  border-radius: 4px; padding: 16px 22px; cursor: pointer;
-  font-size: 20px; font-weight: 600; font-family: inherit; letter-spacing: 0.02em;
-  min-height: 58px; width: 100%;
-  box-shadow: inset 0 0 0 2px var(--navy), inset 0 0 0 3px rgba(218, 179, 104, 0.45), 0 8px 18px -12px rgba(8, 27, 48, 0.6);
-  transition: background-color 0.2s var(--ease), transform 0.2s var(--ease);
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--navy); color: var(--gold-on-navy); border: 1px solid var(--navy);
+  border-radius: 12px; padding: 14px 24px; cursor: pointer;
+  font-size: 18px; font-weight: 700; font-family: inherit; letter-spacing: 0.01em;
+  min-height: 54px; width: 100%; text-decoration: none;
+  box-shadow: 0 8px 18px -12px rgba(8, 27, 48, 0.75);
+  transition: background-color 0.2s var(--ease), transform 0.15s var(--ease), box-shadow 0.2s var(--ease);
 }
-.btn:hover { background: var(--navy-soft); box-shadow: inset 0 0 0 2px var(--navy-soft), inset 0 0 0 3px rgba(218, 179, 104, 0.6), 0 10px 22px -12px rgba(8, 27, 48, 0.6); }
+.btn:hover { background: var(--navy-hover); color: #f3e2bb; box-shadow: 0 12px 24px -14px rgba(8, 27, 48, 0.85); }
 .btn:active { transform: translateY(1px); }
-.btn-gold, button.btn-gold { background: var(--gold-grad); color: var(--navy-deep); font-weight: 700; border: 1px solid var(--gold-dark); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 8px 18px -12px rgba(122, 92, 50, 0.8); }
-.btn-gold:hover { background: var(--gold-grad); filter: brightness(1.05); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 10px 22px -12px rgba(122, 92, 50, 0.9); }
-.btn.secondary, button.btn.secondary { background: var(--paper); color: var(--navy); border: 1px solid var(--stone-dark); box-shadow: none; }
-.btn.secondary:hover { border-color: var(--gold); background: #fff; }
-.btn:disabled, button:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-gold, button.btn-gold { background: var(--paper); color: var(--navy); border: 1px solid var(--gold); box-shadow: none; }
+.btn-gold:hover { background: var(--gold-tint); color: var(--navy); box-shadow: none; }
+.btn.secondary, button.btn.secondary { background: var(--paper); color: var(--navy); border: 1px solid var(--line); box-shadow: none; }
+.btn.secondary:hover { border-color: var(--gold); background: var(--parchment); }
+.btn:disabled, button:disabled { opacity: 0.5; cursor: not-allowed; }
 .btn:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible, button:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 
-/* Forms: large targets for older gabbaim, quiet styling */
+/* Forms: large, calm fields */
 input, select, textarea {
-  font: inherit; font-size: 19px; padding: 14px 16px; border: 1px solid var(--stone-dark);
-  border-radius: 4px; background: var(--paper); color: var(--ink); width: 100%; min-height: 56px;
+  font: inherit; font-size: 18px; padding: 13px 16px; border: 1px solid var(--stone-dark);
+  border-radius: var(--radius-sm); background: var(--paper); color: var(--ink); width: 100%; min-height: 54px;
   transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
-input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(218, 179, 104, 0.25); outline: none; }
+input:focus, select:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(218, 179, 104, 0.22); outline: none; }
 input[type="email"], input[type="number"], input[type="date"], input[type="tel"] { direction: ltr; text-align: start; }
+input[type="checkbox"], input[type="radio"] { width: 22px; height: 22px; min-height: 0; padding: 0; accent-color: var(--navy); vertical-align: middle; }
+input[type="file"] { padding: 12px; background: var(--parchment); border-style: dashed; border-color: var(--gold); }
 textarea { min-height: 120px; }
-label { font-weight: 600; display: block; margin: 16px 0 6px; font-size: 17px; color: var(--navy); }
+label { font-weight: 600; display: block; margin: 16px 0 6px; font-size: 16px; color: var(--ink-soft); }
 
-/* Tables */
-table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 17px; font-variant-numeric: tabular-nums; border: 1px solid var(--stone-dark); border-radius: 4px; overflow: hidden; }
-th { background: var(--navy); color: #f4ead6; padding: 12px 10px; text-align: start; font-weight: 600; letter-spacing: 0.02em; border-bottom: 2px solid var(--gold); }
-td { padding: 11px 10px; border-bottom: 1px solid rgba(217, 203, 176, 0.7); text-align: start; }
-tr:nth-child(even) td { background: rgba(237, 228, 211, 0.35); }
+/* Tables: light header, clean rows */
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 17px; font-variant-numeric: tabular-nums; border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; background: var(--paper); }
+th { background: var(--stone); color: var(--navy); padding: 12px 12px; text-align: start; font-weight: 700; font-size: 15px; letter-spacing: 0.02em; border-bottom: 1px solid var(--stone-dark); }
+td { padding: 12px 12px; border-bottom: 1px solid var(--line); text-align: start; }
+tr:nth-child(even) td { background: #fcfaf6; }
 tr:last-child td { border-bottom: 0; }
 
-/* Top bar: navy with a thin gold double rule, letterhead style */
+/* Top bar on the inner pages: white, a slim navy bar on top, a thin gold line below, clear links */
 .topbar {
-  position: relative;
-  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-deep) 100%); color: #f4ead6; padding: 14px 24px;
-  display: flex; gap: 0.6rem 1.4rem; align-items: center; flex-wrap: wrap;
-  border-bottom: 1px solid var(--gold);
-  box-shadow: 0 3px 0 var(--navy-deep), 0 4px 0 var(--gold-hair), 0 14px 30px -18px rgba(8, 27, 48, 0.7);
+  position: sticky; top: 0; z-index: 30;
+  background: rgba(255, 255, 255, 0.92); -webkit-backdrop-filter: saturate(1.2) blur(10px); backdrop-filter: saturate(1.2) blur(10px);
+  color: var(--ink); padding: 14px 28px;
+  display: flex; gap: 0.6rem 1.6rem; align-items: center; flex-wrap: wrap;
+  border-top: 4px solid var(--navy);
+  border-bottom: 1px solid var(--line);
+  box-shadow: inset 0 -2px 0 -1px var(--gold-hair);
   margin-bottom: 8px;
 }
-.topbar strong { font-family: var(--font-display); font-size: 22px; font-weight: 600; color: #fbf3e2; letter-spacing: 0.02em; }
-.topbar span { color: rgba(244, 234, 214, 0.75); font-size: 16px; }
-.topbar a { color: var(--gold-light); text-decoration: none; font-size: 16px; font-weight: 600; letter-spacing: 0.02em; padding: 4px 0; border-bottom: 1px solid transparent; transition: border-color 0.2s var(--ease); }
-.topbar a:hover { color: #f3dca4; border-bottom-color: var(--gold-light); }
+.topbar strong { font-family: var(--font-display-he); font-size: 22px; font-weight: 600; color: var(--navy); letter-spacing: 0; }
+.topbar span { color: var(--muted); font-size: 16px; }
+.topbar a { margin-inline-start: 0; color: var(--navy); text-decoration: none; font-size: 15px; font-weight: 700; padding: 8px 16px; border: 1px solid var(--line); border-radius: 999px; background: var(--paper); transition: border-color 0.2s var(--ease), background-color 0.2s var(--ease); }
+.topbar a:first-of-type { margin-inline-start: auto; }
+.topbar a:hover { border-color: var(--gold); background: var(--parchment); color: var(--navy); }
 
-.page { max-width: 1180px; margin: 0 auto; padding: 18px 24px 56px; }
+.page { max-width: 1180px; margin: 0 auto; padding: 22px 28px 64px; }
 .page > .gold-frame { margin: 22px 0; }
+.page > h1, .page > h2 { font-family: var(--font-display-he), var(--font-display); }
 .badge-sample { display: none; }
-.note { background: var(--parchment); border: 1px solid rgba(217, 203, 176, 0.8); border-inline-start: 3px solid var(--gold); border-radius: 4px; padding: 0.9rem 1rem; margin: 1rem 0; }
+.note { background: var(--parchment); border: 1px solid var(--line); border-inline-start: 3px solid var(--gold); border-radius: var(--radius-sm); padding: 0.9rem 1.1rem; margin: 1rem 0; }
 .hint { font-size: 16px; color: var(--muted); }
+pre { background: #fcfaf6; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 14px 16px; font-size: 14px; max-height: 60vh; overflow: auto; direction: ltr; text-align: left; }
+pre:empty { display: none; }
+
+/* Backup and restore: one clean tool card */
+.tool-card { max-width: 820px; margin: 40px auto 24px; }
+.tool-card h2 { margin-bottom: 4px; }
+.tool-card .btn { margin-top: 12px; }
+.tool-card input[type="file"] { margin-top: 12px; }
 
 /* Status bar injected by firebase-app.js on signed-in pages */
-.status-bar, #ohFirebaseStatusBar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 14px; margin: 6px 0 4px; border: 1px solid rgba(217, 203, 176, 0.9); border-radius: 4px; background: rgba(255, 253, 248, 0.8); color: var(--navy); font-size: 15px; }
+.status-bar, #ohFirebaseStatusBar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 16px; margin: 6px 0 4px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: rgba(255, 255, 255, 0.85); color: var(--ink-soft); font-size: 15px; }
 
-/* Sign-in gate: the logo, untouched, above the card text */
+/* Sign-in gate: one calm card on a Jerusalem stone wall. The arched top
+   is the only shape borrowed from the old city; the logo is untouched. */
 .gate-card {
-  display: none; background: var(--paper); border: var(--frame);
-  border-radius: var(--radius); padding: 40px 32px 34px; box-shadow: var(--double-rule), var(--shadow); text-align: center; margin: 48px auto; max-width: 680px;
+  display: none; position: relative;
+  background: var(--paper);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 50% 50% var(--radius) var(--radius) / 120px 120px var(--radius) var(--radius);
+  padding: 64px 40px 40px; text-align: center; margin: 72px auto 48px; max-width: 560px;
+  box-shadow: inset 0 0 0 10px #fff, inset 0 0 0 11px var(--gold-hair), 0 30px 70px -30px rgba(60, 45, 25, 0.5);
 }
 .gate-card::before {
-  content: ""; display: block; height: 112px; margin: 0 auto 18px; max-width: 300px;
+  content: ""; display: block; height: 96px; margin: 0 auto 18px; max-width: 280px;
   background: url("assets/logo-4k-transparent.png") center / contain no-repeat;
 }
-.gate-card h2 { margin-top: 0; background-position: center bottom; background-image: linear-gradient(90deg, transparent, var(--gold), transparent); display: inline-block; padding: 0 24px 10px; }
+.gate-card h2 { margin: 0 0 6px; font-family: var(--font-display-he), var(--font-display); font-size: 26px; }
 .gate-card p { color: var(--muted); }
+.gate-card .gsi-btn { margin-top: 10px; }
+body.gated {
+  background-color: var(--stone);
+  background-image: linear-gradient(180deg, rgba(250, 245, 235, 0.55), rgba(240, 228, 204, 0.35)), url("assets/textures/jerusalem-stone-wall.webp");
+  background-size: auto, 1600px auto; background-position: center; background-attachment: fixed;
+}
 body.gated .gate-card { display: block; }
 body.gated .topbar { display: none !important; } /* Gated page shows only the sign-in gate, no navigation. */
 body.gated .page > :not(.gate-card) { display: none !important; }
 body.gated .page > .gate-card { display: block !important; }
 
-.placeholder { display: inline-block; background: transparent; border: 1px dashed var(--gold); color: var(--gold-text); border-radius: 3px; padding: 2px 10px; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; }
+.placeholder { display: inline-block; background: var(--parchment); border: 1px dashed var(--gold); color: var(--gold-text); border-radius: 6px; padding: 2px 10px; font-size: 14px; font-weight: 600; letter-spacing: 0.02em; }
 
 /* Next-zman card (screen.css refines it for the TV) */
-.next-hero { background: radial-gradient(120% 140% at 50% 0%, var(--navy-soft) 0%, var(--navy) 45%, var(--navy-deep) 100%); color: #fbf3e2; border: 1px solid var(--gold); border-radius: var(--radius); padding: 20px; text-align: center; box-shadow: inset 0 0 0 5px var(--navy-deep), inset 0 0 0 6px rgba(218, 179, 104, 0.5), 0 18px 40px -24px rgba(8, 27, 48, 0.8); }
-.next-hero .next-time { font-size: 48px; font-weight: 700; color: var(--gold-light); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.next-hero { background: var(--paper); color: var(--ink); border: 1px solid var(--gold); border-radius: var(--radius); padding: 20px; text-align: center; box-shadow: var(--shadow); }
+.next-hero .next-time { font-size: 48px; font-weight: 700; color: var(--navy); line-height: 1.1; font-variant-numeric: tabular-nums; }
 .next-hero .next-name { font-size: 24px; font-weight: 600; }
 
 /* Branded Sign in with Google button, per Google branding rules. */
-button.gsi-btn, .gsi-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: auto; min-width: 280px; background: #fff; color: #1f1f1f; border: 1px solid #dadce0; border-radius: 999px; padding: 13px 24px; font-family: inherit; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(60, 64, 67, 0.2), 0 2px 8px rgba(60, 64, 67, 0.08); transition: box-shadow 0.2s var(--ease); }
-button.gsi-btn:hover, .gsi-btn:hover { filter: none; background: #f8f9fa; box-shadow: 0 2px 4px rgba(60, 64, 67, 0.25), 0 6px 16px rgba(60, 64, 67, 0.12); }
+button.gsi-btn, .gsi-btn { display: inline-flex; align-items: center; justify-content: center; gap: 12px; width: auto; min-width: 280px; min-height: 52px; background: #fff; color: #1f1f1f; border: 1px solid #dadce0; border-radius: 999px; padding: 12px 24px; font-family: inherit; font-size: 17px; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px rgba(60, 64, 67, 0.15), 0 2px 8px rgba(60, 64, 67, 0.06); transition: box-shadow 0.2s var(--ease); }
+button.gsi-btn:hover, .gsi-btn:hover { filter: none; background: #f8f9fa; box-shadow: 0 2px 4px rgba(60, 64, 67, 0.22), 0 6px 16px rgba(60, 64, 67, 0.1); }
 .gsi-btn svg { width: 22px; height: 22px; flex: none; }
-#ohFirebaseStatusBar .gsi-btn { min-width: 0; padding: 7px 16px; font-size: 15px; }
+#ohFirebaseStatusBar .gsi-btn { min-width: 0; min-height: 40px; padding: 7px 16px; font-size: 15px; }
 
 @media (max-width: 640px) {
   body { font-size: 17px; }
   h1 { font-size: 28px; }
   h2 { font-size: 24px; }
-  .gold-frame { padding: 20px 18px; }
-  .page { padding: 12px 14px 40px; }
-  .topbar { padding: 12px 16px; }
+  .gold-frame { padding: 22px 18px; border-radius: 14px; }
+  .page { padding: 14px 14px 44px; }
+  .topbar { padding: 10px 14px; gap: 8px 10px; }
+  .topbar strong { font-size: 19px; width: 100%; }
+  .topbar span { font-size: 14px; width: 100%; margin-top: -6px; }
+  .topbar a, .topbar a:first-of-type { margin-inline-start: 0; padding: 7px 14px; }
+  .gate-card { margin: 48px 14px 32px; padding: 54px 22px 32px; border-radius: 50% 50% 16px 16px / 80px 80px 16px 16px; }
+  button.gsi-btn, .gsi-btn { min-width: 0; width: 100%; }
+  th, td { padding: 10px 8px; font-size: 15px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -229,5 +263,5 @@ button.gsi-btn:hover, .gsi-btn:hover { filter: none; background: #f8f9fa; box-sh
 @media print {
   .no-print, .topbar, .btn { display: none !important; }
   body { background: #fff; }
-  .gold-frame { box-shadow: none; }
+  .gold-frame { box-shadow: none; border-color: #ccc; }
 }
