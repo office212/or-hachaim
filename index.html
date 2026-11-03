@@ -1,31 +1,92 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Or Hachaim Congregation Site, TEST ONLY</title>
+<title>אור החיים / Or Hachaim Congregation</title>
 <link rel="stylesheet" href="src/theme.css">
+<script src="src/firebase/firebase-config.js"></script>
+<script src="src/firebase/firebase-app.js"></script>
 <style>
-body{font-family:system-ui,Arial,sans-serif;margin:0;padding:32px 20px;background:#faf7f1;color:#1b365d}
-main{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e5dcc9;border-radius:14px;padding:32px}
-h1{margin:0 0 8px}
-p{line-height:1.7}
-.test{font-weight:700;color:#b45309}
-a{display:block;margin:12px 0;padding:14px 18px;border:1px solid #1b365d;border-radius:999px;text-decoration:none;color:#1b365d;text-align:center}
-a:hover{background:#1b365d;color:#fff}
-small{color:#666}
+.landing-hero { text-align: center; }
+.landing-hero .logo { width: 220px; max-width: 70vw; height: auto; }
+.landing-hero h1 { font-size: 38px; margin: 12px 0 6px; }
+.address { font-size: 20px; font-weight: 700; }
+.map-link { display: inline-block; margin-top: 16px; padding: 14px 28px; border: 2px solid var(--gold); border-radius: 999px; background: var(--navy); color: #fff; text-decoration: none; font-weight: 700; }
+.map-link:hover { filter: brightness(1.08); }
+.landing-section { margin-top: 28px; }
+.contact-row { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--stone-dark); }
+.contact-row:last-child { border-bottom: none; }
+.signin-box { text-align: center; }
+.signin-box .gsi-btn { margin: 16px auto 0; }
+.signed-in-note { display: none; margin-top: 16px; font-weight: 700; }
+.landing-footer { margin-top: 36px; background: var(--navy-deep); color: #fff; border-top: 3px solid var(--gold); padding: 20px; text-align: center; }
+.landing-footer .gold-line { color: var(--gold-light); }
+@media (max-width: 640px) {
+  .landing-hero h1 { font-size: 30px; }
+  .contact-row { flex-direction: column; gap: 4px; }
+}
 </style>
 </head>
 <body>
-<main>
-<h1>Or Hachaim Congregation</h1>
-<p class="test">TEST SITE ONLY, TEST DATA ONLY. No real gabbai list, no real congregant list, no real prayer times, no real data.</p>
-<p>Synagogue: Or Hachaim Congregation, 321 Harold St, Staten Island, NY 10314. This is the test scaffold for the live screen and gabbai finance platform. Firebase project or-hachaim exists; the wiring layer (src/firebase/firebase-app.js, Google Auth only, Firestore with test-data fallback) is present in the code; the Firebase web config is now complete and the site is connected to Firebase project or-hachaim, still TEST DATA ONLY, no real data. Storage is not used in this build; images stay local preview only.</p>
-<a href="screen/index.html">TV Screen, TEST</a>
-<a href="admin/index.html">Gabbai Editing Interface, TEST, mock only</a>
-<a href="finance/index.html">Finance Platform, TEST names only</a>
-<a href="congregant/index.html">Congregant Dashboard, TEST, one sample congregant only</a>
-<p><small>Design is a separate theme layer and can change later without touching data, times, lists, or finance.</small></p>
+<header class="topbar">
+<strong>אור החיים / Or Hachaim Congregation</strong>
+</header>
+<main class="page">
+<section class="gold-frame landing-hero">
+<img class="logo" src="src/assets/logo-4k-transparent.png" alt="Or Hachaim logo, unchanged">
+<h1>אור החיים / Or Hachaim Congregation</h1>
+<p class="ornament">✦</p>
+<p class="address">321 Harold St, Staten Island, NY 10314</p>
+<a class="map-link" href="https://www.google.com/maps/search/?api=1&amp;query=321+Harold+St%2C+Staten+Island%2C+NY+10314">מפה / Map</a>
+</section>
+
+<section class="gold-frame landing-section">
+<h2>על בית הכנסת / About the Congregation</h2>
+<p><span class="placeholder">PLACEHOLDER / פליסהולדר</span></p>
+<p>PLACEHOLDER / פליסהולדר: a description of the congregation is to be entered here.</p>
+</section>
+
+<section class="gold-frame landing-section">
+<h2>קשר / Contact</h2>
+<div class="contact-row"><span>טלפון / Phone</span><span class="placeholder">PLACEHOLDER / פליסהולדר</span></div>
+<div class="contact-row"><span>דוא״ל / Email</span><span class="placeholder">PLACEHOLDER / פליסהולדר</span></div>
+<div class="contact-row"><span>WhatsApp Business</span><span class="placeholder">PLACEHOLDER / פליסהולדר</span></div>
+<p class="hint">כתובת / Address: 321 Harold St, Staten Island, NY 10314</p>
+</section>
+
+<section class="gold-frame landing-section signin-box">
+<h2>כניסה / Sign-in</h2>
+<p>כניסה לחברים ולגבאים / Sign-in for members and gabbaim</p>
+<button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>Sign in with Google / התחברות עם Google</span></button>
+<p class="hint" id="gateMsg"></p>
+<p class="signed-in-note" id="signedInNote">נכנסת בהצלחה / Signed in successfully.</p>
+</section>
 </main>
+<footer class="landing-footer">
+<span class="gold-line">✦</span>
+<span>אור החיים / Or Hachaim Congregation, 321 Harold St, Staten Island, NY 10314</span>
+</footer>
+<script>
+function signInFromGate() {
+  var fb = window.OH_FIREBASE;
+  if (!fb || !fb.signIn) {
+    document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.';
+    return;
+  }
+  var r = fb.signIn();
+  if (r && r.catch) r.catch(function (e) {
+    document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e);
+  });
+}
+setInterval(function () {
+  try {
+    var fb = window.OH_FIREBASE;
+    var note = document.getElementById('signedInNote');
+    if (fb && fb.user && note) { note.style.display = 'block'; }
+    else if (note) { note.style.display = 'none'; }
+  } catch (e) {}
+}, 1000);
+</script>
 </body>
 </html>
