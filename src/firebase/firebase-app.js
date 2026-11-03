@@ -26,19 +26,142 @@
     db: null,
   storage: null,
     auth: null,
-    ready: false
+    ready: false,
+    role: null,
+    roleUid: null,
+    rolePromise: null
   };
+  var SUPER_ADMIN_EMAIL = "hanochhason@gmail.com";
+  var UNAUTH_TEXT = "This account is not authorized for the system.";
+  function normalizePerms(v) {
+    var out = [];
+    var arr = Array.isArray(v) ? v : (v ? [v] : []);
+    arr.forEach(function (x) {
+      String(x).split(/[,\s]+/).forEach(function (part) {
+        var q = part.trim().toLowerCase();
+        if (q) out.push(q);
+      });
+    });
+    return out;
+  }
+  /* Claims precedence (option 2): when a token carries ohRoleVersion,
+     the claims define finance/screen/viewer/imageUpload, and stale
+     users-doc permissions are ignored for those areas. Without
+     claims, the old UID-doc + email-doc union is used, so existing
+     grants keep working during migration. Congregant status is
+     separate and is never set by claims. */
+  function buildRole(user, userDoc, hasCongregant, userDocByEmail, claims) {
+    var email = (user.email || "").toLowerCase();
+    var role = { email: email, uid: user.uid, isSuperAdmin: email === SUPER_ADMIN_EMAIL,
+      screenViewer: false, permissions: [], isCongregant: !!hasCongregant, source: "none", imageUpload: false };
+    var hasClaims = !!(claims && typeof claims.ohRoleVersion === "number");
+    var docs = [];
+    if (userDoc) docs.push(userDoc);
+    if (userDocByEmail) docs.push(userDocByEmail);
+    if (hasClaims) {
+      role.source = "customClaims";
+      if (claims.ohScreenViewer === true) role.screenViewer = true;
+      if (claims.ohImageUpload === true) role.imageUpload = true;
+      if (claims.ohFinance === true) role.permissions.push("finance");
+      if (claims.ohScreen === true) role.permissions.push("screen");
+      if (claims.ohScreenEdit === true && role.permissions.indexOf("screen") < 0) role.permissions.push("screen");
+      if (claims.ohScreenViewer === true && role.permissions.indexOf("viewer") < 0) role.permissions.push("viewer");
+      if (docs.length) role.source = "customClaims+usersDoc";
+    }
+    if (docs.length && !hasClaims) {
+      role.source = docs.length > 1 ? "usersDoc+emailDoc" : "usersDoc";
+      docs.forEach(function (doc) {
+        if (doc.screenViewer === true || doc.viewer === true) role.screenViewer = true;
+        if (doc.imageUpload === true || doc.image_upload === true) role.imageUpload = true;
+        normalizePerms(doc.permissions || doc.permission || doc.role).forEach(function (p) {
+          if (role.permissions.indexOf(p) < 0) role.permissions.push(p);
+        });
+      });
+      if (role.screenViewer && role.permissions.indexOf("viewer") < 0) role.permissions.push("viewer");
+    }
+    var has = function (tok) { return role.permissions.indexOf(tok) >= 0; };
+    role.isViewer = role.screenViewer || has("viewer");
+    role.isScreen = role.isSuperAdmin || role.isViewer || has("screen") || has("times") || has("both");
+    role.isFinance = role.isSuperAdmin || has("finance") || has("both");
+    /* Viewer (screenViewer true, or permissions viewer only) is NOT admin. */
+    role.isAdmin = role.isSuperAdmin || has("finance") || has("screen") || has("times") || has("both");
+    role.isCongregantAccess = role.isSuperAdmin || role.isCongregant;
+    role.canScreen = role.isScreen;
+    role.canFinance = role.isFinance;
+    role.canAdmin = role.isAdmin;
+    role.canCongregant = role.isCongregantAccess;
+    role.authorized = role.isSuperAdmin || role.isScreen || role.isFinance || role.isAdmin || role.isCongregant;
+    if (role.isSuperAdmin) {
+      role.source = "superAdmin";
+      role.canScreen = role.canFinance = role.canAdmin = role.canCongregant = true;
+      role.authorized = true;
+    }
+    return role;
+  }
+  async function resolveRoleInternal() {
+    if (!state.ready || !state.db || !state.user) return null;
+    if (state.role && state.roleUid === state.user.uid) return state.role;
+    if (state.rolePromise && state.roleUid === state.user.uid) return state.rolePromise;
+    state.roleUid = state.user.uid;
+    state.rolePromise = (async function () {
+      try {
+        var tokenClaims = null;
+        try {
+          // Compat auth user: getIdTokenResult without force refresh,
+          // so the 1-second page polls do not hammer token refresh.
+          // After a new grant, the target user must sign out and
+          // sign in again to get a fresh token with the new claims.
+          if (state.user && typeof state.user.getIdTokenResult === "function") {
+            var tr = await state.user.getIdTokenResult();
+            tokenClaims = (tr && tr.claims) || null;
+          }
+        } catch (e) {}
+        var userDoc = null;
+        try {
+          var d = await state.db.collection("users").doc(state.user.uid).get();
+          if (d.exists) userDoc = d.data() || {};
+        } catch (e) {}
+        /* Email lookup, merged with the UID doc. NOTE: under the
+           current live Firestore rules this query is DENIED for a
+           non-super-admin (users read is super admin or UID match
+           only), so it only succeeds for the super admin until the
+           rules are changed. See the report for the exact rule line. */
+        var userDocByEmail = null;
+        if (state.user.email) {
+          try {
+            var eq = await state.db.collection("users").where("email", "==", state.user.email.toLowerCase()).limit(1).get();
+            if (!eq.empty) userDocByEmail = eq.docs[0].data() || {};
+          } catch (e) {}
+        }
+        var hasCong = false;
+        if (state.user.email) {
+          try {
+            var s = await state.db.collection("congregants").where("email", "==", state.user.email).limit(1).get();
+            hasCong = !s.empty;
+          } catch (e) {}
+        }
+        state.role = buildRole(state.user, userDoc, hasCong, userDocByEmail, tokenClaims);
+        return state.role;
+      } catch (e) {
+        state.role = buildRole(state.user, null, false, null, null);
+        return state.role;
+      }
+    })();
+    return state.rolePromise;
+  }
+  function isLandingPage() { return !!document.querySelector(".signin-box"); }
 
   function statusText() {
     if (!complete) return "Firebase: not configured, sign-in required";
     if (!state.user) return "Firebase: signed out, sign-in required";
-    return "Firebase: signed in as " + (state.user.email || state.user.uid);
+    return "Firebase: signed in";
   }
   function renderStatus() {
     var el = document.getElementById("ohFirebaseStatus");
     if (el) el.textContent = statusText();
   }
   function injectStatus() {
+    if (isLandingPage()) return; /* Public landing: no status bar, no signed-in email. Only Sign in / Sign out. */
     if (document.getElementById("ohFirebaseStatus")) { renderStatus(); return; }
     var bar = document.createElement("div");
     bar.id = "ohFirebaseStatusBar";
@@ -71,6 +194,18 @@
     reason: state.reason,
     get user() { return state.user; },
     get ready() { return state.ready; },
+    get role() { return state.role; },
+    resolveRole: function () { return resolveRoleInternal(); },
+    canAccess: function (page) {
+      var r = state.role;
+      if (!r) return false;
+      if (page === "screen") return !!r.canScreen;
+      if (page === "finance") return !!r.canFinance;
+      if (page === "admin") return !!r.canAdmin;
+      if (page === "congregant") return !!r.canCongregant;
+      return !!r.authorized;
+    },
+    unauthMessage: function () { return "חשבון זה אינו מורשה למערכת / This account is not authorized for the system. פנה לגבאי או למנהל העל כדי לקבל הרשאה. / Contact a gabbai or the super admin for authorization."; },
     statusText: statusText,
     signIn: function () {
       if (!state.auth || !window.firebase || !window.firebase.auth) return Promise.reject(new Error("Firebase not ready"));
@@ -180,6 +315,114 @@
       try { var url = await state.storage.ref(path).getDownloadURL(); return { ok: true, url: url }; }
       catch (e) { return { ok: false, reason: String(e && e.message ? e.message : e) }; }
     },
+    /* Super-admin user management. Client-side super-admin check
+       only; the Firestore rules are the real enforcement (super
+       admin create/update/delete on users). Congregants are NOT
+       added here; they are added separately in the finance flow.
+       imageUpload is stored as a field only. It does NOT yet
+       enforce Storage access; Storage enforcement by custom claim
+       is a separate open item. */
+    isSuperAdminClient: function () {
+      return !!(state.user && state.user.email && state.user.email.toLowerCase() === SUPER_ADMIN_EMAIL);
+    },
+    saveUserPermission: async function (email, permissions, screenViewer, imageUpload) {
+      if (!state.ready || !state.db || !state.user) return { saved: false, reason: "not-signed-in" };
+      if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { saved: false, reason: "not-super-admin" };
+      var em = String(email || "").trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return { saved: false, reason: "invalid-email" };
+      var perm = String(permissions || "").trim().toLowerCase();
+      if (["finance", "screen", "both", "viewer"].indexOf(perm) < 0) return { saved: false, reason: "invalid-permission" };
+      var viewer = screenViewer === true || perm === "viewer";
+      try {
+        var q = await state.db.collection("users").where("email", "==", em).limit(1).get();
+        var data = { email: em, permissions: perm, screenViewer: viewer,
+          imageUpload: imageUpload === true,
+          updatedBy: state.user.email, updatedAt: new Date().toISOString() };
+        if (!q.empty) {
+          var docId = q.docs[0].id;
+          await state.db.collection("users").doc(docId).update(data);
+          return { saved: true, id: docId, updated: true };
+        }
+        data.createdBy = state.user.email;
+        data.createdAt = new Date().toISOString();
+        var ref = await state.db.collection("users").add(data);
+        return { saved: true, id: ref.id, updated: false };
+      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e) }; }
+    },
+    saveUserPermissionById: async function (id, permissions, screenViewer, imageUpload) {
+      if (!state.ready || !state.db || !state.user) return { saved: false, reason: "not-signed-in" };
+      if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { saved: false, reason: "not-super-admin" };
+      if (!id) return { saved: false, reason: "missing-id" };
+      var perm = String(permissions || "").trim().toLowerCase();
+      if (["finance", "screen", "both", "viewer"].indexOf(perm) < 0) return { saved: false, reason: "invalid-permission" };
+      try {
+        await state.db.collection("users").doc(id).update({ permissions: perm,
+          screenViewer: screenViewer === true || perm === "viewer",
+          imageUpload: imageUpload === true,
+          updatedBy: state.user.email, updatedAt: new Date().toISOString() });
+        return { saved: true, id: id, updated: true };
+      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e) }; }
+    },
+    listUsers: async function () {
+      if (!state.ready || !state.db || !state.user) return { ok: false, reason: "not-signed-in", users: [] };
+      if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { ok: false, reason: "not-super-admin", users: [] };
+      try {
+        var snap = await state.db.collection("users").get();
+        var out = [];
+        snap.forEach(function (doc) {
+          var d = doc.data() || {};
+          out.push({ id: doc.id, email: d.email || "", permissions: d.permissions || d.permission || "", screenViewer: d.screenViewer === true, imageUpload: d.imageUpload === true });
+        });
+        out.sort(function (a, b) { return (a.email || "").localeCompare(b.email || ""); });
+        return { ok: true, users: out };
+      } catch (e) { return { ok: false, reason: String(e && e.message ? e.message : e), users: [] }; }
+    },
+    deleteUserPermission: async function (id) {
+      if (!state.ready || !state.db || !state.user) return { saved: false, reason: "not-signed-in" };
+      if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { saved: false, reason: "not-super-admin" };
+      if (!id) return { saved: false, reason: "missing-id" };
+      try {
+        await state.db.collection("users").doc(id).delete();
+        return { saved: true, id: id };
+      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e) }; }
+    },
+    /* Custom claims client (option 2, function LIVE since 2026-11-02
+       20:51, URL is a public endpoint, the Firebase ID token is the
+       access control, so the URL itself is not a secret).
+       URL comes from window.OH_CLAIMS_FUNCTION_URL or
+       FIREBASE_CONFIG.claimsFunctionUrl, otherwise the deployed
+       function URL below. */
+    claimsFunctionUrl: function () {
+      return window.OH_CLAIMS_FUNCTION_URL || (cfg && cfg.claimsFunctionUrl) || "https://us-east1-or-hachaim.cloudfunctions.net/setUserClaims";
+    },
+    grantUserClaims: async function (email, permission, screenViewer, imageUpload, action) {
+      if (!state.ready || !state.user) return { ok: false, reason: "not-signed-in" };
+      if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { ok: false, reason: "not-super-admin" };
+      var url = (window.OH_FIREBASE && window.OH_FIREBASE.claimsFunctionUrl) ? window.OH_FIREBASE.claimsFunctionUrl() : (this && this.claimsFunctionUrl ? this.claimsFunctionUrl() : "https://us-east1-or-hachaim.cloudfunctions.net/setUserClaims");
+      if (!url) return { ok: false, reason: "claims-function-not-configured" };
+      try {
+        var token = await state.user.getIdToken();
+        var resp = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+          body: JSON.stringify({ email: String(email || "").trim().toLowerCase(), permission: permission, screenViewer: screenViewer === true, imageUpload: imageUpload === true, action: action || "grant" }) });
+        var data = null;
+        try { data = await resp.json(); } catch (e) {}
+        if (!resp.ok) return { ok: false, reason: (data && data.error) || ("http-" + resp.status), message: data && data.message ? data.message : "" };
+        return { ok: true, data: data };
+      } catch (e) { return { ok: false, reason: String(e && e.message ? e.message : e) }; }
+    },
+    revokeUserClaims: async function (email) {
+      return window.OH_FIREBASE.grantUserClaims(email, "viewer", false, false, "revoke");
+    },
+    grantUserClaimsAndSave: async function (email, permission, screenViewer, imageUpload) {
+      var r = await window.OH_FIREBASE.grantUserClaims(email, permission, screenViewer, imageUpload, "grant");
+      if (r && r.ok) return { saved: true, viaClaims: true, pending: false, data: r.data };
+      if (r && r.reason === "auth-user-not-found") {
+        var s = await window.OH_FIREBASE.saveUserPermission(email, permission, screenViewer, imageUpload);
+        if (s && s.saved) return { saved: true, viaClaims: false, pending: true, reason: "auth-user-not-found", message: "Saved as pending only. This email has no Auth record yet: ask the user to sign in once with Google first, then grant again.", id: s.id, updated: s.updated };
+        return { saved: false, viaClaims: false, pending: false, reason: (s && s.reason) || "pending-save-failed" };
+      }
+      return { saved: false, viaClaims: false, pending: false, reason: (r && r.reason) || "claims-grant-failed" };
+    },
     savePrayerTime: async function (item) {
       if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
       try {
@@ -224,6 +467,8 @@
       state.mode = "firebase";
       state.auth.onAuthStateChanged(function (u) {
         state.user = u;
+        state.role = null; state.roleUid = null; state.rolePromise = null;
+        if (u) { resolveRoleInternal().catch(function () {}); }
         renderStatus();
         if (state._btn) { var _sp = state._btn.querySelector("span"); if (_sp) _sp.textContent = u ? "Sign out" : "Sign in with Google"; else state._btn.textContent = u ? "Sign out" : "Sign in with Google"; }
       });
