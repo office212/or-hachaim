@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Restore Import / שחזור (TEST)</title>
+<title>Restore Import / שחזור</title>
 <link rel="stylesheet" href="../src/theme.css">
 <script src="../src/firebase/firebase-config.js"></script>
 <script src="../src/firebase/firebase-app.js"></script></head>
 <body>
-<div class="topbar"><strong>Or Hachaim / אור החיים</strong><span>Restore import (TEST)</span></div>
+<div class="topbar"><strong>Or Hachaim / אור החיים</strong><span>Restore import</span></div>
 <div class="page">
-<p><span class="badge-sample">TEST DATA ONLY</span> Restore imports MISSING documents only, from a backup JSON file exported by the backup page. It never overwrites an existing document, never deletes anything, and never changes an existing ledger entry. Step 1 is always a dry run, with no writes. Step 2 imports only the documents the dry run listed as missing.</p>
+<p>Restore imports MISSING documents only, from a backup JSON file exported by the backup page. It never overwrites an existing document, never deletes anything, and never changes an existing ledger entry. Step 1 is always a dry run, with no writes. Step 2 imports only the documents the dry run listed as missing.</p>
 <input type="file" id="backupFile" accept="application/json">
 <button class="btn" onclick="dryRun()">Step 1: Dry run (no writes)</button>
 <button class="btn" onclick="doImport()" id="importBtn" disabled>Step 2: Import missing only</button>
@@ -29,7 +29,7 @@ async function dryRun(){
   if(!fb || !fb.ready || !fb.user){ document.getElementById('restoreMsg').textContent = 'Sign in first.'; return; }
   try { _backup = await readFile(); } catch(e){ document.getElementById('restoreMsg').textContent = 'File error: ' + e.message; return; }
   _missing = []; var lines = [];
-  var cols = ['congregants','ledgerEntries','prayerTimes','operationIds','users'];
+  var cols = ['congregants','ledgerEntries','operationIds','pledges','recurringSchedules','activityLog','prayerTimes','announcements','dedications','sponsors','flyers','yahrzeits','backups','users']; /* same list as the backup page */
   for(var i=0;i<cols.length;i++){
     var col = cols[i]; var docs = (_backup.collections && _backup.collections[col]) || [];
     for(var j=0;j<docs.length;j++){
@@ -52,9 +52,15 @@ async function doImport(){
   var created = 0, failed = []; var lines = [];
   for(var i=0;i<_missing.length;i++){
     var m = _missing[i]; var doc = {}; Object.keys(m.doc).forEach(function(k){ if(k !== '_id') doc[k] = m.doc[k]; });
+    /* Restored ledger entries keep their original date and enteredBy,
+       and are marked as restored, with the server time and the uid of
+       who restored them. firestore.rules allows this path for the
+       super admin only, so a restore never looks like a new entry. */
+    if (m.col === 'ledgerEntries' || m.col === 'pledges' || m.col === 'activityLog') { doc.restored = true; doc.restoredAt = window.firebase.firestore.FieldValue.serverTimestamp(); doc.restoredBy = fb.user.uid; }
     try { await fb._db().collection(m.col).doc(m.id).set(doc); created++; lines.push('CREATED: ' + m.col + '/' + m.id); }
     catch(e){ failed.push(m.col + '/' + m.id + ' (' + (e.code || e.message) + ')'); lines.push('FAILED: ' + m.col + '/' + m.id + ' ' + (e.code || e.message)); }
   }
+  document.getElementById('importBtn').disabled = true; /* run a new dry run before importing again */
   document.getElementById('restoreMsg').textContent = 'Import done. Created: ' + created + ', Failed: ' + failed.length + (failed.length ? ' ' + failed.join(', ') : '');
   document.getElementById('restoreOut').textContent = lines.join('\n');
 }
