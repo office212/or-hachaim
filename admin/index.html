@@ -10,6 +10,27 @@
 <div class="gate-card" id="signInGate"><h2>כניסה נדרשת / Sign-in required</h2><p>ממשק הגבאי מוצג רק לאחר כניסה. / The gabbai interface is shown only after sign-in.</p><button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>Sign in with Google / התחברות עם Google</span></button><p class="hint" id="gateMsg"></p></div>
 <p>זמני תפילה להלן הם נתונים חיים מ-Firestore כאשר מחוברים. / Prayer times below are live Firestore data when signed in. סעיפים אחרים בדף זה (הודעות, הקדשות, פליירים, יורצייט, תמונות) עדיין נשמרים מקומית בלבד, ולא נשמרים ל-Firestore. / Other sections on this page (announcements, dedications, flyers, yahrzeit, images) are still saved locally only, not saved to Firestore.</p>
 <div class="note"><strong>מודל הרשאות / Permissions model:</strong> super admin chooses per gabbai: finance only, times/screen only, or both. A gabbai with screen permission edits the items below; a gabbai with finance permission only does not see this page. The TV screen itself never uses the super admin account: it uses a dedicated synagogue viewer account, screen-read-only, with no finance and no editing access.</div>
+<div id="userMgmtSection" style="display:none">
+<h2>ניהול משתמשים, מנהל על בלבד / User management, super admin only</h2>
+<div class="gold-frame" style="padding:1rem">
+<p>הוספת מייל כאן שומרת אותו אוטומטית ב-Firestore, בלי עריכה ידנית בקונסול. / Adding an email here saves it automatically in Firestore, with no manual console edit. מתפללים אינם נוספים כאן, הם נוספים בנפרד. / Congregants are not added here, they are added separately.</p>
+<p><small>הערה: שמירה כאן מעניקה הרשאה באמצעות custom claims, כאשר הפונקציה setUserClaims פרוסה. אם המייל עדיין לא נכנס פעם אחת עם גוגל, השמירה נשמרת כממתינה בלבד, והמשתמש חייב להיכנס פעם אחת ואז לקבל את ההרשאה שוב. אחרי הענקה, המשתמש חייב להתנתק ולהיכנס שוב כדי שהטוקן החדש יכלול את ההרשאה. / Note: saving here grants via custom claims once setUserClaims is deployed. If the email has never signed in with Google, the save is pending only, the user must sign in once first, then be granted again. After a grant, the user must sign out and sign in again for the new token to carry the claims.</small></p>
+<label>מייל / Email</label><input id="umEmail" type="email" placeholder="למשל name@example.com / e.g. name@example.com">
+<label>הרשאה / Permission</label>
+<select id="umPerm">
+<option value="finance">פיננסים / Finance</option>
+<option value="screen">מסך וזמנים / Screen and times</option>
+<option value="both">שניהם / Both</option>
+<option value="viewer">צופה מסך בלבד / Viewer only</option>
+</select>
+<label><input type="checkbox" id="umViewer"> צופה מסך / Screen viewer</label>
+<label><input type="checkbox" id="umImage"> העלאת תמונות / Image upload (stored only, not yet enforced)</label>
+<button class="btn" onclick="saveUm()">שמור משתמש / Save user</button>
+<button class="btn" onclick="refreshUmList()">רענן רשימה / Refresh list</button>
+<p id="umMsg"></p>
+<div id="umList"></div>
+</div>
+</div>
 <h2>זמני תפילות / Prayer Times</h2><p id="ptSource">כניסה נדרשת / Sign-in required</p>
 <div class="gold-frame" style="padding:1rem"><div id="ptList"></div>
 <label>זמן תפילה חדש / New prayer time</label><input id="ptName" placeholder="שם, למשל שחרית / Name, e.g. Shacharit">
@@ -37,14 +58,17 @@ var _lastPTUser = null;
 function signInFromGate(){
   var fb = window.OH_FIREBASE;
   if(!fb || !fb.signIn){ document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.'; return; }
+  if(fb.user){ fb.signOut(); return; }
   var r = fb.signIn();
   if(r && r.catch) r.catch(function(e){ document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e); });
 }
 async function refreshPT(){
   try {
     var fb = window.OH_FIREBASE;
-    if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); if(_lastPTUser !== null){ _lastPTUser = null; document.getElementById('ptSource').textContent = 'כניסה נדרשת / Sign-in required'; pts = []; renderPT(); } return; }
-    document.body.classList.remove('gated');
+    if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastPTUser !== null){ _lastPTUser = null; document.getElementById('ptSource').textContent = 'כניסה נדרשת / Sign-in required'; pts = []; renderPT(); } return; }
+    var role = await fb.resolveRole();
+    if(!role || !fb.canAccess('admin')){ document.body.classList.add('gated'); if(role) document.getElementById('gateMsg').textContent = 'חשבון זה אינו מורשה למערכת / This account is not authorized for the system. פנה לגבאי או למנהל העל כדי לקבל הרשאה. / Contact a gabbai or the super admin for authorization.'; _lastPTUser = null; document.getElementById('ptSource').textContent = 'כניסה נדרשת / Sign-in required'; pts = []; renderPT(); return; }
+    document.body.classList.remove('gated'); document.getElementById('gateMsg').textContent = '';
     var email = fb.user.email || '';
     if(email === _lastPTUser) return;
     _lastPTUser = email;
@@ -60,6 +84,62 @@ function saveLocal2(){ document.getElementById("dedMsg").textContent = "Saved lo
 function saveLocal3(){ document.getElementById("flyMsg").textContent = "Flyer saved locally only, not saved to Firestore. Shown only " + document.getElementById("flyFrom").value + " to " + document.getElementById("flyTo").value; }
 function saveLocal4(){ document.getElementById("yMsg").textContent = "Yahrzeit added locally only, not saved to Firestore. It will recur yearly in its week when saved."; }
 function previewImg(e){ var f = e.target.files[0]; if(!f) return; var r = new FileReader(); r.onload = function(){ document.getElementById("imgPreview").innerHTML = '<img src="' + r.result + '" style="max-width:300px">'; }; r.readAsDataURL(f); }
+var _umShown = false;
+async function refreshUmList(){
+  var fb = window.OH_FIREBASE, listEl = document.getElementById("umList"), msgEl = document.getElementById("umMsg");
+  if(!fb || !fb.listUsers){ if(listEl) listEl.innerHTML = "<p>ניהול משתמשים אינו זמין כרגע / User management is not available right now.</p>"; return; }
+  var r = await fb.listUsers();
+  if(!r || !r.ok){ if(listEl) listEl.innerHTML = "<p>טעינת רשימה נכשלה / List load failed: " + (r && r.reason ? r.reason : "unknown") + "</p>"; return; }
+  if(!r.users.length){ listEl.innerHTML = "<p>אין משתמשים עדיין / No users yet.</p>"; return; }
+  listEl.innerHTML = r.users.map(function(u){
+    var esc = function(s){ return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); };
+    return "<p>" + esc(u.email) + " / " + esc(u.permissions) + (u.screenViewer ? " / צופה מסך" : "") + (u.imageUpload ? " / העלאת תמונות" : "") +
+      ' <button class="btn" onclick="editUm(\'' + u.id + '\', \'' + esc(u.email) + '\', \'' + esc(u.permissions) + '\', ' + (u.screenViewer ? "true" : "false") + ', ' + (u.imageUpload ? "true" : "false") + ')">ערוך / Edit</button>' +
+      ' <button class="btn" onclick="deleteUm(\'' + u.id + '\')">מחק / Delete</button></p>';
+  }).join("");
+}
+async function saveUm(){
+  var fb = window.OH_FIREBASE, msgEl = document.getElementById("umMsg");
+  if(!fb || !fb.saveUserPermission){ msgEl.textContent = "ניהול משתמשים אינו זמין כרגע / User management is not available right now."; return; }
+  var r;
+  if(fb.grantUserClaimsAndSave){ r = await fb.grantUserClaimsAndSave(document.getElementById("umEmail").value, document.getElementById("umPerm").value, document.getElementById("umViewer").checked, document.getElementById("umImage").checked); }
+  else { r = await fb.saveUserPermission(document.getElementById("umEmail").value, document.getElementById("umPerm").value, document.getElementById("umViewer").checked, document.getElementById("umImage").checked); }
+  if(r && r.saved && r.viaClaims){ msgEl.textContent = "הוענק באמצעות custom claims / Granted via custom claims. המשתמש חייב להתנתק ולהיכנס שוב / The user must sign out and sign in again."; refreshUmList(); }
+  else if(r && r.saved && r.pending){ msgEl.textContent = "נשמר כממתין בלבד / Saved as pending only. המייל עדיין לא נכנס פעם אחת עם גוגל, בקש ממנו להיכנס פעם אחת ואז הענק שוב / The email has not signed in with Google yet, ask the user to sign in once first, then grant again."; refreshUmList(); }
+  else if(r && r.saved){ msgEl.textContent = "נשמר ב-Firestore / Saved to Firestore." + (r.updated ? " (עודכן קיים / existing updated)" : " (חדש / new)"); refreshUmList(); }
+  else { msgEl.textContent = "שמירה נכשלה, לא נשמר בשקט / Save failed, not silently saved: " + (r && r.reason ? r.reason : "unknown"); }
+}
+function editUm(id, email, perm, viewer, image){
+  document.getElementById("umEmail").value = email;
+  document.getElementById("umPerm").value = perm || "finance";
+  document.getElementById("umViewer").checked = !!viewer;
+  document.getElementById("umImage").checked = !!image;
+  document.getElementById("umMsg").textContent = "עריכה של " + email + ", לחץ שמור כדי לעדכן את אותו המייל / Editing " + email + ", press Save to update that same email.";
+  document.getElementById("umEmail").focus();
+}
+async function deleteUm(id){
+  var fb = window.OH_FIREBASE, msgEl = document.getElementById("umMsg");
+  if(!confirm("למחוק משתמש זה? / Delete this user?")) return;
+  try {
+    var listR = await fb.listUsers();
+    var target = listR && listR.users ? listR.users.find(function(u){ return u.id === id; }) : null;
+    if(target && target.email && fb.revokeUserClaims){ await fb.revokeUserClaims(target.email); }
+  } catch(e) {}
+  var r = await fb.deleteUserPermission(id);
+  if(r && r.saved){ msgEl.textContent = "נמחק / Deleted."; refreshUmList(); }
+  else { msgEl.textContent = "מחיקה נכשלה / Delete failed: " + (r && r.reason ? r.reason : "unknown"); }
+}
+async function checkUmVisibility(){
+  try {
+    var fb = window.OH_FIREBASE, sec = document.getElementById("userMgmtSection");
+    if(!fb || !fb.ready || !fb.user || !sec) return;
+    var role = await fb.resolveRole();
+    if(role && role.isSuperAdmin){ sec.style.display = ""; if(!_umShown){ _umShown = true; refreshUmList(); } }
+    else { sec.style.display = "none"; }
+  } catch(e) {}
+}
+setInterval(checkUmVisibility, 1000);
+checkUmVisibility();
 renderPT();
 </script>
 </div></body></html>
