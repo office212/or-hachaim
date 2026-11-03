@@ -26,16 +26,19 @@ var _lastCongUser = null;
 function signInFromGate(){
   var fb = window.OH_FIREBASE;
   if(!fb || !fb.signIn){ document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.'; return; }
+  if(fb.user){ fb.signOut(); return; }
   var r = fb.signIn();
   if(r && r.catch) r.catch(function(e){ document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e); });
 }
 async function refreshCong(){
   try {
     var fb = window.OH_FIREBASE;
-    if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); if(_lastCongUser !== null){ _lastCongUser = null; document.getElementById('congSource').textContent = 'כניסה נדרשת / Sign-in required'; document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>'; } return; }
+    if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastCongUser !== null){ _lastCongUser = null; document.getElementById('congSource').textContent = 'כניסה נדרשת / Sign-in required'; document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>'; } return; }
+    var role = await fb.resolveRole();
+    if(!role || !fb.canAccess('congregant')){ document.body.classList.add('gated'); if(role) document.getElementById('gateMsg').textContent = 'חשבון זה אינו מורשה למערכת / This account is not authorized for the system. פנה לגבאי או למנהל העל כדי לקבל הרשאה. / Contact a gabbai or the super admin for authorization.'; _lastCongUser = null; document.getElementById('congSource').textContent = 'כניסה נדרשת / Sign-in required'; document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>'; return; }
     var email = fb.user.email || '';
     if(email === _lastCongUser) return;
-    document.body.classList.remove('gated');
+    document.body.classList.remove('gated'); document.getElementById('gateMsg').textContent = '';
     _lastCongUser = email;
     var own = await fb.loadOwnCongregant();
     if(own){ document.getElementById('congSource').textContent = 'Signed in as ' + email; renderCong(own, 'Signed-in congregant only.'); }
