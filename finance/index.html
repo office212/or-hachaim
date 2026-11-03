@@ -1,12 +1,19 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>כספים / Finance</title>
 <link rel="stylesheet" href="../src/theme.css">
 <script src="../src/firebase/firebase-config.js"></script>
 <script src="../src/firebase/firebase-app.js"></script>
 <script src="../src/engines/idempotency.js"></script>
 <script src="../src/engines/finance-states.js"></script>
-<style>@media print { .page > :not(#printArea) { display: none; } }</style></head>
+<script src="../src/ui/oh-ui.js"></script>
+<style>
+@media print { .page > :not(#printArea) { display: none !important; } #printArea .tax-letter { page-break-after: always; box-shadow: none; } }
+.ledger-summary { display: flex; flex-wrap: wrap; gap: 10px 26px; font-variant-numeric: tabular-nums; }
+.ledger-summary strong { color: var(--navy); }
+.cong-card h3 { margin: 0 0 4px; }
+.amt { direction: ltr; unicode-bidi: isolate; white-space: nowrap; margin: 0 0.4em; }
+</style></head>
 <body class="gated">
 <div class="topbar no-print"><strong>אור החיים / Or Hachaim</strong><span>פיננסים / Finance</span><a href="../screen/index.html">מסך / Screen</a><a href="../admin/index.html">ממשק גבאי / Gabbai admin</a></div>
 <div class="page">
@@ -40,163 +47,230 @@
 <div class="gold-frame no-print" style="padding:1rem"><p>גיבוי הוא דרישה מהיום הראשון. / Backup is a day-one requirement, not a go-live item. Export downloads the full ledger, congregant records, recurring schedules, and activity log. Restore never deletes or overwrites existing entries; it imports only missing entries.</p>
 <button class="btn btn-gold" onclick="backupExport()">ייצוא גיבוי מלא / Export full backup (JSON)</button><p id="backupMsg"></p></div>
 <script>
+/* Finance page logic. Changed 2026-11-03 (see design_suggestions file):
+   every Firestore value is escaped (OH_UI.esc / OH_UI.jsArg); amounts are
+   summed in cents and shown as $1,234.50; dates are New York dates;
+   one operationId per form, reused on retry, so a double click or a
+   resend after a network drop records ONE entry; the screen shows an
+   entry only after the database accepted it; the activity log records
+   the signed-in email, never a hard-coded "Gabbai". */
+var esc = OH_UI.esc, jsArg = OH_UI.jsArg, money = OH_UI.money, today = OH_UI.nyDate;
 var cons = [];
 var opStore = new window.Idempotency.IdempotencyStore();
 function newOp(prefix){ return window.Idempotency.makeOperationId(prefix); }
-function totals(c){ return window.ledgerTotals(c); }
+function totals(c){ return OH_UI.ledgerTotals(c); }
+function who(){ var fb = window.OH_FIREBASE; return (fb && fb.user && fb.user.email) || "local preview"; }
+function amt$(n){ return '<span class="amt">' + money(n) + '</span>'; }
 function renderList(){
   var q = (document.getElementById("search").value || "").toLowerCase();
-  document.getElementById("list").innerHTML = cons.filter(function(c){ return c.name.toLowerCase().includes(q); }).map(function(c){
+  document.getElementById("list").innerHTML = cons.filter(function(c){ return String(c.name || "").toLowerCase().includes(q); }).map(function(c){
     var t = totals(c);
-    return '<div class="gold-frame" style="padding:1rem;margin:1rem 0"><h3>' + c.name + '</h3><p>Phone: ' + c.phone + ' | Email: ' + (c.email || "(none yet)") + '</p>' +
-    '<p><strong>Charges total: $' + t.charges + ' | Payments total: $' + t.payments + ' | Balance owed: $' + t.balance + '</strong></p>' +
-    '<button class="btn" onclick="showCard(\'' + c.id + '\')">Open card</button></div>';
+    return '<div class="gold-frame cong-card" style="margin:1rem 0"><h3>' + esc(c.name) + '</h3><p class="hint">טלפון / Phone: ' + esc(c.phone) + ' | מייל / Email: ' + (c.email ? esc(c.email) : "(none yet)") + '</p>' +
+    '<p class="ledger-summary"><span>חיובים / Charges: ' + amt$(t.charges) + '</span><span>תשלומים / Payments: ' + amt$(t.payments) + '</span><strong>יתרה / Balance owed: ' + amt$(t.balance) + '</strong></p>' +
+    '<button class="btn secondary" style="width:auto" onclick="showCard(' + jsArg(c.id) + ')">פתח כרטיס / Open card</button></div>';
   }).join("") || "<p>אין מתפללים עדיין / No congregants yet.</p>";
 }
+/* One pending operationId per open card. It is created when the card
+   opens and replaced only after a confirmed save, so pressing the
+   button twice, or again after a network error, reuses the same id. */
+var pendingOp = {};
 function showCard(id){
-  var c = cons.find(function(x){ return x.id === id; }); var t = totals(c);
-  var rows = c.ledger.map(function(e){ return "<tr><td>" + e.date + "</td><td>" + e.type + "</td><td>$" + e.amount + "</td><td>" + e.description + "</td><td>" + e.enteredBy + "</td></tr>"; }).join("");
+  var c = cons.find(function(x){ return x.id === id; }); if(!c) return;
+  var t = totals(c);
+  if(!pendingOp[id]) pendingOp[id] = newOp("entry");
+  var rows = c.ledger.map(function(e){ return "<tr><td>" + esc(e.date) + "</td><td>" + esc(e.type) + "</td><td>" + amt$(e.amount) + "</td><td>" + esc(e.description) + "</td><td>" + esc(e.enteredBy) + "</td></tr>"; }).join("");
   document.getElementById("printArea").innerHTML =
-    '<div class="gold-frame" style="padding:1rem"><h2>כרטיס מתפלל / Congregant card: ' + c.name + '</h2>' +
-    '<p>טלפון / Phone: ' + c.phone + ' | מייל / Email: ' + (c.email || "(none yet)") + ' | תאריך הדפסה / Print date: ' + new Date().toLocaleDateString() + '</p>' +
-    '<p>סך חיובים / Charges total: $' + t.charges + ' | סך תשלומים / Payments total: $' + t.payments + ' | <strong>יתרה לתשלום / Balance owed: $' + t.balance + '</strong></p>' +
-    '<table><tr><th>Date</th><th>Type</th><th>Amount</th><th>Description</th><th>Entered by</th></tr>' + rows + '</table>' +
-    '<div class="no-print" style="margin-top:1rem"><button class="btn btn-gold" onclick="window.print()">Print balance (window.print)</button> ' +
-    '<button class="btn" onclick="exportCSV(\'' + c.id + '\')">ייצוא דוח כ-CSV / Export statement as CSV</button></div>' +
+    '<div class="gold-frame"><h2>כרטיס מתפלל / Congregant card: ' + esc(c.name) + '</h2>' +
+    '<p>טלפון / Phone: ' + esc(c.phone) + ' | מייל / Email: ' + (c.email ? esc(c.email) : "(none yet)") + ' | תאריך הדפסה / Print date: ' + esc(today()) + '</p>' +
+    '<p class="ledger-summary"><span>סך חיובים / Charges total: ' + amt$(t.charges) + '</span><span>סך תשלומים / Payments total: ' + amt$(t.payments) + '</span><strong>יתרה לתשלום / Balance owed: ' + amt$(t.balance) + '</strong></p>' +
+    '<table><tr><th>תאריך / Date</th><th>סוג / Type</th><th>סכום / Amount</th><th>תיאור / Description</th><th>הוזן ע״י / Entered by</th></tr>' + rows + '</table>' +
+    '<div class="no-print" style="margin-top:1rem;display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-gold" style="width:auto" onclick="window.print()">הדפס יתרה / Print balance</button>' +
+    '<button class="btn secondary" style="width:auto" onclick="exportCSV(' + jsArg(c.id) + ')">ייצוא דוח כ-CSV / Export statement as CSV</button></div>' +
     '<div class="no-print" style="margin-top:1rem"><label>הוסף רשומה / Add entry</label>' +
-    '<select id="eType"><option value="charge">Charge</option><option value="payment">Payment</option><option value="correction">Correction entry</option></select>' +
-    '<label>סכום / Amount (for a correction, use a signed amount: negative lowers the balance)</label><input id="eAmt" type="number" step="0.01"><label>תיאור / Description</label><input id="eDesc">' +
-    '<button class="btn" onclick="addEntry(\'' + c.id + '\')">הוסף רשומה / Add entry</button></div></div>';
+    '<select id="eType"><option value="charge">חיוב / Charge</option><option value="payment">תשלום / Payment</option><option value="correction">רשומת תיקון / Correction entry</option></select>' +
+    '<label>סכום / Amount (for a correction, use a signed amount: negative lowers the balance)</label><input id="eAmt" type="number" step="0.01" inputmode="decimal"><label>תיאור / Description</label><input id="eDesc">' +
+    '<button class="btn" id="eBtn" onclick="addEntry(' + jsArg(c.id) + ')">הוסף רשומה / Add entry</button><p id="eMsg" class="hint"></p></div></div>';
 }
-function addEntry(id){
-  var c = cons.find(function(x){ return x.id === id; });
-  var amt = parseFloat(document.getElementById("eAmt").value || "0");
+async function addEntry(id){
+  var c = cons.find(function(x){ return x.id === id; }); if(!c) return;
   var type = document.getElementById("eType").value;
-  var opId = newOp("entry");
-  if(!opStore.tryClaim(opId)){ return; }
-  /* Correction entries are stored as their own entries and never delete
-     an earlier entry. Their amount is a signed delta to the balance. */
-  c.ledger.push({ date: new Date().toISOString().slice(0,10), operationId: opId, type: type, amount: type === "payment" ? amt : amt, description: document.getElementById("eDesc").value, enteredBy: (window.OH_FIREBASE && window.OH_FIREBASE.user && window.OH_FIREBASE.user.email) || "Gabbai" });
-  if (window.OH_FIREBASE && window.OH_FIREBASE.saveLedgerEntry) {
-    window.OH_FIREBASE.saveLedgerEntry({ congregantId: id, date: new Date().toISOString().slice(0,10), type: type, amount: amt, description: document.getElementById("eDesc").value, operationId: opId }).then(function (r) {
-      if (r && r.saved) { var m = document.getElementById("printArea"); if (m) { var n = document.createElement("p"); n.textContent = "Also saved to Firestore (append-only)."; m.appendChild(n); } }
-    }).catch(function () {});
+  var amt = Number(document.getElementById("eAmt").value);
+  var desc = document.getElementById("eDesc").value.trim();
+  var msg = document.getElementById("eMsg"), btn = document.getElementById("eBtn");
+  /* Validation: a number, not zero; charge and payment are positive;
+     only a correction may be negative. */
+  if(!isFinite(amt) || amt === 0){ msg.textContent = "הזן סכום / Enter an amount (not zero)."; return; }
+  if(type !== "correction" && amt < 0){ msg.textContent = "חיוב ותשלום חייבים להיות חיוביים. לתיקון בחר רשומת תיקון. / Charges and payments must be positive; use a correction entry to lower a balance."; return; }
+  var opId = pendingOp[id] || (pendingOp[id] = newOp("entry"));
+  if(btn.disabled) return; /* a save with this id is already running */
+  var entry = { congregantId: id, date: today(), type: type, amount: Math.round(amt * 100) / 100, description: desc, operationId: opId, source: "manual" };
+  var fb = window.OH_FIREBASE;
+  btn.disabled = true; msg.textContent = "שומר... / Saving...";
+  var r = (fb && fb.saveLedgerEntry) ? await fb.saveLedgerEntry(entry) : { saved: false, reason: "test-only" };
+  btn.disabled = false;
+  if (r.saved || r.reason === "duplicate-operationId" || r.reason === "test-only") {
+    if (r.reason !== "duplicate-operationId") c.ledger.push({ date: entry.date, operationId: opId, type: type, amount: entry.amount, description: desc, enteredBy: who() });
+    delete pendingOp[id]; /* the next entry gets a new id */
+    logActivity(who(), "Added " + type + " entry, " + money(entry.amount) + ", for " + c.name, "ledger");
+    showCard(id); renderList();
+    document.getElementById("eMsg").textContent = r.saved ? "נשמר / Saved (append-only)." : (r.reason === "test-only" ? "תצוגה מקומית בלבד / Local preview only, not saved." : "כבר נשמר / Already saved, not recorded twice.");
+  } else {
+    /* Not saved: nothing is added on screen, and the same operationId
+       is kept, so pressing again cannot create a second entry. */
+    msg.textContent = "לא נשמר / Not saved: " + r.reason + ". לחץ שוב לנסות / Press again to retry (it will not be recorded twice).";
   }
-  logActivity((window.OH_FIREBASE && window.OH_FIREBASE.user && window.OH_FIREBASE.user.email) || "Gabbai", "Added " + type + " entry, $" + amt + ", for " + c.name, "ledger");
-  showCard(id); renderList();
+}
+function csvCell(v){
+  var s = String(v == null ? "" : v);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; /* spreadsheet formula injection guard */
+  return '"' + s.replace(/"/g, '""') + '"';
 }
 function exportCSV(id){
-  var c = cons.find(function(x){ return x.id === id; });
-  var csv = "date,type,amount,description,enteredBy\n" + c.ledger.map(function(e){ return [e.date, e.type, e.amount, '"' + e.description.replace(/"/g, '""') + '"', e.enteredBy].join(","); }).join("\n");
-  var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv"})); a.download = c.id + "-statement.csv"; a.click();
+  var c = cons.find(function(x){ return x.id === id; }); if(!c) return;
+  var csv = "\uFEFFdate,type,amount,description,enteredBy\n" + c.ledger.map(function(e){ return [e.date, e.type, e.amount, e.description, e.enteredBy].map(csvCell).join(","); }).join("\n");
+  var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv;charset=utf-8"})); a.download = String(c.id).replace(/[^\w-]/g, "_") + "-statement-" + today() + ".csv"; a.click();
 }
 function addCong(){
-  var n = document.getElementById("newName").value; if(!n){ document.getElementById("addMsg").textContent = "Enter a name."; return; }
-  cons.push({ id: "local-" + Date.now(), name: n, phone: document.getElementById("newPhone").value, email: document.getElementById("newEmail").value, ledger: [] });
-  logActivity("Super admin", "Added congregant " + n + " (this view only, not saved to Firestore yet)", "congregants");
+  var n = document.getElementById("newName").value.trim(); if(!n){ document.getElementById("addMsg").textContent = "Enter a name."; return; }
+  cons.push({ id: "local-" + Date.now(), name: n, phone: document.getElementById("newPhone").value.trim(), email: document.getElementById("newEmail").value.trim().toLowerCase(), ledger: [] });
+  logActivity(who(), "Added congregant " + n + " (this view only, not saved to Firestore yet)", "congregants");
   document.getElementById("addMsg").textContent = "Added to this view only, not saved to Firestore yet."; renderList(); renderNederCong();
 }
 var activity = [];
-function logActivity(who, action, area){
-  activity.unshift({ when: new Date().toISOString().slice(0,10), who: who, action: action, area: area });
+function logActivity(by, action, area){
+  activity.unshift({ when: today(), who: by, action: action, area: area });
   renderActivity();
 }
 function renderActivity(){
   document.getElementById("activityList").innerHTML = activity.map(function(a){
-    return "<p>" + a.when + " | " + a.who + " | " + a.area + " | " + a.action + "</p>";
+    return "<p>" + esc(a.when) + " | " + esc(a.who) + " | " + esc(a.area) + " | " + esc(a.action) + "</p>";
   }).join("");
 }
 var pledges = [];
 function renderNederCong(){
-  document.getElementById("nederCong").innerHTML = cons.map(function(c){ return '<option value="' + c.id + '">' + c.name + '</option>'; }).join("");
+  document.getElementById("nederCong").innerHTML = cons.map(function(c){ return '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>'; }).join("");
   document.getElementById("nederList").innerHTML = pledges.map(function(n){
-    return "<p>" + n.date + " | " + n.name + " | $" + n.amount + " | Aliyah: " + n.aliyah + "</p>";
+    return "<p>" + esc(n.date) + " | " + esc(n.name) + " | " + amt$(n.amount) + " | Aliyah: " + esc(n.aliyah) + "</p>";
   }).join("") || "<p>אין נדרים עדיין / No nedarim yet.</p>";
 }
-function addNeder(){
+/* One operationId for the neder form, kept until a confirmed save. */
+var nederOp = null;
+async function addNeder(){
   var id = document.getElementById("nederCong").value;
   var c = cons.find(function(x){ return x.id === id; });
-  var name = document.getElementById("nederName").value, amt = parseFloat(document.getElementById("nederAmt").value || "0"), aliyah = document.getElementById("nederAliyah").value;
-  if(!c || !name || !amt){ document.getElementById("nederMsg").textContent = "Enter a congregant, a name, and an amount."; return; }
+  var name = document.getElementById("nederName").value.trim(), amt = Number(document.getElementById("nederAmt").value), aliyah = document.getElementById("nederAliyah").value.trim();
+  var msg = document.getElementById("nederMsg");
+  if(!c || !name || !isFinite(amt) || amt <= 0){ msg.textContent = "Enter a congregant, a name, and a positive amount."; return; }
   /* Foundation: a neder first creates a pledge, not a payment.
      Converting it creates a ledger charge with a unique operationId,
      so a double click records one charge only. */
-  var opId = newOp("neder");
-  if(!opStore.tryClaim(opId)){ document.getElementById("nederMsg").textContent = "Duplicate neder submission rejected (same operationId)."; return; }
-  pledges.push({ id: "pledge-local-" + Date.now(), congregantId: id, name: name, amount: amt, aliyah: aliyah, date: new Date().toISOString().slice(0,10), status: "converted" });
-  c.ledger.push({ date: new Date().toISOString().slice(0,10), operationId: opId, type: "charge", amount: amt, description: "Neder converted to charge: " + name + ", Aliyah: " + aliyah, enteredBy: (window.OH_FIREBASE && window.OH_FIREBASE.user && window.OH_FIREBASE.user.email) || "Gabbai" });
-  if (window.OH_FIREBASE && window.OH_FIREBASE.saveLedgerEntry) {
-    window.OH_FIREBASE.saveLedgerEntry({ congregantId: id, date: new Date().toISOString().slice(0,10), type: "charge", amount: amt, description: "Neder converted to charge: " + name + ", Aliyah: " + aliyah, operationId: opId, source: "neder" }).catch(function () {});
+  var opId = nederOp || (nederOp = newOp("neder"));
+  var btn = document.querySelector('button[onclick="addNeder()"]');
+  if (btn && btn.disabled) return;
+  if (btn) btn.disabled = true;
+  var entry = { congregantId: id, date: today(), type: "charge", amount: Math.round(amt * 100) / 100, description: "Neder converted to charge: " + name + ", Aliyah: " + aliyah, operationId: opId, source: "neder", aliyah: aliyah };
+  var fb = window.OH_FIREBASE;
+  var r = (fb && fb.saveLedgerEntry) ? await fb.saveLedgerEntry(entry) : { saved: false, reason: "test-only" };
+  if (btn) btn.disabled = false;
+  if (!(r.saved || r.reason === "duplicate-operationId" || r.reason === "test-only")) {
+    msg.textContent = "הנדר לא נשמר / Neder not saved: " + r.reason + ". Press again to retry, it will not be recorded twice.";
+    return;
   }
-  logActivity((window.OH_FIREBASE && window.OH_FIREBASE.user && window.OH_FIREBASE.user.email) || "Gabbai", "Added neder, $" + amt + ", " + name + ", Aliyah: " + aliyah + ", for " + c.name, "ledger");
-  document.getElementById("nederMsg").textContent = "Neder added as a ledger charge for " + c.name + ".";
+  if (r.reason !== "duplicate-operationId") {
+    pledges.push({ id: "pledge-local-" + Date.now(), congregantId: id, name: name, amount: entry.amount, aliyah: aliyah, date: entry.date, status: "converted" });
+    c.ledger.push({ date: entry.date, operationId: opId, type: "charge", amount: entry.amount, description: entry.description, enteredBy: who() });
+    logActivity(who(), "Added neder, " + money(entry.amount) + ", " + name + ", Aliyah: " + aliyah + ", for " + c.name, "ledger");
+  }
+  nederOp = null;
+  document.getElementById("nederName").value = ""; document.getElementById("nederAmt").value = ""; document.getElementById("nederAliyah").value = "";
+  msg.textContent = (r.saved ? "נשמר / Saved: " : (r.reason === "test-only" ? "תצוגה מקומית / Local preview: " : "כבר נשמר / Already saved: ")) + "neder for " + c.name + ".";
   renderList(); renderNederCong();
 }
 var recs = [];
 function renderRec(){
   document.getElementById("recList").innerHTML = recs.map(function(r){
     var c = cons.find(function(x){ return x.id === r.congregantId; });
-    return "<p>" + r.name + " | " + (c ? c.name : r.congregantId) + " | $" + r.amount + " | " + r.period + " | Status: " + r.status + " | Next due: " + r.nextDue +
-    ' <button class="btn" onclick="toggleRec(\'' + r.id + '\')">' + (r.status === "active" ? "Pause or cancel" : "Reactivate") + '</button></p>';
+    return "<p>" + esc(r.name) + " | " + esc(c ? c.name : r.congregantId) + " | " + amt$(r.amount) + " | " + esc(r.period) + " | Status: " + esc(r.status) + " | Next due: " + esc(r.nextDue) +
+    ' <button class="btn secondary" style="width:auto;min-height:44px;padding:8px 14px" onclick="toggleRec(' + jsArg(r.id) + ')">' + (r.status === "active" ? "Pause or cancel" : "Reactivate") + '</button></p>';
   }).join("");
 }
 function toggleRec(id){
-  var r = recs.find(function(x){ return x.id === id; });
+  var r = recs.find(function(x){ return x.id === id; }); if(!r) return;
   r.status = (r.status === "active") ? "cancelled" : "active";
-  logActivity("Gabbai", (r.status === "active" ? "Reactivated" : "Paused or cancelled") + " recurring schedule: " + r.name + ". Past ledger entries were NOT deleted.", "recurring");
+  logActivity(who(), (r.status === "active" ? "Reactivated" : "Paused or cancelled") + " recurring schedule: " + r.name + ". Past ledger entries were NOT deleted.", "recurring");
   document.getElementById("recMsg").textContent = "Schedule status changed. Past ledger entries were NOT deleted.";
   renderRec();
 }
-function applyRecurring(){
-  var applied = 0;
-  recs.forEach(function(r){
-    if(r.status !== "active") return;
+/* Recurring charges: only schedules whose nextDue has arrived are
+   charged, and the operationId is built from the schedule id and the
+   due date ("rec-<id>-<date>"). Pressing the button twice, or two
+   gabbaim pressing it, can never charge the same month twice. */
+async function applyRecurring(){
+  var applied = 0, skipped = 0, failed = 0, d = today(), fb = window.OH_FIREBASE;
+  for (var i = 0; i < recs.length; i++) {
+    var r = recs[i];
+    if (r.status !== "active" || !r.nextDue || r.nextDue > d) { skipped++; continue; }
     var c = cons.find(function(x){ return x.id === r.congregantId; });
-    if(!c) return;
-    c.ledger.push({ date: new Date().toISOString().slice(0,10), type: "charge", amount: r.amount, description: "Recurring: " + r.name, enteredBy: "SYSTEM (schedule)" });
-    applied++;
-    logActivity("SYSTEM (schedule)", "Recorded recurring charge, $" + r.amount + ", " + r.name + ", for " + c.name, "ledger");
-  });
-  document.getElementById("recMsg").textContent = "Applied " + applied + " due recurring charge(s) as ledger entries.";
-  renderList();
+    if (!c) { skipped++; continue; }
+    var opId = "rec-" + r.id + "-" + r.nextDue;
+    var entry = { congregantId: c.id, date: r.nextDue, type: "charge", amount: r.amount, description: "Recurring: " + r.name, operationId: opId, source: "recurring" };
+    var res = (fb && fb.saveLedgerEntry) ? await fb.saveLedgerEntry(entry) : { saved: false, reason: "test-only" };
+    if (res.saved || res.reason === "test-only") {
+      c.ledger.push({ date: entry.date, operationId: opId, type: "charge", amount: r.amount, description: entry.description, enteredBy: who() });
+      applied++;
+      logActivity(who(), "Recorded recurring charge, " + money(r.amount) + ", " + r.name + ", for " + c.name, "ledger");
+    } else if (res.reason !== "duplicate-operationId") { failed++; continue; }
+    r.nextDue = OH_UI.addMonths(r.nextDue, r.period === "annual" ? 12 : 1);
+  }
+  document.getElementById("recMsg").textContent = "Applied " + applied + " due recurring charge(s). Not due yet: " + skipped + (failed ? ". Failed: " + failed + " (press again to retry)." : ".");
+  renderList(); renderRec();
 }
 function renderPledges(){
   var el = document.getElementById("pledgeList"); if(!el) return;
   el.innerHTML = pledges.map(function(p){
     var c = cons.find(function(x){ return x.id === p.congregantId; });
-    return "<p>" + p.date + " | " + (c ? c.name : p.congregantId) + " | " + p.name + " | $" + p.amount + " | Aliyah: " + p.aliyah + " | Status: " + p.status + " (pledge, not a payment)</p>";
+    return "<p>" + esc(p.date) + " | " + esc(c ? c.name : p.congregantId) + " | " + esc(p.name) + " | " + amt$(p.amount) + " | Aliyah: " + esc(p.aliyah) + " | Status: " + esc(p.status) + " (pledge, not a payment)</p>";
   }).join("");
 }
 function annualReport(){
-  var year = document.getElementById("annualYear").value || "2026";
+  var year = String(document.getElementById("annualYear").value || today().slice(0, 4)).trim();
   var r = window.FinanceStates.annualReport(cons, pledges, year);
+  var methods = Object.keys(r.paymentsByMethod).map(function(k){ return esc(k) + ": " + amt$(r.paymentsByMethod[k]); }).join(" | ") || "-";
   document.getElementById("annualArea").innerHTML =
-    '<div class="gold-frame" style="padding:1rem;margin:1rem 0"><h3>דוח שנתי / Annual financial report, ' + year + '</h3>' +
-    '<p>Total income (payments in ' + year + '): $' + r.totalIncome + '</p>' +
-    '<p>Total charges (in ' + year + '): $' + r.totalCharges + '</p>' +
-    '<p>יתרות פתוחות / Open balances (all time): $' + r.openBalances + '</p>' +
-    '<p>Payments by method: ' + JSON.stringify(r.paymentsByMethod) + '</p>' +
-    '<p>Unpaid commitments: $' + r.unpaidCommitments + '</p>' +
+    '<div class="gold-frame" style="margin:1rem 0"><h3>דוח שנתי / Annual financial report, ' + esc(year) + '</h3>' +
+    '<p>Total income (payments in ' + esc(year) + '): ' + amt$(r.totalIncome) + '</p>' +
+    '<p>Total charges (in ' + esc(year) + '): ' + amt$(r.totalCharges) + '</p>' +
+    '<p>יתרות פתוחות / Open balances (all time): ' + amt$(r.openBalances) + '</p>' +
+    '<p>Payments by method: ' + methods + '</p>' +
+    '<p>Unpaid commitments: ' + amt$(r.unpaidCommitments) + '</p>' +
     '<p><small>This report is separate from a balance statement and separate from a tax letter. Unpaid pledges are not counted as income.</small></p></div>';
-  logActivity("Gabbai", "Generated annual financial report for " + year, "finance");
+  logActivity(who(), "Generated annual financial report for " + year, "finance");
 }
 function taxLetters(){
-  var year = document.getElementById("taxYear").value || "2026";
-  document.getElementById("taxArea").innerHTML = cons.map(function(c){
-    var pays = c.ledger.filter(function(e){ return e.type === "payment" && e.date.indexOf(year) === 0; });
-    var total = pays.reduce(function(s, e){ return s + e.amount; }, 0);
-    return '<div class="gold-frame" style="padding:1rem;margin:1rem 0"><h3>מכתב תרומה 501c3, מוכן להדפסה / 501c3 donation letter, print-ready (' + year + '): ' + c.name + '</h3>' +
-    '<p>Payments recorded in ' + year + ': $' + total + ' (' + pays.length + ' payment(s)).</p>' +
-    '<p>Dear ' + c.name + ', thank you for your support of Or Hachaim Congregation in ' + year + '. Before issuing a real letter, the gabbai must confirm which payments count as tax-deductible donations, because not every payment (for example, a membership fee) is necessarily a donation.</p>' +
-    '<p><small>Print-ready letter, not a PDF file: no PDF library is included yet, so no PDF is claimed. Use window.print to print this letter.</small></p></div>';
+  var year = String(document.getElementById("taxYear").value || today().slice(0, 4)).trim();
+  var html = cons.map(function(c){
+    var pays = c.ledger.filter(function(e){ return e.type === "payment" && String(e.date).indexOf(year) === 0; });
+    var total = pays.reduce(function(s, e){ return s + OH_UI.cents(e.amount); }, 0) / 100;
+    return '<div class="gold-frame tax-letter" style="margin:1rem 0"><h3>מכתב תרומה 501c3, מוכן להדפסה / 501c3 donation letter, print-ready (' + esc(year) + '): ' + esc(c.name) + '</h3>' +
+    '<p>Payments recorded in ' + esc(year) + ': ' + amt$(total) + ' (' + pays.length + ' payment(s)).</p>' +
+    '<p>Dear ' + esc(c.name) + ', thank you for your support of Or Hachaim Congregation in ' + esc(year) + '. Before issuing a real letter, the gabbai must confirm which payments count as tax-deductible donations, because not every payment (for example, a membership fee) is necessarily a donation.</p></div>';
   }).join("");
-  logActivity("Gabbai", "Generated annual tax letters for " + cons.length + " congregant(s) for " + year + " (print-ready)", "tax");
+  document.getElementById("taxArea").innerHTML = html + (html ? '<button class="btn btn-gold" style="width:auto" onclick="printTaxLetters()">הדפס את כל המכתבים / Print all letters</button>' : "");
+  logActivity(who(), "Generated annual tax letters for " + cons.length + " congregant(s) for " + year + " (print-ready)", "tax");
+}
+/* The print rule shows only #printArea. Letters are copied there (one
+   per page) before printing; before this, printing showed the open
+   congregant card instead of the letters. */
+function printTaxLetters(){
+  var letters = document.querySelectorAll("#taxArea .tax-letter");
+  document.getElementById("printArea").innerHTML = Array.prototype.map.call(letters, function(n){ return n.outerHTML; }).join("");
+  window.print();
 }
 function backupExport(){
-  var data = { exportedAt: new Date().toISOString(), congregants: cons, pledges: pledges, recurringSchedules: recs, activityLog: activity, note: "Restore imports only missing entries and never deletes or overwrites existing entries. Automatic daily backup with a copy outside Firebase and a tested full restore is the standard." };
-  var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"})); a.download = "or-hachaim-backup-test.json"; a.click();
-  document.getElementById("backupMsg").textContent = "Full backup exported.";
-  logActivity("Gabbai", "Exported full finance backup", "backup");
+  var data = { exportedAt: new Date().toISOString(), exportedBy: who(), congregants: cons, pledges: pledges, recurringSchedules: recs, activityLog: activity, note: "Restore imports only missing entries and never deletes or overwrites existing entries. Automatic daily backup with a copy outside Firebase and a tested full restore is the standard." };
+  var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"})); a.download = "or-hachaim-finance-backup-" + today() + ".json"; a.click();
+  document.getElementById("backupMsg").textContent = "Full backup exported (this view's data).";
+  logActivity(who(), "Exported full finance backup", "backup");
 }
 renderList(); renderActivity(); renderNederCong(); renderRec(); renderPledges();
 var _lastUserEmail = null;
