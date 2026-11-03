@@ -3,69 +3,243 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>אור החיים / Or Hachaim Congregation</title>
+<title>בית הכנסת אור החיים | Or Hachaim Congregation, Staten Island</title>
+<meta name="description" content="בית הכנסת אור החיים, 321 Harold St, Staten Island, NY 10314. זמני היום, מפה, ניווט ויצירת קשר. Or Hachaim Congregation, Staten Island: daily zmanim, directions and contact.">
+<meta name="theme-color" content="#0e2c4c">
+<meta property="og:type" content="website">
+<meta property="og:title" content="בית הכנסת אור החיים | Or Hachaim Congregation">
+<meta property="og:description" content="321 Harold St, Staten Island, NY 10314">
+<meta property="og:locale" content="he_IL">
+<meta property="og:locale:alternate" content="en_US">
+<link rel="preload" href="src/assets/fonts/assistant-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="src/assets/fonts/frank-ruhl-libre-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="src/theme.css">
-<script src="src/firebase/firebase-config.js"></script>
-<script src="src/firebase/firebase-app.js"></script>
+<script src="src/firebase/firebase-config.js" defer></script>
+<script src="src/firebase/firebase-app.js" defer></script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Synagogue","name":"Or Hachaim Congregation","alternateName":"בית הכנסת אור החיים","address":{"@type":"PostalAddress","streetAddress":"321 Harold St","addressLocality":"Staten Island","addressRegion":"NY","postalCode":"10314","addressCountry":"US"},"geo":{"@type":"GeoCoordinates","latitude":40.60155,"longitude":-74.13206}}
+</script>
 <style>
-.landing-hero { text-align: center; }
-.landing-hero .logo { width: 220px; max-width: 70vw; height: auto; }
-.landing-hero h1 { font-size: 38px; margin: 12px 0 6px; }
-.address { font-size: 20px; font-weight: 700; }
-.map-frame { height: 450px; border-radius: 24px; overflow: hidden; border: 1px solid #e5dcc9; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
-.map-frame iframe { width: 100%; height: 100%; border: 0; }
-.map-caption { text-align: center; margin-top: 14px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-.map-caption a { display: inline-block; padding: 14px 28px; border-radius: 999px; background: var(--navy); color: #fff; text-decoration: none; font-weight: 700; }
-.map-caption a.waze { background: #fff; color: var(--navy); border: 2px solid var(--gold); }
-.contact-row { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--stone-dark); }
+/* Home page only. Shared tokens and components live in src/theme.css. */
+html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip-link { position: absolute; inset-inline-start: 12px; top: -60px; z-index: 100; background: var(--navy); color: #fff; padding: 10px 16px; border-radius: 4px; }
+.skip-link:focus { top: 12px; }
+
+/* Header: letterhead bar, sticky, quiet */
+.site-header { position: sticky; top: 0; z-index: 40; background: rgba(8, 27, 48, 0.97); color: #f4ead6; border-bottom: 1px solid var(--gold); box-shadow: 0 3px 0 var(--navy-deep), 0 4px 0 var(--gold-hair), 0 16px 30px -20px rgba(8, 27, 48, 0.8); }
+.site-header__inner { max-width: 1180px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.brand { display: flex; flex-direction: column; text-decoration: none; line-height: 1.05; }
+.brand-he { font-family: var(--font-display-he); font-size: 26px; font-weight: 600; color: #fbf3e2; }
+.brand-en { font-family: var(--font-display); font-size: 12px; letter-spacing: 0.34em; text-transform: uppercase; color: var(--gold-light); margin-top: 4px; }
+.site-nav { display: flex; gap: 26px; align-items: center; }
+.site-nav a { color: rgba(244, 234, 214, 0.86); text-decoration: none; font-size: 16px; font-weight: 600; letter-spacing: 0.02em; padding: 6px 0; border-bottom: 1px solid transparent; transition: color 0.2s var(--ease), border-color 0.2s var(--ease); white-space: nowrap; }
+.site-nav a:hover { color: var(--gold-light); border-bottom-color: var(--gold); }
+.site-nav a.nav-signin { border: 1px solid var(--gold-hair); border-radius: 3px; padding: 6px 14px; color: var(--gold-light); }
+.site-nav a.nav-signin:hover { border-color: var(--gold-light); }
+
+/* Hero: navy with a faint Sephardic star lattice, cream plaque, logo untouched */
+.hero { position: relative; margin: 0 calc(50% - 50vw); padding: 64px 20px 72px; background-color: var(--navy-deep);
+  background-image: radial-gradient(70% 90% at 50% 40%, rgba(42, 74, 110, 0.55), transparent 70%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23dab368' stroke-opacity='0.16' stroke-width='1'%3E%3Crect x='22' y='22' width='28' height='28'/%3E%3Crect x='22' y='22' width='28' height='28' transform='rotate(45 36 36)'/%3E%3Cpath d='M0 36h8M64 36h8M36 0v8M36 64v8'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: auto, 72px 72px; border-bottom: 1px solid var(--gold); box-shadow: 0 3px 0 var(--marble), 0 4px 0 var(--gold-hair); }
+.plaque { position: relative; max-width: 780px; margin: 0 auto; background: linear-gradient(180deg, #fffdf8 0%, #f7f0e1 100%); border: 1px solid var(--gold); border-radius: 3px; padding: 54px 48px 40px; text-align: center;
+  box-shadow: inset 0 0 0 8px #fffaf0, inset 0 0 0 9px rgba(180, 142, 86, 0.6), 0 40px 80px -40px rgba(0, 0, 0, 0.75), 0 10px 30px -14px rgba(0, 0, 0, 0.45); }
+.plaque .corner { position: absolute; width: 22px; height: 22px; border: 1px solid var(--gold); }
+.plaque .corner::after { content: ""; position: absolute; width: 6px; height: 6px; background: var(--gold); transform: rotate(45deg); top: 7px; left: 7px; }
+.plaque .tl { top: 16px; left: 16px; border-width: 1px 0 0 1px; }
+.plaque .tr { top: 16px; right: 16px; border-width: 1px 1px 0 0; }
+.plaque .bl { bottom: 16px; left: 16px; border-width: 0 0 1px 1px; }
+.plaque .br { bottom: 16px; right: 16px; border-width: 0 1px 1px 0; }
+.plaque .tl::after { top: -4px; left: -4px; } .plaque .tr::after { top: -4px; left: auto; right: -4px; }
+.plaque .bl::after { top: auto; bottom: -4px; left: -4px; } .plaque .br::after { top: auto; bottom: -4px; left: auto; right: -4px; }
+.landing-hero .logo { width: 520px; max-width: 100%; height: auto; display: block; margin: 0 auto; }
+.plaque .eyebrow { margin-top: 6px; }
+.address { font-size: 21px; font-weight: 600; color: var(--navy); margin: 6px 0 0; letter-spacing: 0.01em; }
+.hero-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
+.hero-actions .btn { width: auto; min-width: 220px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+.hero-note { color: rgba(244, 234, 214, 0.75); text-align: center; margin: 22px 0 0; font-family: var(--font-display); letter-spacing: 0.3em; text-transform: uppercase; font-size: 13px; }
+
+/* Sections */
+.landing-section { margin-top: 44px; }
+.section-head { text-align: center; margin-bottom: 26px; }
+.section-head h2 { display: inline-block; font-size: 34px; margin: 4px 0 0; padding: 0 0 2px; background: none; }
+.section-head .eyebrow { display: block; }
+.section-head .divider { margin-top: 10px; }
+
+/* Today's zmanim */
+.zmanim-dates { text-align: center; color: var(--muted); margin: -10px 0 22px; font-size: 17px; }
+.zmanim-dates strong { color: var(--navy); font-family: var(--font-display-he); font-weight: 600; font-size: 20px; }
+.zmanim-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--stone-dark); border-radius: 4px; overflow: hidden; background: var(--paper); }
+.zman { padding: 20px 18px; text-align: center; border-inline-start: 1px solid rgba(217, 203, 176, 0.8); border-bottom: 1px solid rgba(217, 203, 176, 0.8); }
+.zman:nth-child(3n+1) { border-inline-start: 0; }
+.zman:nth-last-child(-n+3) { border-bottom: 0; }
+.zman .z-he { font-family: var(--font-display-he); font-size: 20px; font-weight: 500; color: var(--navy); }
+.zman .z-en { font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold-text); margin-top: 2px; }
+.zman .z-time { font-size: 34px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; margin-top: 6px; letter-spacing: 0.01em; }
+.zman.is-next { background: linear-gradient(180deg, rgba(218, 179, 104, 0.16), rgba(218, 179, 104, 0.04)); }
+.zman.is-next .z-time { color: var(--gold-text); }
+.shabbat-band { margin-top: 18px; display: grid; grid-template-columns: auto 1fr 1fr 1fr; align-items: center; gap: 0; background: var(--navy); color: #f4ead6; border: 1px solid var(--gold); border-radius: 4px; box-shadow: inset 0 0 0 4px var(--navy), inset 0 0 0 5px rgba(218, 179, 104, 0.45); overflow: hidden; }
+.shabbat-band .sb-title { padding: 18px 26px; font-family: var(--font-display-he); font-size: 24px; color: var(--gold-light); border-inline-end: 1px solid rgba(218, 179, 104, 0.35); }
+.shabbat-band .sb-title small { display: block; font-family: var(--font-display); font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(244, 234, 214, 0.7); }
+.shabbat-band .sb-item { padding: 14px 18px; text-align: center; }
+.shabbat-band .sb-item + .sb-item { border-inline-start: 1px solid rgba(218, 179, 104, 0.25); }
+.shabbat-band .sb-name { font-size: 15px; color: rgba(244, 234, 214, 0.8); }
+.shabbat-band .sb-time { font-size: 30px; font-weight: 700; color: #fbf3e2; font-variant-numeric: tabular-nums; }
+
+/* About */
+.about-body { max-width: 760px; margin: 0 auto; text-align: center; font-size: 19px; }
+
+/* Visit: map and contact side by side */
+.visit-grid { display: grid; grid-template-columns: 1.65fr 1fr; gap: 28px; align-items: stretch; }
+.map-frame { height: 100%; min-height: 420px; border-radius: 3px; overflow: hidden; border: 1px solid var(--gold); box-shadow: inset 0 0 0 4px var(--paper), 0 18px 40px -26px rgba(8, 27, 48, 0.6); background: var(--stone); padding: 5px; }
+.map-frame iframe { width: 100%; height: 100%; min-height: 408px; border: 0; display: block; filter: grayscale(0.25) sepia(0.12) contrast(1.02); }
+.visit-card h3 { margin: 0 0 6px; font-size: 26px; }
+.visit-card .addr-lines { font-size: 20px; font-weight: 600; color: var(--navy); margin: 0 0 18px; line-height: 1.45; }
+.map-caption { margin: 0 0 8px; display: grid; gap: 10px; }
+.map-caption a { display: flex; align-items: center; justify-content: center; min-height: 54px; padding: 12px 18px; border-radius: 4px; background: var(--navy); color: #f7efdd; text-decoration: none; font-weight: 600; border: 1px solid var(--gold); box-shadow: inset 0 0 0 2px var(--navy), inset 0 0 0 3px rgba(218, 179, 104, 0.45); transition: background-color 0.2s var(--ease); }
+.map-caption a:hover { background: var(--navy-soft); color: #fff; }
+.map-caption a.waze { background: var(--paper); color: var(--navy); box-shadow: none; }
+.map-caption a.waze:hover { background: #fff; border-color: var(--gold-dark); }
+.contact-list { margin-top: 18px; border-top: 1px solid var(--gold-hair); }
+.contact-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid rgba(217, 203, 176, 0.8); }
 .contact-row:last-child { border-bottom: none; }
-.signin-box { text-align: center; }
+.contact-row > span:first-child { color: var(--muted); font-size: 16px; }
+
+/* Sign-in: discreet, at the end */
+.page > .signin-box { text-align: center; max-width: 640px; margin: 52px auto 0; }
+.signin-box h2 { display: inline-block; background-image: linear-gradient(90deg, transparent, var(--gold), transparent); background-position: center bottom; padding: 0 28px 10px; }
 .signin-box .gsi-btn { margin: 16px auto 0; }
-.signed-in-note { display: none; margin-top: 16px; font-weight: 700; }
-.landing-footer { margin-top: 36px; background: var(--navy-deep); color: #fff; border-top: 3px solid var(--gold); padding: 20px; text-align: center; }
-.landing-footer .gold-line { color: var(--gold-light); }
-@media (max-width: 640px) {
-  .landing-hero h1 { font-size: 30px; }
-  .contact-row { flex-direction: column; gap: 4px; }
+.signed-in-note { display: none; margin-top: 16px; font-weight: 700; color: var(--navy); }
+#roleMenu h3 { font-size: 20px; margin: 0 0 8px; }
+#roleMenu a { font-weight: 600; }
+
+/* Footer */
+.landing-footer { margin-top: 64px; background: var(--navy-deep); color: rgba(244, 234, 214, 0.85); border-top: 1px solid var(--gold); box-shadow: 0 -3px 0 var(--marble), 0 -4px 0 var(--gold-hair); padding: 40px 20px 26px; text-align: center; }
+.landing-footer .f-he { display: block; font-family: var(--font-display-he); font-size: 30px; color: #fbf3e2; }
+.landing-footer .f-en { display: block; font-family: var(--font-display); font-size: 13px; letter-spacing: 0.34em; text-transform: uppercase; color: var(--gold-light); margin-top: 4px; }
+.landing-footer .divider { margin: 18px auto; max-width: 220px; }
+.landing-footer .f-addr { font-size: 16px; }
+.landing-footer .f-small { margin-top: 18px; font-size: 13px; color: rgba(244, 234, 214, 0.5); letter-spacing: 0.04em; }
+.gold-line { color: var(--gold-light); }
+
+/* Gentle entrance, once */
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.plaque { animation: rise 0.9s var(--ease) both; }
+
+@media (max-width: 900px) {
+  .visit-grid { grid-template-columns: 1fr; }
+  .map-frame { min-height: 340px; }
+  .map-frame iframe { min-height: 328px; }
+  .site-nav { gap: 18px; }
+}
+@media (max-width: 760px) {
+  .site-header__inner { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 14px 8px; }
+  .brand { align-items: center; }
+  .site-nav { overflow-x: auto; justify-content: center; gap: 18px; padding-bottom: 2px; scrollbar-width: none; }
+  .site-nav::-webkit-scrollbar { display: none; }
+  .site-nav a { font-size: 15px; }
+  .site-nav a.nav-signin { padding: 4px 10px; }
+  .hero { padding: 34px 14px 42px; }
+  .plaque { padding: 40px 22px 28px; }
+  .plaque .corner { width: 16px; height: 16px; }
+  .plaque .tl, .plaque .tr { top: 10px; } .plaque .bl, .plaque .br { bottom: 10px; }
+  .plaque .tl, .plaque .bl { left: 10px; } .plaque .tr, .plaque .br { right: 10px; }
+  .address { font-size: 18px; }
+  .hero-actions .btn { min-width: 0; width: 100%; }
+  .section-head h2 { font-size: 28px; }
+  .zmanim-grid { grid-template-columns: repeat(2, 1fr); }
+  .zman:nth-child(3n+1) { border-inline-start: 1px solid rgba(217, 203, 176, 0.8); }
+  .zman:nth-child(2n+1) { border-inline-start: 0; }
+  .zman:nth-last-child(-n+3) { border-bottom: 1px solid rgba(217, 203, 176, 0.8); }
+  .zman:nth-last-child(-n+2) { border-bottom: 0; }
+  .zman .z-time { font-size: 28px; }
+  .shabbat-band { grid-template-columns: 1fr 1fr 1fr; }
+  .shabbat-band .sb-title { grid-column: 1 / -1; text-align: center; border-inline-end: 0; border-bottom: 1px solid rgba(218, 179, 104, 0.35); padding: 12px; }
+  .shabbat-band .sb-time { font-size: 24px; }
+  .shabbat-band .sb-name { font-size: 13px; }
+  .contact-row { flex-direction: column; align-items: flex-start; gap: 4px; }
 }
 </style>
 </head>
 <body>
-<header class="topbar">
-<strong>אור החיים / Or Hachaim Congregation</strong>
-</header>
-<main class="page">
-<section class="gold-frame landing-hero">
-<img class="logo" src="src/assets/logo-4k-transparent.png" alt="Or Hachaim logo, unchanged">
-<h1>אור החיים / Or Hachaim Congregation</h1>
-<p class="ornament">✦</p>
-<p class="address" dir="ltr">321 Harold St, Staten Island, NY 10314</p>
-</section>
-
-<section class="gold-frame landing-section">
-<h2>מפה / Map</h2>
-<p class="hint" dir="ltr">321 Harold St, Staten Island, NY 10314</p>
-<div class="map-frame">
-<iframe src="https://www.google.com/maps?q=321%20Harold%20St%2C%20Staten%20Island%2C%20NY%2010314&amp;output=embed" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Or Hachaim Congregation map, 321 Harold St, Staten Island, NY 10314"></iframe>
+<a class="skip-link" href="#main">דלג לתוכן / Skip to content</a>
+<header class="site-header">
+<div class="site-header__inner">
+<a class="brand" href="#top" aria-label="אור החיים, לראש העמוד"><span class="brand-he">אור החיים</span><span class="brand-en">Or Hachaim Congregation</span></a>
+<nav class="site-nav" aria-label="ניווט ראשי / Main navigation">
+<a href="#zmanim">זמני היום</a>
+<a href="#about">על בית הכנסת</a>
+<a href="#visit">ביקור ומפה</a>
+<a href="#contact">קשר</a>
+<a href="#signin" class="nav-signin">כניסה</a>
+</nav>
 </div>
-<p class="map-caption"><a href="https://www.google.com/maps/dir/?api=1&amp;destination=321+Harold+St%2C+Staten+Island%2C+NY+10314">נווט עם גוגל מפות / Navigate with Google Maps</a><a class="waze" href="https://www.waze.com/ul?ll=40.60155%2C-74.13206&amp;navigate=yes">נווט עם Waze / Navigate with Waze</a></p>
+</header>
+
+<section class="hero landing-hero" id="top">
+<div class="plaque">
+<span class="corner tl" aria-hidden="true"></span><span class="corner tr" aria-hidden="true"></span><span class="corner bl" aria-hidden="true"></span><span class="corner br" aria-hidden="true"></span>
+<h1 class="sr-only">אור החיים / Or Hachaim Congregation</h1>
+<img class="logo" src="src/assets/logo-4k-transparent.png" alt="אור החיים / Or Hachaim Congregation" width="3840" height="1551" fetchpriority="high">
+<div class="divider" aria-hidden="true"><span></span></div>
+<p class="address" dir="ltr">321 Harold St, Staten Island, NY 10314</p>
+<div class="hero-actions">
+<a class="btn" href="https://www.google.com/maps/dir/?api=1&amp;destination=321+Harold+St%2C+Staten+Island%2C+NY+10314">ניווט לבית הכנסת</a>
+<a class="btn btn-gold" href="#zmanim">זמני היום</a>
+</div>
+</div>
+<p class="hero-note">Staten Island · New York</p>
 </section>
 
-<section class="gold-frame landing-section">
-<h2>על בית הכנסת / About the Congregation</h2>
+<main class="page" id="main">
+
+<section class="landing-section" id="zmanim" hidden>
+<div class="section-head">
+<span class="eyebrow">Today's Zmanim</span>
+<h2>זמני היום</h2>
+<div class="divider" aria-hidden="true"><span></span></div>
+</div>
+<p class="zmanim-dates" id="zmanimDates"></p>
+<div class="zmanim-grid" id="zmanimGrid"></div>
+<div class="shabbat-band" id="shabbatBand" hidden></div>
+</section>
+
+<section class="gold-frame landing-section" id="about">
+<div class="section-head">
+<span class="eyebrow">About the Congregation</span>
+<h2>על בית הכנסת</h2>
+<div class="divider" aria-hidden="true"><span></span></div>
+</div>
+<div class="about-body">
 <p><span class="placeholder">PLACEHOLDER / פליסהולדר</span></p>
 <p>PLACEHOLDER / פליסהולדר: a description of the congregation is to be entered here.</p>
+</div>
 </section>
 
-<section class="gold-frame landing-section">
-<h2>קשר / Contact</h2>
+<section class="landing-section" id="visit">
+<div class="section-head">
+<span class="eyebrow">Visit &amp; Contact</span>
+<h2>ביקור ויצירת קשר</h2>
+<div class="divider" aria-hidden="true"><span></span></div>
+</div>
+<div class="visit-grid">
+<div class="map-frame">
+<iframe src="https://www.google.com/maps?q=321%20Harold%20St%2C%20Staten%20Island%2C%20NY%2010314&amp;output=embed" width="100%" height="100%" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="מפה: אור החיים, 321 Harold St, Staten Island, NY 10314"></iframe>
+</div>
+<div class="gold-frame visit-card" id="contact">
+<h3>הכתובת שלנו</h3>
+<p class="addr-lines" dir="ltr">321 Harold St<br>Staten Island, NY 10314</p>
+<p class="map-caption"><a href="https://www.google.com/maps/dir/?api=1&amp;destination=321+Harold+St%2C+Staten+Island%2C+NY+10314">נווט עם גוגל מפות / Google Maps</a><a class="waze" href="https://www.waze.com/ul?ll=40.60155%2C-74.13206&amp;navigate=yes">נווט עם Waze</a></p>
+<div class="contact-list">
 <div class="contact-row"><span>טלפון / Phone</span><span class="placeholder">PLACEHOLDER / פליסהולדר</span></div>
 <div class="contact-row"><span>דוא״ל / Email</span><span class="placeholder">PLACEHOLDER / פליסהולדר</span></div>
 <div class="contact-row"><span>WhatsApp Business</span><span class="placeholder">PLACEHOLDER / פליסהולדר</span></div>
-<p class="hint">כתובת / Address: <span dir="ltr">321 Harold St, Staten Island, NY 10314</span></p>
+</div>
+</div>
+</div>
 </section>
 
-<section class="gold-frame landing-section signin-box">
+<section class="gold-frame landing-section signin-box" id="signin">
 <h2>כניסה / Sign-in</h2>
 <p>כניסה לחברים ולגבאים / Sign-in for members and gabbaim</p>
 <button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>Sign in with Google / התחברות עם Google</span></button>
@@ -75,10 +249,84 @@
 <p class="hint" id="unauthMsg" style="display:none"></p>
 </section>
 </main>
+
 <footer class="landing-footer">
-<span class="gold-line">✦</span>
-<span>אור החיים / Or Hachaim Congregation, <span dir="ltr">321 Harold St, Staten Island, NY 10314</span></span>
+<span class="f-he">אור החיים</span>
+<span class="f-en">Or Hachaim Congregation</span>
+<div class="divider" aria-hidden="true"><span></span></div>
+<p class="f-addr"><span dir="ltr">321 Harold St, Staten Island, NY 10314</span></p>
+<p class="f-small">© <span id="footerYear">2026</span> Or Hachaim Congregation</p>
 </footer>
+<script>
+/* Today's zmanim on the home page, from the same daily file the TV
+   screen uses (src/zmanim/roy-daily-5787.json). Read only, no login.
+   Set PUBLIC_ZMANIM to false to hide this section until the Torah
+   approval of the public display is complete. */
+var PUBLIC_ZMANIM = false;
+(function () {
+  var y = document.getElementById("footerYear");
+  if (y) y.textContent = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric" }).format(new Date());
+  if (!PUBLIC_ZMANIM || !window.fetch) return;
+  var TZ = "America/New_York";
+  function nyKey(offsetDays) {
+    var p = {}; new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; });
+    var d = new Date(Date.UTC(+p.year, +p.month - 1, +p.day + offsetDays));
+    return d.toISOString().slice(0, 10);
+  }
+  function nyWeekday() { return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short" }).format(new Date())); }
+  function nowMins() { var p = {}; new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; }); return (+p.hour % 24) * 60 + (+p.minute); }
+  function t12(t) { if (!t) return ""; var a = String(t).split(":"), h = +a[0], ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; return h + ":" + a[1] + " " + ap; }
+  function mins(t) { var a = String(t).split(":"); return +a[0] * 60 + (+a[1]); }
+/* Hebrew date with Hebrew letters (כ״ג בחשוון תשפ״ז), the way a
+   synagogue writes it. Intl gives the Hebrew calendar but Arabic digits. */
+  function hebrewNumeral(n) {
+  var ones = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"], tens = ["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"];
+  var hund = ["", "ק", "ר", "ש", "ת", "תק", "תר", "תש", "תת", "תתק"];
+  var s = hund[Math.floor(n / 100)]; n = n % 100;
+  if (n === 15) s += "טו"; else if (n === 16) s += "טז"; else s += tens[Math.floor(n / 10)] + ones[n % 10];
+  return s.length > 1 ? s.slice(0, -1) + "\u05F4" + s.slice(-1) : s + "\u05F3";
+}
+  function hebrewDateText(date, withWeekday) {
+  var opts = { timeZone: "America/New_York", day: "numeric", month: "long", year: "numeric" };
+  if (withWeekday) opts.weekday = "long";
+  return new Intl.DateTimeFormat("he-IL-u-ca-hebrew", opts).formatToParts(date).map(function (p) {
+    if (p.type === "day") return hebrewNumeral(parseInt(p.value, 10));
+    if (p.type === "year") return hebrewNumeral(parseInt(p.value, 10) % 1000);
+    return p.value;
+  }).join("");
+}
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+  fetch("src/zmanim/roy-daily-5787.json").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+    if (!j || !j.days) return;
+    var day = j.days[nyKey(0)]; if (!day) return;
+    var items = [
+      ["netz", "נץ החמה", "Netz"], ["shemaGra", "סוף זמן ק״ש גר״א", "Shema, Gra"], ["chatzot", "חצות היום", "Chatzot"],
+      ["plag", "פלג המנחה", "Plag HaMincha"], ["shkiah", "שקיעה", "Shkiah"], ["tzeit", "צאת הכוכבים", "Tzeit HaKochavim"]
+    ];
+    var now = nowMins(), nextDone = false;
+    document.getElementById("zmanimGrid").innerHTML = items.map(function (it) {
+      var t = day[it[0]]; var isNext = !nextDone && t && mins(t) >= now; if (isNext) nextDone = true;
+      return '<div class="zman' + (isNext ? " is-next" : "") + '"><div class="z-he">' + esc(it[1]) + '</div><div class="z-en">' + esc(it[2]) + '</div><div class="z-time" dir="ltr">' + esc(t12(t)) + "</div></div>";
+    }).join("");
+    var heb = ""; try { heb = hebrewDateText(new Date()); } catch (e) {}
+    var greg = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(new Date());
+    document.getElementById("zmanimDates").innerHTML = (heb ? '<strong dir="rtl">' + esc(heb) + "</strong> · " : "") + '<span dir="ltr">' + esc(greg) + "</span>";
+    /* Coming Shabbat: Friday candle lighting, Shabbat ends and Rabbeinu Tam (Saturday). */
+    var wd = nyWeekday(), toFri = wd === 6 ? -1 : (5 - wd);
+    if (wd === 6 && day.shabbatEndsMyZmanim && now > mins(day.shabbatEndsMyZmanim)) toFri = 6; /* Motzei Shabbat: show the next Shabbat */
+    var fri = j.days[nyKey(toFri)], sat = j.days[nyKey(toFri + 1)];
+    if (fri && sat && fri.candle18 && sat.shabbatEndsMyZmanim) {
+      var band = document.getElementById("shabbatBand");
+      band.innerHTML = '<div class="sb-title">שבת קודש<small>Shabbat</small></div>' +
+        '<div class="sb-item"><div class="sb-name">הדלקת נרות · Candles</div><div class="sb-time" dir="ltr">' + esc(t12(fri.candle18)) + "</div></div>" +
+        '<div class="sb-item"><div class="sb-name">צאת השבת · Shabbat ends</div><div class="sb-time" dir="ltr">' + esc(t12(sat.shabbatEndsMyZmanim)) + "</div></div>" +
+        (sat.rabbeinuTamMyZmanim ? '<div class="sb-item"><div class="sb-name">רבנו תם · Rabbeinu Tam</div><div class="sb-time" dir="ltr">' + esc(t12(sat.rabbeinuTamMyZmanim)) + "</div></div>" : "");
+      band.hidden = false;
+    }
+    document.getElementById("zmanim").hidden = false;
+  }).catch(function () {});
+})();
+</script>
 <script>
 function signInFromGate() {
   var fb = window.OH_FIREBASE;
