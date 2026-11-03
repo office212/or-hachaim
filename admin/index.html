@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ממשק גבאי / Gabbai Admin</title>
 <link rel="stylesheet" href="../src/theme.css">
 <script src="../src/firebase/firebase-config.js"></script>
-<script src="../src/firebase/firebase-app.js"></script></head>
+<script src="../src/firebase/firebase-app.js"></script>
+<script src="../src/ui/oh-ui.js"></script></head>
 <body class="gated">
 <div class="topbar"><strong>אור החיים / Or Hachaim</strong><span>ממשק עריכה לגבאי / Gabbai editing interface</span><a href="../screen/index.html">מסך / Screen</a><a href="../finance/index.html">פיננסים / Finance</a></div>
 <div class="page">
@@ -33,8 +34,9 @@
 </div>
 <h2>זמני תפילות / Prayer Times</h2><p id="ptSource">כניסה נדרשת / Sign-in required</p>
 <div class="gold-frame" style="padding:1rem"><div id="ptList"></div>
-<label>זמן תפילה חדש / New prayer time</label><input id="ptName" placeholder="שם, למשל שחרית / Name, e.g. Shacharit">
-<label>שעה / Time</label><input id="ptTime" placeholder="למשל 7:00 AM / e.g. 7:00 AM">
+<label>שם התפילה בעברית / Hebrew name</label><input id="ptNameHe" placeholder="למשל שחרית">
+<label>שם באנגלית / English name</label><input id="ptName" placeholder="e.g. Shacharit" dir="ltr">
+<label>שעה / Time</label><input id="ptTime" placeholder="7:00 AM" dir="ltr" inputmode="text">
 <button class="btn" onclick="addPT()">הוסף זמן תפילה / Add prayer time</button><p id="ptMsg"></p></div>
 <h2>הודעות / Announcements</h2> <span class="placeholder">PLACEHOLDER, local only</span>
 <div class="gold-frame" style="padding:1rem"><label>טקסט ההודעה / Announcement text</label><textarea id="anText" rows="3"></textarea><button class="btn" onclick="saveLocal('הודעה נשמרה מקומית בלבד, לא פורסמה. / Announcement saved locally only, not published.')">שמור / Save</button><p id="anMsg"></p></div>
@@ -52,8 +54,29 @@
 <div class="gold-frame" style="padding:1rem"><p>בטיחות שבת נאכפת על ידי המערכת, לא על ידי זיכרון הגבאי. / Shabbat safety is system-enforced, not gabbai memory. Weekday-only items, payment text, and donation QR are hidden automatically on Shabbat and Yom Tov, even if a gabbai forgot to flag them. Each page also marks its own weekday-only items. On the screen, weekday-only items are hidden from Shabbat entry to Shabbat exit. Use the Shabbat preview toggle on the screen to test this.</p></div>
 <script>
 var pts = [];
-function renderPT(){ document.getElementById("ptList").innerHTML = pts.length ? pts.map(function(p){ return "<p>" + p.nameHe + " / " + p.nameEn + ": " + p.time + "</p>"; }).join("") : "<p>אין זמני תפילה עדיין / No prayer times yet.</p>"; }
-function addPT(){ var n = document.getElementById("ptName").value, t = document.getElementById("ptTime").value; if(!n || !t){ document.getElementById("ptMsg").textContent = "Enter a name and a time."; return; } pts.push({nameEn: n, nameHe: n, time: t}); renderPT(); document.getElementById("ptMsg").textContent = "Added to this view. Saving to Firestore below, if signed in."; if(window.OH_FIREBASE && window.OH_FIREBASE.savePrayerTime){ window.OH_FIREBASE.savePrayerTime({nameEn: n, nameHe: n, time: t}).then(function(r){ if(r && r.saved){ document.getElementById("ptMsg").textContent = "Also saved to Firestore. Reload the screen page to see it."; } else { document.getElementById("ptMsg").textContent = "Local only: Firestore save failed or denied (" + (r && r.reason ? r.reason : "unknown") + ")."; } }).catch(function(e){ document.getElementById("ptMsg").textContent = "Local only: Firestore save error."; }); } }
+/* Prayer times: Hebrew and English names are separate fields (the TV
+   shows Hebrew large and English small); the time is checked and
+   normalised to "7:00 AM"; "order" is the minute of the day, so the
+   TV lists them in time order. Firestore text is escaped. */
+function ptMinutes(t){ var m = String(t).trim().match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/); if(!m) return -1; var h = +m[1] % 12, mi = +m[2]; if(+m[1] > 12 || mi > 59) return -1; if(/p/i.test(m[3])) h += 12; return h * 60 + mi; }
+function ptNormal(t){ var m = String(t).trim().match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/); return m ? (+m[1]) + ":" + m[2] + " " + m[3].toUpperCase() : ""; }
+function renderPT(){
+  var esc = OH_UI.esc;
+  var list = pts.slice().sort(function(a, b){ return (a.order || 0) - (b.order || 0); });
+  document.getElementById("ptList").innerHTML = list.length ? list.map(function(p){ return "<p>" + esc(p.nameHe) + " / " + esc(p.nameEn) + ": <span dir=\"ltr\">" + esc(p.time) + "</span></p>"; }).join("") : "<p>אין זמני תפילה עדיין / No prayer times yet.</p>";
+}
+function addPT(){
+  var he = document.getElementById("ptNameHe").value.trim(), n = document.getElementById("ptName").value.trim(), raw = document.getElementById("ptTime").value;
+  var msg = document.getElementById("ptMsg"), t = ptNormal(raw), order = ptMinutes(raw);
+  if(!(he || n) || !t || order < 0){ msg.textContent = "הזן שם ושעה בפורמט 7:00 AM / Enter a name and a time like 7:00 AM."; return; }
+  var item = { nameHe: he || n, nameEn: n || he, time: t, order: order };
+  pts.push(item); renderPT(); msg.textContent = "Added to this view. Saving to Firestore below, if signed in.";
+  if(window.OH_FIREBASE && window.OH_FIREBASE.savePrayerTime){
+    window.OH_FIREBASE.savePrayerTime(item).then(function(r){
+      msg.textContent = (r && r.saved) ? "Also saved to Firestore. Reload the screen page to see it." : "Local only: Firestore save failed or denied (" + (r && r.reason ? r.reason : "unknown") + ").";
+    }).catch(function(){ msg.textContent = "Local only: Firestore save error."; });
+  }
+}
 var _lastPTUser = null;
 function signInFromGate(){
   var fb = window.OH_FIREBASE;
@@ -92,10 +115,10 @@ async function refreshUmList(){
   if(!r || !r.ok){ if(listEl) listEl.innerHTML = "<p>טעינת רשימה נכשלה / List load failed: " + (r && r.reason ? r.reason : "unknown") + "</p>"; return; }
   if(!r.users.length){ listEl.innerHTML = "<p>אין משתמשים עדיין / No users yet.</p>"; return; }
   listEl.innerHTML = r.users.map(function(u){
-    var esc = function(s){ return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;"); };
+    var esc = OH_UI.esc, arg = OH_UI.jsArg; /* arg: safe inside onclick, also for an apostrophe in an email */
     return "<p>" + esc(u.email) + " / " + esc(u.permissions) + (u.screenViewer ? " / צופה מסך" : "") + (u.imageUpload ? " / העלאת תמונות" : "") +
-      ' <button class="btn" onclick="editUm(\'' + u.id + '\', \'' + esc(u.email) + '\', \'' + esc(u.permissions) + '\', ' + (u.screenViewer ? "true" : "false") + ', ' + (u.imageUpload ? "true" : "false") + ')">ערוך / Edit</button>' +
-      ' <button class="btn" onclick="deleteUm(\'' + u.id + '\')">מחק / Delete</button></p>';
+      ' <button class="btn secondary" style="width:auto;min-height:44px;padding:8px 14px" onclick="editUm(' + arg(u.id) + ', ' + arg(u.email) + ', ' + arg(u.permissions) + ', ' + (u.screenViewer ? "true" : "false") + ', ' + (u.imageUpload ? "true" : "false") + ')">ערוך / Edit</button>' +
+      ' <button class="btn secondary" style="width:auto;min-height:44px;padding:8px 14px" onclick="deleteUm(' + arg(u.id) + ')">מחק / Delete</button></p>';
   }).join("");
 }
 async function saveUm(){
