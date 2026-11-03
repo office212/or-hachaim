@@ -29,8 +29,8 @@ change a time. Each engine is tested separately.
 
 1. Security rules tested with test users in the emulator or
    rules tester, including: finance gabbai cannot edit his own
-   permissions, screen gabbai cannot read finance, screen viewer
-   cannot read finance, congregant cannot read or write another
+   permissions, screen gabbai cannot read finance, the public /tv/
+   page cannot read finance, congregant cannot read or write another
    congregant, congregant cannot change a balance, duplicate
    operationId is rejected.
 2. Backup: daily automatic backup exists, a copy exists outside
