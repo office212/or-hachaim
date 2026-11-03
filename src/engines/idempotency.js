@@ -11,7 +11,10 @@
 (function (global) {
   function makeOperationId(prefix) {
     var stamp = Date.now().toString(36);
-    var rand = Math.random().toString(36).slice(2, 10);
+    /* crypto.randomUUID when available (all current browsers and Node):
+       Math.random is not designed to be unique across devices. */
+    var c = global.crypto;
+    var rand = (c && typeof c.randomUUID === "function") ? c.randomUUID().replace(/-/g, "").slice(0, 16) : Math.random().toString(36).slice(2, 10);
     return (prefix || "op") + "-" + stamp + "-" + rand;
   }
   function IdempotencyStore() {
