@@ -6,7 +6,7 @@
      - the footer strip (permanent dedications, v5: endless slow ticker),
      - the donation board (v5: a centre board, weekday only, system hidden on Shabbat/YT).
    /tv/ (public, no sign-in) reads only published + public items;
-   /screen/ (signed-in viewer or gabbai) reads all published items.
+   (the protected /screen/ page was deleted on 2026-11-03.)
    Offline: the last list is kept in localStorage and shown with the
    existing "last updated" note. Preview: the admin editor embeds this
    page with ?embed=preview and posts one draft item; nothing is saved.
