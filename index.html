@@ -20,144 +20,162 @@
 {"@context":"https://schema.org","@type":"Synagogue","name":"Or Hachaim Congregation","alternateName":"בית הכנסת אור החיים","address":{"@type":"PostalAddress","streetAddress":"321 Harold St","addressLocality":"Staten Island","addressRegion":"NY","postalCode":"10314","addressCountry":"US"},"geo":{"@type":"GeoCoordinates","latitude":40.60155,"longitude":-74.13206}}
 </script>
 <style>
-/* Home page only. Shared tokens and components live in src/theme.css. */
-html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+/* Home page only. Shared tokens and components live in src/theme.css.
+   Jerusalem stone edition: a light stone wall with one arched white
+   panel holding the logo, then clean cards. Gold only as thin lines.
+   v3: the logo's navy as a quiet second colour (slim header bar,
+   headings, primary buttons, the next zman, the footer band). */
+html { scroll-behavior: smooth; scroll-padding-top: 84px; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-.skip-link { position: absolute; inset-inline-start: 12px; top: -60px; z-index: 100; background: var(--navy); color: #fff; padding: 10px 16px; border-radius: 4px; }
+.skip-link { position: absolute; inset-inline-start: 12px; top: -60px; z-index: 100; background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 8px; }
 .skip-link:focus { top: 12px; }
 
-/* Header: letterhead bar, sticky, quiet */
-.site-header { position: sticky; top: 0; z-index: 40; background: rgba(8, 27, 48, 0.97); color: #f4ead6; border-bottom: 1px solid var(--gold); box-shadow: 0 3px 0 var(--navy-deep), 0 4px 0 var(--gold-hair), 0 16px 30px -20px rgba(8, 27, 48, 0.8); }
-.site-header__inner { max-width: 1180px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+/* Header: white, translucent, a slim navy bar on top, one thin gold line below */
+.site-header { position: sticky; top: 0; z-index: 40; background: rgba(255, 255, 255, 0.9); -webkit-backdrop-filter: saturate(1.2) blur(12px); backdrop-filter: saturate(1.2) blur(12px); border-top: 4px solid var(--navy); border-bottom: 1px solid var(--line); box-shadow: inset 0 -2px 0 -1px var(--gold-hair); }
+.site-header__inner { max-width: 1180px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .brand { display: flex; flex-direction: column; text-decoration: none; line-height: 1.05; }
-.brand-he { font-family: var(--font-display-he); font-size: 26px; font-weight: 600; color: #fbf3e2; }
-.brand-en { font-family: var(--font-display); font-size: 12px; letter-spacing: 0.34em; text-transform: uppercase; color: var(--gold-light); margin-top: 4px; }
-.site-nav { display: flex; gap: 26px; align-items: center; }
-.site-nav a { color: rgba(244, 234, 214, 0.86); text-decoration: none; font-size: 16px; font-weight: 600; letter-spacing: 0.02em; padding: 6px 0; border-bottom: 1px solid transparent; transition: color 0.2s var(--ease), border-color 0.2s var(--ease); white-space: nowrap; }
-.site-nav a:hover { color: var(--gold-light); border-bottom-color: var(--gold); }
-.site-nav a.nav-signin { border: 1px solid var(--gold-hair); border-radius: 3px; padding: 6px 14px; color: var(--gold-light); }
-.site-nav a.nav-signin:hover { border-color: var(--gold-light); }
+.brand-he { font-family: var(--font-display-he); font-size: 27px; font-weight: 600; color: var(--navy); }
+.brand-en { font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--muted); margin-top: 5px; font-weight: 600; }
+.site-nav { display: flex; gap: 6px; align-items: center; }
+.site-nav a { color: var(--navy); text-decoration: none; font-size: 16px; font-weight: 600; padding: 9px 14px; border-radius: 999px; transition: background-color 0.2s var(--ease), color 0.2s var(--ease); white-space: nowrap; }
+.site-nav a:hover { background: var(--parchment); color: var(--navy); }
+.site-nav a.nav-signin { margin-inline-start: 10px; border: 1px solid var(--navy); background: var(--navy); color: var(--gold-on-navy); padding: 8px 20px; }
+.site-nav a.nav-signin:hover { background: var(--navy-hover); color: #f3e2bb; }
 
-/* Hero: navy with a faint Sephardic star lattice, cream plaque, logo untouched */
-.hero { position: relative; margin: 0 calc(50% - 50vw); padding: 64px 20px 72px; background-color: var(--navy-deep);
-  background-image: radial-gradient(70% 90% at 50% 40%, rgba(42, 74, 110, 0.55), transparent 70%), url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23dab368' stroke-opacity='0.16' stroke-width='1'%3E%3Crect x='22' y='22' width='28' height='28'/%3E%3Crect x='22' y='22' width='28' height='28' transform='rotate(45 36 36)'/%3E%3Cpath d='M0 36h8M64 36h8M36 0v8M36 64v8'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: auto, 72px 72px; border-bottom: 1px solid var(--gold); box-shadow: 0 3px 0 var(--marble), 0 4px 0 var(--gold-hair); }
-.plaque { position: relative; max-width: 780px; margin: 0 auto; background: linear-gradient(180deg, #fffdf8 0%, #f7f0e1 100%); border: 1px solid var(--gold); border-radius: 3px; padding: 54px 48px 40px; text-align: center;
-  box-shadow: inset 0 0 0 8px #fffaf0, inset 0 0 0 9px rgba(180, 142, 86, 0.6), 0 40px 80px -40px rgba(0, 0, 0, 0.75), 0 10px 30px -14px rgba(0, 0, 0, 0.45); }
-.plaque .corner { position: absolute; width: 22px; height: 22px; border: 1px solid var(--gold); }
-.plaque .corner::after { content: ""; position: absolute; width: 6px; height: 6px; background: var(--gold); transform: rotate(45deg); top: 7px; left: 7px; }
-.plaque .tl { top: 16px; left: 16px; border-width: 1px 0 0 1px; }
-.plaque .tr { top: 16px; right: 16px; border-width: 1px 1px 0 0; }
-.plaque .bl { bottom: 16px; left: 16px; border-width: 0 0 1px 1px; }
-.plaque .br { bottom: 16px; right: 16px; border-width: 0 1px 1px 0; }
-.plaque .tl::after { top: -4px; left: -4px; } .plaque .tr::after { top: -4px; left: auto; right: -4px; }
-.plaque .bl::after { top: auto; bottom: -4px; left: -4px; } .plaque .br::after { top: auto; bottom: -4px; left: auto; right: -4px; }
-.landing-hero .logo { width: 520px; max-width: 100%; height: auto; display: block; margin: 0 auto; }
-.plaque .eyebrow { margin-top: 6px; }
-.address { font-size: 21px; font-weight: 600; color: var(--navy); margin: 6px 0 0; letter-spacing: 0.01em; }
-.hero-actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin-top: 26px; }
-.hero-actions .btn { width: auto; min-width: 220px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
-.hero-note { color: rgba(244, 234, 214, 0.75); text-align: center; margin: 22px 0 0; font-family: var(--font-display); letter-spacing: 0.3em; text-transform: uppercase; font-size: 13px; }
+/* Hero: Jerusalem stone wall in warm light, one arched panel */
+.hero { position: relative; margin: 0 calc(50% - 50vw); padding: 88px 20px 80px; overflow: hidden;
+  background-color: var(--stone);
+  background-image:
+    radial-gradient(55% 70% at 50% 38%, rgba(255, 252, 245, 0.8) 0%, rgba(255, 252, 245, 0.3) 60%, transparent 80%),
+    linear-gradient(180deg, rgba(255, 252, 246, 0.42) 0%, rgba(252, 246, 234, 0.3) 60%, rgba(240, 230, 210, 0.4) 100%),
+    url("src/assets/textures/jerusalem-stone-wall.webp");
+  background-size: auto, auto, 1600px auto; background-position: center; }
+.hero::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+.plaque { position: relative; max-width: 700px; margin: 0 auto; text-align: center;
+  background: rgba(255, 255, 255, 0.94);
+  border-radius: 50% 50% var(--radius) var(--radius) / 210px 210px var(--radius) var(--radius);
+  padding: 86px 64px 46px;
+  box-shadow: inset 0 0 0 12px rgba(255, 255, 255, 0.94), inset 0 0 0 13px var(--gold-hair), 0 40px 80px -40px rgba(80, 60, 30, 0.55), 0 2px 6px rgba(80, 60, 30, 0.06); }
+.plaque .corner { display: none; }
+.landing-hero .logo { width: 460px; max-width: 100%; height: auto; display: block; margin: 0 auto; }
+.plaque .divider { margin: 20px auto 16px; }
+.address { font-size: 20px; font-weight: 600; color: var(--navy); margin: 0; letter-spacing: 0.01em; }
+.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
+.hero-actions .btn { width: auto; min-width: 210px; }
+.hero-note { position: relative; color: var(--gold-text); text-align: center; margin: 26px 0 0; letter-spacing: 0.3em; text-transform: uppercase; font-size: 12px; font-weight: 700; }
 
 /* Sections */
-.landing-section { margin-top: 44px; }
+.landing-section { margin-top: 64px; }
 .section-head { text-align: center; margin-bottom: 26px; }
-.section-head h2 { display: inline-block; font-size: 34px; margin: 4px 0 0; padding: 0 0 2px; background: none; }
+.section-head h2 { font-family: var(--font-display-he); font-size: 38px; font-weight: 500; margin: 6px 0 0; }
 .section-head .eyebrow { display: block; }
-.section-head .divider { margin-top: 10px; }
+.section-head .divider { margin-top: 14px; }
 
-/* Today's zmanim */
-.zmanim-dates { text-align: center; color: var(--muted); margin: -10px 0 22px; font-size: 17px; }
-.zmanim-dates strong { color: var(--navy); font-family: var(--font-display-he); font-weight: 600; font-size: 20px; }
-.zmanim-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid var(--stone-dark); border-radius: 4px; overflow: hidden; background: var(--paper); }
-.zman { padding: 20px 18px; text-align: center; border-inline-start: 1px solid rgba(217, 203, 176, 0.8); border-bottom: 1px solid rgba(217, 203, 176, 0.8); }
-.zman:nth-child(3n+1) { border-inline-start: 0; }
-.zman:nth-last-child(-n+3) { border-bottom: 0; }
-.zman .z-he { font-family: var(--font-display-he); font-size: 20px; font-weight: 500; color: var(--navy); }
-.zman .z-en { font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold-text); margin-top: 2px; }
-.zman .z-time { font-size: 34px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; margin-top: 6px; letter-spacing: 0.01em; }
-.zman.is-next { background: linear-gradient(180deg, rgba(218, 179, 104, 0.16), rgba(218, 179, 104, 0.04)); }
-.zman.is-next .z-time { color: var(--gold-text); }
-.shabbat-band { margin-top: 18px; display: grid; grid-template-columns: auto 1fr 1fr 1fr; align-items: center; gap: 0; background: var(--navy); color: #f4ead6; border: 1px solid var(--gold); border-radius: 4px; box-shadow: inset 0 0 0 4px var(--navy), inset 0 0 0 5px rgba(218, 179, 104, 0.45); overflow: hidden; }
-.shabbat-band .sb-title { padding: 18px 26px; font-family: var(--font-display-he); font-size: 24px; color: var(--gold-light); border-inline-end: 1px solid rgba(218, 179, 104, 0.35); }
-.shabbat-band .sb-title small { display: block; font-family: var(--font-display); font-size: 12px; letter-spacing: 0.3em; text-transform: uppercase; color: rgba(244, 234, 214, 0.7); }
-.shabbat-band .sb-item { padding: 14px 18px; text-align: center; }
-.shabbat-band .sb-item + .sb-item { border-inline-start: 1px solid rgba(218, 179, 104, 0.25); }
-.shabbat-band .sb-name { font-size: 15px; color: rgba(244, 234, 214, 0.8); }
-.shabbat-band .sb-time { font-size: 30px; font-weight: 700; color: #fbf3e2; font-variant-numeric: tabular-nums; }
+/* Today's zmanim: six clean cards, the next one in the logo's navy with gold time */
+.zmanim-dates { text-align: center; color: var(--muted); margin: -6px 0 24px; font-size: 17px; }
+.zmanim-dates strong { color: var(--navy); font-family: var(--font-display-he); font-weight: 600; font-size: 21px; }
+.zmanim-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+.zman { position: relative; padding: 22px 12px 20px; text-align: center; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); transition: transform 0.2s var(--ease); }
+.zman .z-he { font-family: var(--font-display-he); font-size: 19px; font-weight: 600; color: var(--ink); line-height: 1.25; min-height: 2.5em; display: flex; align-items: center; justify-content: center; }
+.zman .z-en { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-top: 2px; font-weight: 600; }
+.zman .z-time { font-size: 28px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; margin-top: 10px; white-space: nowrap; }
+.zman.is-next { background: linear-gradient(180deg, #123659 0%, var(--navy) 100%); border-color: var(--navy); box-shadow: inset 0 0 0 4px var(--navy), inset 0 0 0 5px rgba(230, 203, 146, 0.45), var(--shadow-lift); }
+.zman.is-next::before { content: "הבא"; position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: var(--gold-grad); color: var(--navy); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; padding: 2px 12px; border-radius: 999px; box-shadow: 0 0 0 2px var(--marble); }
+.zman.is-next .z-he { color: #fff; }
+.zman.is-next .z-en { color: rgba(230, 203, 146, 0.8); }
+.zman.is-next .z-time { color: var(--gold-on-navy); }
+/* Shabbat: one light card, three times */
+.shabbat-band { margin-top: 16px; display: grid; grid-template-columns: auto 1fr 1fr 1fr; align-items: center; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.shabbat-band .sb-title { align-self: stretch; display: flex; flex-direction: column; justify-content: center; padding: 18px 34px; font-family: var(--font-display-he); font-size: 26px; font-weight: 600; color: var(--navy); text-align: center; line-height: 1.1;
+  background: linear-gradient(180deg, rgba(255, 251, 242, 0.75), rgba(246, 236, 214, 0.75)), url("src/assets/textures/jerusalem-stone.webp"); background-size: auto, 512px; border-inline-end: 1px solid var(--line); }
+.shabbat-band .sb-title small { display: block; font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--muted); margin-top: 6px; font-family: var(--font-body); font-weight: 700; }
+.shabbat-band .sb-item { padding: 16px 18px; text-align: center; }
+.shabbat-band .sb-item + .sb-item { border-inline-start: 1px solid var(--line); }
+.shabbat-band .sb-name { font-size: 15px; color: var(--muted); }
+.shabbat-band .sb-time { font-size: 28px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
 
 /* About */
-.about-body { max-width: 760px; margin: 0 auto; text-align: center; font-size: 19px; }
+#about { padding: 44px 48px; }
+.about-body { max-width: 720px; margin: 0 auto; text-align: center; font-size: 19px; color: var(--ink-soft); }
 
 /* Visit: map and contact side by side */
-.visit-grid { display: grid; grid-template-columns: 1.65fr 1fr; gap: 28px; align-items: stretch; }
-.map-frame { height: 100%; min-height: 420px; border-radius: 3px; overflow: hidden; border: 1px solid var(--gold); box-shadow: inset 0 0 0 4px var(--paper), 0 18px 40px -26px rgba(8, 27, 48, 0.6); background: var(--stone); padding: 5px; }
-.map-frame iframe { width: 100%; height: 100%; min-height: 408px; border: 0; display: block; filter: grayscale(0.25) sepia(0.12) contrast(1.02); }
-.visit-card h3 { margin: 0 0 6px; font-size: 26px; }
+.visit-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items: stretch; }
+.map-frame { height: 100%; min-height: 420px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--stone); }
+.map-frame iframe { width: 100%; height: 100%; min-height: 420px; border: 0; display: block; filter: saturate(0.85) sepia(0.08); }
+.visit-card h3 { margin: 0 0 6px; font-size: 26px; font-family: var(--font-display-he); font-weight: 500; }
 .visit-card .addr-lines { font-size: 20px; font-weight: 600; color: var(--navy); margin: 0 0 18px; line-height: 1.45; }
 .map-caption { margin: 0 0 8px; display: grid; gap: 10px; }
-.map-caption a { display: flex; align-items: center; justify-content: center; min-height: 54px; padding: 12px 18px; border-radius: 4px; background: var(--navy); color: #f7efdd; text-decoration: none; font-weight: 600; border: 1px solid var(--gold); box-shadow: inset 0 0 0 2px var(--navy), inset 0 0 0 3px rgba(218, 179, 104, 0.45); transition: background-color 0.2s var(--ease); }
-.map-caption a:hover { background: var(--navy-soft); color: #fff; }
-.map-caption a.waze { background: var(--paper); color: var(--navy); box-shadow: none; }
-.map-caption a.waze:hover { background: #fff; border-color: var(--gold-dark); }
-.contact-list { margin-top: 18px; border-top: 1px solid var(--gold-hair); }
-.contact-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid rgba(217, 203, 176, 0.8); }
+.map-caption a { display: flex; align-items: center; justify-content: center; min-height: 52px; padding: 12px 18px; border-radius: 12px; background: var(--navy); color: var(--gold-on-navy); text-decoration: none; font-weight: 700; transition: background-color 0.2s var(--ease); }
+.map-caption a:hover { background: var(--navy-hover); color: #f3e2bb; }
+.map-caption a.waze { background: var(--paper); color: var(--navy); border: 1px solid var(--line); }
+.map-caption a.waze:hover { border-color: var(--gold); background: var(--parchment); }
+.contact-list { margin-top: 18px; border-top: 1px solid var(--line); }
+.contact-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
 .contact-row:last-child { border-bottom: none; }
 .contact-row > span:first-child { color: var(--muted); font-size: 16px; }
 
 /* Sign-in: discreet, at the end */
-.page > .signin-box { text-align: center; max-width: 640px; margin: 52px auto 0; }
-.signin-box h2 { display: inline-block; background-image: linear-gradient(90deg, transparent, var(--gold), transparent); background-position: center bottom; padding: 0 28px 10px; }
-.signin-box .gsi-btn { margin: 16px auto 0; }
+.page > .signin-box { text-align: center; max-width: 600px; margin: 64px auto 0; }
+.signin-box h2 { font-family: var(--font-display-he), var(--font-display); }
+.signin-box .gsi-btn { margin: 14px auto 0; }
 .signed-in-note { display: none; margin-top: 16px; font-weight: 700; color: var(--navy); }
-#roleMenu h3 { font-size: 20px; margin: 0 0 8px; }
-#roleMenu a { font-weight: 600; }
+#roleMenu h3 { font-size: 19px; margin: 0 0 8px; }
+#roleMenu a { font-weight: 700; }
 
-/* Footer */
-.landing-footer { margin-top: 64px; background: var(--navy-deep); color: rgba(244, 234, 214, 0.85); border-top: 1px solid var(--gold); box-shadow: 0 -3px 0 var(--marble), 0 -4px 0 var(--gold-hair); padding: 40px 20px 26px; text-align: center; }
-.landing-footer .f-he { display: block; font-family: var(--font-display-he); font-size: 30px; color: #fbf3e2; }
-.landing-footer .f-en { display: block; font-family: var(--font-display); font-size: 13px; letter-spacing: 0.34em; text-transform: uppercase; color: var(--gold-light); margin-top: 4px; }
-.landing-footer .divider { margin: 18px auto; max-width: 220px; }
-.landing-footer .f-addr { font-size: 16px; }
-.landing-footer .f-small { margin-top: 18px; font-size: 13px; color: rgba(244, 234, 214, 0.5); letter-spacing: 0.04em; }
-.gold-line { color: var(--gold-light); }
+/* Footer: one navy band, like the logo, with a gold hairline */
+.landing-footer { margin-top: 80px; color: rgba(255, 255, 255, 0.82); padding: 44px 20px 30px; text-align: center;
+  background: linear-gradient(180deg, #11335a 0%, var(--navy) 55%, var(--navy-deep) 100%);
+  border-top: 3px solid var(--gold); box-shadow: inset 0 4px 0 rgba(230, 203, 146, 0.25); }
+.landing-footer .f-he { display: block; font-family: var(--font-display-he); font-size: 30px; font-weight: 600; color: var(--gold-on-navy); }
+.landing-footer .f-en { display: block; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); margin-top: 6px; font-weight: 700; }
+.landing-footer a { color: var(--gold-on-navy); }
+.landing-footer .divider { margin: 18px auto; }
+.landing-footer .f-addr { font-size: 16px; margin: 0; }
+.landing-footer .f-small { margin-top: 14px; font-size: 13px; color: rgba(255, 255, 255, 0.55); }
+.gold-line { color: var(--gold-text); }
 
 /* Gentle entrance, once */
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-.plaque { animation: rise 0.9s var(--ease) both; }
+.plaque { animation: rise 0.8s var(--ease) both; }
 
+@media (max-width: 1100px) {
+  .zmanim-grid { grid-template-columns: repeat(3, 1fr); row-gap: 20px; }
+}
 @media (max-width: 900px) {
   .visit-grid { grid-template-columns: 1fr; }
-  .map-frame { min-height: 340px; }
-  .map-frame iframe { min-height: 328px; }
-  .site-nav { gap: 18px; }
+  .map-frame, .map-frame iframe { min-height: 320px; }
 }
+/* Phone: feels like an app. Compact bar, swipeable section chips,
+   full-width buttons, two-column zmanim cards. */
 @media (max-width: 760px) {
-  .site-header__inner { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 14px 8px; }
-  .brand { align-items: center; }
-  .site-nav { overflow-x: auto; justify-content: center; gap: 18px; padding-bottom: 2px; scrollbar-width: none; }
+  html { scroll-padding-top: 112px; }
+  .site-header__inner { flex-wrap: wrap; gap: 8px 12px; padding: 10px 16px 8px; }
+  .brand-he { font-size: 23px; }
+  .brand-en { font-size: 10px; letter-spacing: 0.22em; }
+  .site-nav { order: 3; width: calc(100% + 32px); margin: 0 -16px; padding: 2px 16px 6px; overflow-x: auto; gap: 8px; scrollbar-width: none; }
   .site-nav::-webkit-scrollbar { display: none; }
-  .site-nav a { font-size: 15px; }
-  .site-nav a.nav-signin { padding: 4px 10px; }
-  .hero { padding: 34px 14px 42px; }
-  .plaque { padding: 40px 22px 28px; }
-  .plaque .corner { width: 16px; height: 16px; }
-  .plaque .tl, .plaque .tr { top: 10px; } .plaque .bl, .plaque .br { bottom: 10px; }
-  .plaque .tl, .plaque .bl { left: 10px; } .plaque .tr, .plaque .br { right: 10px; }
-  .address { font-size: 18px; }
+  .site-nav a { font-size: 14px; padding: 7px 14px; background: var(--parchment); border: 1px solid var(--line); }
+  .site-nav a.nav-signin { margin-inline-start: 0; background: var(--navy); border-color: var(--navy); color: var(--gold-on-navy); }
+  .hero { padding: 40px 14px 44px; background-size: auto, auto, 1100px auto; }
+  .plaque { padding: 58px 22px 30px; border-radius: 50% 50% 16px 16px / 110px 110px 16px 16px; box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.94), inset 0 0 0 9px var(--gold-hair), 0 30px 60px -36px rgba(80, 60, 30, 0.55); }
+  .address { font-size: 16px; }
+  .hero-actions { flex-direction: column; gap: 10px; margin-top: 22px; }
   .hero-actions .btn { min-width: 0; width: 100%; }
-  .section-head h2 { font-size: 28px; }
-  .zmanim-grid { grid-template-columns: repeat(2, 1fr); }
-  .zman:nth-child(3n+1) { border-inline-start: 1px solid rgba(217, 203, 176, 0.8); }
-  .zman:nth-child(2n+1) { border-inline-start: 0; }
-  .zman:nth-last-child(-n+3) { border-bottom: 1px solid rgba(217, 203, 176, 0.8); }
-  .zman:nth-last-child(-n+2) { border-bottom: 0; }
-  .zman .z-time { font-size: 28px; }
+  .hero-note { margin-top: 18px; font-size: 11px; }
+  .landing-section { margin-top: 44px; }
+  .section-head h2 { font-size: 30px; }
+  .zmanim-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; row-gap: 16px; }
+  .zman { padding: 18px 8px 16px; border-radius: 14px; }
+  .zman .z-he { font-size: 17px; }
+  .zman .z-time { font-size: 25px; }
   .shabbat-band { grid-template-columns: 1fr 1fr 1fr; }
-  .shabbat-band .sb-title { grid-column: 1 / -1; text-align: center; border-inline-end: 0; border-bottom: 1px solid rgba(218, 179, 104, 0.35); padding: 12px; }
-  .shabbat-band .sb-time { font-size: 24px; }
+  .shabbat-band .sb-title { grid-column: 1 / -1; border-inline-end: 0; border-bottom: 1px solid var(--line); padding: 12px; font-size: 22px; }
+  .shabbat-band .sb-item { padding: 14px 6px; }
+  .shabbat-band .sb-time { font-size: 22px; }
   .shabbat-band .sb-name { font-size: 13px; }
+  #about { padding: 30px 20px; }
   .contact-row { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .landing-footer { margin-top: 56px; }
 }
 </style>
 </head>
@@ -178,7 +196,6 @@ html { scroll-behavior: smooth; scroll-padding-top: 88px; }
 
 <section class="hero landing-hero" id="top">
 <div class="plaque">
-<span class="corner tl" aria-hidden="true"></span><span class="corner tr" aria-hidden="true"></span><span class="corner bl" aria-hidden="true"></span><span class="corner br" aria-hidden="true"></span>
 <h1 class="sr-only">אור החיים / Or Hachaim Congregation</h1>
 <img class="logo" src="src/assets/logo-4k-transparent.png" alt="אור החיים / Or Hachaim Congregation" width="3840" height="1551" fetchpriority="high">
 <div class="divider" aria-hidden="true"><span></span></div>
@@ -188,7 +205,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 88px; }
 <a class="btn btn-gold" href="#zmanim">זמני היום</a>
 </div>
 </div>
-<p class="hero-note">Staten Island · New York</p>
+<p class="hero-note">Staten Island | New York</p>
 </section>
 
 <main class="page" id="main">
