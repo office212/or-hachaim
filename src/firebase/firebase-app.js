@@ -45,45 +45,44 @@
     return out;
   }
   /* Claims precedence (option 2): when a token carries ohRoleVersion,
-     the claims define finance/screen/viewer/imageUpload, and stale
+     the claims define finance/screen/imageUpload, and stale
      users-doc permissions are ignored for those areas. Without
      claims, the old UID-doc + email-doc union is used, so existing
      grants keep working during migration. Congregant status is
-     separate and is never set by claims. */
+     separate and is never set by claims.
+     Stage 2 (2026-11-03): the read-only screen account role is
+     abolished. Its old claim or users field is ignored here, and only
+     the known permissions (finance, screen = content and times, times,
+     both) are kept from a users document. */
+  var KNOWN_PERMS = ["finance", "screen", "times", "both"];
   function buildRole(user, userDoc, hasCongregant, userDocByEmail, claims) {
     var email = (user.email || "").toLowerCase();
     var role = { email: email, uid: user.uid, isSuperAdmin: email === SUPER_ADMIN_EMAIL,
-      screenViewer: false, permissions: [], isCongregant: !!hasCongregant, source: "none", imageUpload: false };
+      permissions: [], isCongregant: !!hasCongregant, source: "none", imageUpload: false };
     var hasClaims = !!(claims && typeof claims.ohRoleVersion === "number");
     var docs = [];
     if (userDoc) docs.push(userDoc);
     if (userDocByEmail) docs.push(userDocByEmail);
     if (hasClaims) {
       role.source = "customClaims";
-      if (claims.ohScreenViewer === true) role.screenViewer = true;
       if (claims.ohImageUpload === true) role.imageUpload = true;
       if (claims.ohFinance === true) role.permissions.push("finance");
       if (claims.ohScreen === true) role.permissions.push("screen");
       if (claims.ohScreenEdit === true && role.permissions.indexOf("screen") < 0) role.permissions.push("screen");
-      if (claims.ohScreenViewer === true && role.permissions.indexOf("viewer") < 0) role.permissions.push("viewer");
       if (docs.length) role.source = "customClaims+usersDoc";
     }
     if (docs.length && !hasClaims) {
       role.source = docs.length > 1 ? "usersDoc+emailDoc" : "usersDoc";
       docs.forEach(function (doc) {
-        if (doc.screenViewer === true || doc.viewer === true) role.screenViewer = true;
         if (doc.imageUpload === true || doc.image_upload === true) role.imageUpload = true;
         normalizePerms(doc.permissions || doc.permission || doc.role).forEach(function (p) {
-          if (role.permissions.indexOf(p) < 0) role.permissions.push(p);
+          if (KNOWN_PERMS.indexOf(p) >= 0 && role.permissions.indexOf(p) < 0) role.permissions.push(p);
         });
       });
-      if (role.screenViewer && role.permissions.indexOf("viewer") < 0) role.permissions.push("viewer");
     }
     var has = function (tok) { return role.permissions.indexOf(tok) >= 0; };
-    role.isViewer = role.screenViewer || has("viewer");
-    role.isScreen = role.isSuperAdmin || role.isViewer || has("screen") || has("times") || has("both");
+    role.isScreen = role.isSuperAdmin || has("screen") || has("times") || has("both");
     role.isFinance = role.isSuperAdmin || has("finance") || has("both");
-    /* Viewer (screenViewer true, or permissions viewer only) is NOT admin. */
     role.isAdmin = role.isSuperAdmin || has("finance") || has("screen") || has("times") || has("both");
     role.isCongregantAccess = role.isSuperAdmin || role.isCongregant;
     role.canScreen = role.isScreen;
@@ -352,17 +351,16 @@
     isSuperAdminClient: function () {
       return !!(state.user && state.user.email && state.user.email.toLowerCase() === SUPER_ADMIN_EMAIL);
     },
-    saveUserPermission: async function (email, permissions, screenViewer, imageUpload) {
+    saveUserPermission: async function (email, permissions, imageUpload) {
       if (!state.ready || !state.db || !state.user) return { saved: false, reason: "not-signed-in" };
       if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { saved: false, reason: "not-super-admin" };
       var em = String(email || "").trim().toLowerCase();
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return { saved: false, reason: "invalid-email" };
       var perm = String(permissions || "").trim().toLowerCase();
-      if (["finance", "screen", "both", "viewer"].indexOf(perm) < 0) return { saved: false, reason: "invalid-permission" };
-      var viewer = screenViewer === true || perm === "viewer";
+      if (["finance", "screen", "both"].indexOf(perm) < 0) return { saved: false, reason: "invalid-permission" };
       try {
         var q = await state.db.collection("users").where("email", "==", em).limit(1).get();
-        var data = { email: em, permissions: perm, screenViewer: viewer,
+        var data = { email: em, permissions: perm,
           imageUpload: imageUpload === true,
           updatedBy: state.user.email, updatedAt: new Date().toISOString() };
         if (!q.empty) {
@@ -376,15 +374,14 @@
         return { saved: true, id: ref.id, updated: false };
       } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e) }; }
     },
-    saveUserPermissionById: async function (id, permissions, screenViewer, imageUpload) {
+    saveUserPermissionById: async function (id, permissions, imageUpload) {
       if (!state.ready || !state.db || !state.user) return { saved: false, reason: "not-signed-in" };
       if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { saved: false, reason: "not-super-admin" };
       if (!id) return { saved: false, reason: "missing-id" };
       var perm = String(permissions || "").trim().toLowerCase();
-      if (["finance", "screen", "both", "viewer"].indexOf(perm) < 0) return { saved: false, reason: "invalid-permission" };
+      if (["finance", "screen", "both"].indexOf(perm) < 0) return { saved: false, reason: "invalid-permission" };
       try {
         await state.db.collection("users").doc(id).update({ permissions: perm,
-          screenViewer: screenViewer === true || perm === "viewer",
           imageUpload: imageUpload === true,
           updatedBy: state.user.email, updatedAt: new Date().toISOString() });
         return { saved: true, id: id, updated: true };
@@ -398,7 +395,7 @@
         var out = [];
         snap.forEach(function (doc) {
           var d = doc.data() || {};
-          out.push({ id: doc.id, email: d.email || "", permissions: d.permissions || d.permission || "", screenViewer: d.screenViewer === true, imageUpload: d.imageUpload === true });
+          out.push({ id: doc.id, email: d.email || "", permissions: d.permissions || d.permission || "", imageUpload: d.imageUpload === true });
         });
         out.sort(function (a, b) { return (a.email || "").localeCompare(b.email || ""); });
         return { ok: true, users: out };
@@ -422,7 +419,13 @@
     claimsFunctionUrl: function () {
       return window.OH_CLAIMS_FUNCTION_URL || (cfg && cfg.claimsFunctionUrl) || "https://us-east1-or-hachaim.cloudfunctions.net/setUserClaims";
     },
-    grantUserClaims: async function (email, permission, screenViewer, imageUpload, action) {
+    /* Wire contract of the DEPLOYED setUserClaims function (its code is
+       not in this repo): it takes the old read-only screen account
+       field in the body, sent here always false, and a permission on
+       revoke. Both are kept exactly as the function expects until its
+       code is checked; the role itself is abolished and the rules
+       ignore that claim. */
+    grantUserClaims: async function (email, permission, imageUpload, action) {
       if (!state.ready || !state.user) return { ok: false, reason: "not-signed-in" };
       if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { ok: false, reason: "not-super-admin" };
       var url = (window.OH_FIREBASE && window.OH_FIREBASE.claimsFunctionUrl) ? window.OH_FIREBASE.claimsFunctionUrl() : (this && this.claimsFunctionUrl ? this.claimsFunctionUrl() : "https://us-east1-or-hachaim.cloudfunctions.net/setUserClaims");
@@ -430,7 +433,7 @@
       try {
         var token = await state.user.getIdToken();
         var resp = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
-          body: JSON.stringify({ email: String(email || "").trim().toLowerCase(), permission: permission, screenViewer: screenViewer === true, imageUpload: imageUpload === true, action: action || "grant" }) });
+          body: JSON.stringify({ email: String(email || "").trim().toLowerCase(), permission: permission, screenViewer: false, imageUpload: imageUpload === true, action: action || "grant" }) });
         var data = null;
         try { data = await resp.json(); } catch (e) {}
         if (!resp.ok) return { ok: false, reason: (data && data.error) || ("http-" + resp.status), message: data && data.message ? data.message : "" };
@@ -438,13 +441,13 @@
       } catch (e) { return { ok: false, reason: String(e && e.message ? e.message : e) }; }
     },
     revokeUserClaims: async function (email) {
-      return window.OH_FIREBASE.grantUserClaims(email, "viewer", false, false, "revoke");
+      return window.OH_FIREBASE.grantUserClaims(email, "viewer", false, "revoke");
     },
-    grantUserClaimsAndSave: async function (email, permission, screenViewer, imageUpload) {
-      var r = await window.OH_FIREBASE.grantUserClaims(email, permission, screenViewer, imageUpload, "grant");
+    grantUserClaimsAndSave: async function (email, permission, imageUpload) {
+      var r = await window.OH_FIREBASE.grantUserClaims(email, permission, imageUpload, "grant");
       if (r && r.ok) return { saved: true, viaClaims: true, pending: false, data: r.data };
       if (r && r.reason === "auth-user-not-found") {
-        var s = await window.OH_FIREBASE.saveUserPermission(email, permission, screenViewer, imageUpload);
+        var s = await window.OH_FIREBASE.saveUserPermission(email, permission, imageUpload);
         if (s && s.saved) return { saved: true, viaClaims: false, pending: true, reason: "auth-user-not-found", message: "Saved as pending only. This email has no Auth record yet: ask the user to sign in once with Google first, then grant again.", id: s.id, updated: s.updated };
         return { saved: false, viaClaims: false, pending: false, reason: (s && s.reason) || "pending-save-failed" };
       }
