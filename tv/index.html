@@ -1,0 +1,91 @@
+<!-- Public TV screen, no sign-in, no sensitive data, loads only daily zmanim JSON and prayerTimes, never congregants, ledger, users, or finance, and links to no internal page. -->
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Or Hachaim TV Screen</title>
+<link rel="preload" href="../src/assets/fonts/assistant-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../src/assets/fonts/frank-ruhl-libre-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../screen/screen.css">
+<style>#ohFirebaseStatusBar{display:none !important}</style>
+<script src="../src/firebase/firebase-config.js"></script>
+<script src="../src/firebase/firebase-app.js"></script>
+<script src="../src/engines/shabbat-safe.js"></script>
+<script src="../src/ui/oh-ui.js"></script>
+</head>
+<body>
+<div class="tv">
+  <header>
+    <div class="logo-plaque"><img class="logo" src="../src/assets/logo-4k-transparent.png" alt="Or Hachaim logo, unchanged"></div>
+    <div class="dates">
+      <h1 class="sr-only"><span class="he">אור החיים</span> / Or Hachaim Congregation</h1>
+      <div id="hebrewDateLine"></div>
+      <div id="dateLine" dir="ltr"></div>
+    </div>
+    <div class="meta">
+      <div id="clock" dir="ltr">--:--:--</div>
+    </div>
+  </header>
+  <main>
+    <section class="col col-zmanim">
+      <h2><span class="h-he">זמני היום</span><span class="h-en">Daily Zmanim</span></h2>
+      <div id="zmanList"></div>
+      <div id="netzBox"></div>
+    </section>
+    <section class="col col-center">
+      <div class="next-hero" id="nextHero"><div class="next-label"><span class="he">הזמן הבא</span><span class="en">Next</span></div><div class="next-name" id="nextHeroName">טוען / Loading</div><div class="next-time" id="nextHeroTime" dir="ltr">--:--</div><div class="next-countdown" id="nextHeroCountdown"></div></div>
+      <h2 class="board-title"><span class="h-he">לוח הקהילה</span><span class="h-en">Community Board</span></h2>
+      <div id="centerZone"></div>
+      <p class="board-index" id="boardIndex"></p>
+    </section>
+    <section class="col col-prayers">
+      <h2><span class="h-he">זמני תפילות</span><span class="h-en">Prayer Times</span></h2>
+      <div id="prayerList"></div>
+      <h2 class="h-shabbat"><span class="h-he">שבת קודש</span><span class="h-en">Shabbat</span></h2>
+      <div id="shabbatBlock"><p>PLACEHOLDER / פליסהולדר: Friday candle, Shabbat ends, and Rabbeinu Tam early will appear here on Friday and Saturday from the daily data, once the Shabbat block is filled for the current week.</p></div>
+      <div class="weekday-only">
+        <h3>תרומה / Donation</h3>
+        <p>PLACEHOLDER / פליסהולדר: donation text and QR code to be provided by the synagogue. This block is hidden automatically on Shabbat and holidays.</p>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <span class="f-name"><span class="he">אור החיים</span> <span class="f-addr" dir="ltr">321 Harold St, Staten Island, NY 10314</span></span>
+    <span class="ornament" aria-hidden="true">✦</span>
+    <span id="ticker">PLACEHOLDER / פליסהולדר: permanent dedications and campaign board, to be entered by a gabbai.</span>
+    <span id="offlineNote" class="offline-note" role="status"></span>
+  </footer>
+</div>
+<div class="controls no-print"><button class="btn btn-gold" id="shabbatToggle">תצוגת שבת / Shabbat preview</button></div>
+<script>
+function escHtml(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function renderPrayer(list){
+  if(!list || !list.length){ document.getElementById("prayerList").innerHTML = "<p>אין זמני תפילה עדיין / No prayer times yet.</p>"; return; }
+  /* Firestore text is escaped: a gabbai's entry can never inject markup or script into the TV. */
+  document.getElementById("prayerList").innerHTML = list.map(function (p) {
+    return '<div class="zman-row"><span class="zn"><span class="he">' + escHtml(p.nameHe || p.nameEn || '') + '</span><span class="en">' + escHtml(p.nameEn || '') + '</span></span><span class="zt" dir="ltr">' + escHtml(p.time || '') + '</span></div>';
+  }).join("");
+}
+var _tvReady = false;
+async function refreshPrayer(){
+  try {
+    var fb = window.OH_FIREBASE;
+    if(!fb || !fb.ready) return;
+    if(!_tvReady) _tvReady = true;
+    var live = await fb.loadScreenData();
+    if(live && live.prayerTimes && live.prayerTimes.length){ renderPrayer(live.prayerTimes); }
+    else { renderPrayer([]); }
+  } catch(e) {}
+}
+var _tvReadyPoll = setInterval(function(){
+  if(window.OH_FIREBASE && window.OH_FIREBASE.ready){
+    clearInterval(_tvReadyPoll);
+    refreshPrayer();
+    setInterval(refreshPrayer, 60000);
+  }
+}, 1000);
+</script>
+<script src="../screen/screen.js"></script>
+</body>
+</html>
