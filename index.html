@@ -203,6 +203,7 @@ html { scroll-behavior: smooth; scroll-padding-top: 84px; }
 <div class="hero-actions">
 <a class="btn" href="https://www.google.com/maps/dir/?api=1&amp;destination=321+Harold+St%2C+Staten+Island%2C+NY+10314">ניווט לבית הכנסת</a>
 <a class="btn btn-gold" href="#zmanim">זמני היום</a>
+<a class="btn" href="tv/">זמני תפילה וזמני היום / Prayer Times and Daily Zmanim</a>
 </div>
 </div>
 <p class="hero-note">Staten Island | New York</p>
@@ -390,13 +391,11 @@ async function refreshRoleMenu() {
     if (note) note.style.display = 'block';
     var links = [];
     if (role.isSuperAdmin) {
-      /* Task list for super admin, exactly: Screen, Finance, Admin. */
-      links.push('<a href="screen/">מסך / Screen</a>');
+      /* Task list for super admin, exactly: Finance, Admin. */
       links.push('<a href="finance/">פיננסים / Finance</a>');
       links.push('<a href="admin/">ממשק גבאי / Gabbai admin</a>');
     } else {
       /* Otherwise the union of what this role allows, and nothing else. */
-      if (role.canScreen) links.push('<a href="screen/">מסך / Screen</a>');
       if (role.canFinance) links.push('<a href="finance/">פיננסים / Finance</a>');
       if (role.canAdmin) links.push('<a href="admin/">ממשק גבאי / Gabbai admin</a>');
       if (role.canCongregant) links.push('<a href="congregant/">החשבון שלי / My Account</a>');
