@@ -1,15 +1,18 @@
-/* Screen content data layer (Display Engine side), stage v4 2026-11-03.
-   Real Firestore paths for everything the gabbai shows on the TV:
-     screenItems/{id}                 one item (announcement, dedication,
-                                      flyer, yahrzeit, sponsor, parnas,
-                                      mazal tov, hazkara, rabbi message,
-                                      campaign, donation)
-     screenItemHistory/{id}_v{n}      append-only copy of every version
-                                      (change history and restore)
-     activityLog/{auto}               area "screen", who / when
-   Every save is ONE batch: item + history copy + activity line, so a
-   version never exists without its history (the rules check this with
-   existsAfter / getAfter).
+/* Screen content data layer (Display Engine side), stage 2 2026-11-03.
+   The editor writes to the EXISTING live content collections, as agreed
+   with Hanoch and Muse (no new collection):
+     announcements/{id}  announcement, rabbi message, mazal tov, hazkara,
+                         campaign, donation
+     dedications/{id}    dedication, parnas hayom / ner lamaor
+     sponsors/{id}       kiddush / seudah sponsor
+     flyers/{id}         flyer
+     yahrzeits/{id}      yahrzeit
+   Each document keeps its own "type", so the board shows it the same way.
+   History and restore: every save also writes one activityLog line
+   (area "screen") with the version number and a full copy of the item,
+   in the same batch, so a version never exists without its history line.
+   The public /tv/ reads only status "published" (the stage 2 rules allow
+   the public nothing else). Drafts and archived items stay private.
    Images go to Storage under screen/{type}/{itemId}/..., JPEG, PNG or
    WebP, resized in the browser to at most 1920 px, max 5 MB (the
    Storage rules repeat the limits).
@@ -22,6 +25,11 @@
   var TYPES = ["announcement", "dedication", "flyer", "yahrzeit", "sponsor", "parnas", "mazaltov", "hazkara", "rabbi", "campaign", "donation"];
   var MAX_IMAGE_BYTES = 5 * 1024 * 1024, MAX_EDGE = 1920;
   var CACHE_KEY = "orHachaimScreenItems";
+  var COLLECTION_OF = { announcement: "announcements", rabbi: "announcements", mazaltov: "announcements", hazkara: "announcements",
+    campaign: "announcements", donation: "announcements", dedication: "dedications", parnas: "dedications",
+    sponsor: "sponsors", flyer: "flyers", yahrzeit: "yahrzeits" };
+  var COLLECTIONS = ["announcements", "dedications", "sponsors", "flyers", "yahrzeits"];
+  function collectionOf(type) { return COLLECTION_OF[type] || "announcements"; }
 
   function fb() { return window.OH_FIREBASE || null; }
   function db() { var f = fb(); return f && f._db ? f._db() : null; }
@@ -73,8 +81,9 @@
     return e;
   }
 
-  function toItem(doc) {
+  function toItem(doc, col) {
     var d = doc.data() || {}, o = { id: doc.id };
+    if (col) o.col = col;
     Object.keys(d).forEach(function (k) {
       var v = d[k];
       if (v && typeof v.toDate === "function") v = v.toDate().toISOString();
@@ -85,20 +94,32 @@
   function cache(items) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: new Date().toISOString(), items: items })); } catch (e) {} }
   function cached() { try { var c = JSON.parse(localStorage.getItem(CACHE_KEY) || "null"); return c && c.items ? c : null; } catch (e) { return null; } }
 
-  /* Live subscription. mode: "public" (the /tv/ page, no sign-in:
-     published + public only, which is exactly what the rules allow),
-     "screen" (signed-in viewer or gabbai on /screen/: all published),
-     "editor" (admin: everything, newest first). cb(items, error). */
+  /* Live subscription over the 5 content collections, merged into one
+     list. mode: "public" (the /tv/ page and the congregant page, no
+     special permission: status "published" only, which is exactly what
+     the rules allow the public), "editor" (admin: everything). The
+     callback runs once every collection has answered, then on every
+     change. cb(items, error). */
   function subscribe(mode, cb) {
     var d = db(); if (!d) { cb(null, "not-ready"); return function () {}; }
-    var q = d.collection("screenItems");
-    if (mode === "public") q = q.where("status", "==", "published").where("visibility", "==", "public");
-    else if (mode === "screen") q = q.where("status", "==", "published");
-    return q.onSnapshot(function (snap) {
-      var items = []; snap.forEach(function (doc) { items.push(toItem(doc)); });
+    var parts = {}, failed = null, unsubs = [];
+    function emit() {
+      if (failed) return;
+      if (COLLECTIONS.some(function (c) { return !parts[c]; })) return;
+      var items = [];
+      COLLECTIONS.forEach(function (c) { items = items.concat(parts[c]); });
       if (mode !== "editor") cache(items);
       cb(items, null);
-    }, function (err) { cb(null, (err && err.code) || String(err)); });
+    }
+    COLLECTIONS.forEach(function (c) {
+      var q = d.collection(c);
+      if (mode !== "editor") q = q.where("status", "==", "published");
+      unsubs.push(q.onSnapshot(function (snap) {
+        var items = []; snap.forEach(function (doc) { items.push(toItem(doc, c)); });
+        parts[c] = items; emit();
+      }, function (err) { if (!failed) { failed = (err && err.code) || String(err); cb(null, failed); } }));
+    });
+    return function () { unsubs.forEach(function (u) { try { u(); } catch (e) {} }); };
   }
 
   async function save(item, action, extra) {
@@ -108,7 +129,11 @@
     if (!canEdit(role)) return { saved: false, reason: "no-screen-permission" };
     var data = clean(item), errs = validate(data);
     if (errs.length) return { saved: false, reason: "invalid", errors: errs };
-    var ref = item.id ? d.collection("screenItems").doc(item.id) : d.collection("screenItems").doc();
+    var col = collectionOf(data.type);
+    /* A saved item stays in its collection: a type that belongs to another
+       collection would need a delete, which only the super admin has. */
+    if (item.id && item.col && item.col !== col) return { saved: false, reason: "type-moves-collection" };
+    var ref = item.id ? d.collection(col).doc(item.id) : d.collection(col).doc();
     var ts = fs().FieldValue.serverTimestamp(), email = f.user.email, uid = f.user.uid;
     try {
       var prev = item.id ? await ref.get() : null;
@@ -116,36 +141,43 @@
       data.version = version;
       data.updatedAt = ts; data.updatedBy = email; data.updatedByUid = uid;
       if (version === 1) { data.createdAt = ts; data.createdBy = email; data.createdByUid = uid; }
-      else { var pd = prev.data(); data.createdAt = pd.createdAt; data.createdBy = pd.createdBy; data.createdByUid = pd.createdByUid; }
+      else { var pd = prev.data(); data.createdAt = pd.createdAt || ts; data.createdBy = pd.createdBy || email; data.createdByUid = pd.createdByUid || uid; }
       if (extra && typeof extra.restoredFromVersion === "number") data.restoredFrom = extra.restoredFromVersion;
-      var snapshot = clean(data);
-      var hist = { itemId: ref.id, version: version, action: action || (version === 1 ? "create" : "update"), snapshot: snapshot, savedAt: ts, savedBy: email, savedByUid: uid };
-      if (extra && typeof extra.restoredFromVersion === "number") hist.restoredFromVersion = extra.restoredFromVersion;
+      var act = action || (version === 1 ? "create" : "update");
+      var log = { area: "screen", action: "screenItem." + act, collection: col, itemId: ref.id, itemType: data.type, version: version,
+        snapshot: clean(data), who: email, whoUid: uid, when: ts };
+      if (extra && typeof extra.restoredFromVersion === "number") log.restoredFromVersion = extra.restoredFromVersion;
       var b = d.batch();
       b.set(ref, data);
-      b.set(d.collection("screenItemHistory").doc(ref.id + "_v" + version), hist);
-      b.set(d.collection("activityLog").doc(), { area: "screen", action: "screenItem." + hist.action, itemId: ref.id, itemType: data.type, version: version, who: email, whoUid: uid, when: ts });
+      b.set(d.collection("activityLog").doc(), log);
       await b.commit();
-      return { saved: true, id: ref.id, version: version };
+      return { saved: true, id: ref.id, version: version, col: col };
     } catch (e) { return { saved: false, reason: (e && e.code) || String(e && e.message ? e.message : e) }; }
   }
   async function setStatus(item, status) {
     var copy = Object.assign({}, item, { status: status });
     return save(copy, status === "published" ? "publish" : (status === "archived" ? "archive" : "unpublish"));
   }
+  /* Versions of one item, newest first, from its activityLog lines. */
   async function history(itemId) {
     var d = db(); if (!d) return { ok: false, reason: "not-ready" };
     try {
-      var snap = await d.collection("screenItemHistory").where("itemId", "==", itemId).get();
-      var out = []; snap.forEach(function (doc) { out.push(toItem(doc)); });
+      var snap = await d.collection("activityLog").where("itemId", "==", itemId).get();
+      var out = [];
+      snap.forEach(function (doc) {
+        var a = toItem(doc);
+        if (a.area !== "screen" || typeof a.version !== "number" || !a.snapshot) return;
+        out.push({ id: a.id, itemId: a.itemId, version: a.version, action: String(a.action || "").replace(/^screenItem\./, ""),
+          snapshot: a.snapshot, savedAt: a.when, savedBy: a.who, restoredFromVersion: a.restoredFromVersion });
+      });
       out.sort(function (a, b) { return b.version - a.version; });
       return { ok: true, versions: out };
     } catch (e) { return { ok: false, reason: (e && e.code) || String(e) }; }
   }
   /* Restore = a NEW version whose content is the old snapshot. Nothing
      is overwritten or deleted, so a restore can itself be undone. */
-  async function restore(itemId, versionDoc) {
-    var snap = Object.assign({}, versionDoc.snapshot || {}, { id: itemId });
+  async function restore(itemId, versionDoc, col) {
+    var snap = Object.assign({}, versionDoc.snapshot || {}, { id: itemId, col: col || collectionOf((versionDoc.snapshot || {}).type) });
     return save(snap, "restore", { restoredFromVersion: versionDoc.version });
   }
 
@@ -186,7 +218,8 @@
 
   window.OH_SCREEN_CONTENT = {
     TYPES: TYPES, FIELDS: FIELDS, canEdit: canEdit, canUpload: canUpload, clean: clean, validate: validate,
-    newId: function () { var d = db(); return d ? d.collection("screenItems").doc().id : null; },
+    COLLECTIONS: COLLECTIONS, collectionOf: collectionOf,
+    newId: function () { var d = db(); return d ? d.collection("announcements").doc().id : null; },
     subscribe: subscribe, save: save, setStatus: setStatus, history: history, restore: restore, uploadImage: uploadImage,
     cached: cached
   };
