@@ -29,7 +29,7 @@ without the full ledger cannot restore a correct balance.
 - Automatic daily backup, in the Firebase phase, scheduled by a
   server-side function, not by a person remembering to click.
 - A copy outside Firebase, in a private destination, never public
-  and never readable by the screen viewer account. The destination
+  and never readable by the public /tv/ page or a content-only gabbai. The destination
   is chosen in the Firebase phase; until then, the requirement is
   recorded here and the manual export below is the fallback only.
 - Manual export, one click, from the finance page: download the
@@ -76,4 +76,4 @@ That rule protects the append-only ledger even during recovery.
   Firebase phase, or the manual export plus a weekly reminder is
   the fallback only, not the standard.
 - Export files contain financial data and must never be public
-  and never be readable by the screen viewer account.
+  and never be readable by the public /tv/ page or a content-only gabbai.
