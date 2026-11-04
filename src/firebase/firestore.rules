@@ -1,3 +1,8 @@
+/* 2040 PHASE 2 (2026-11-04, Hanoch 7:19 AM): ONE change, see RULES_DELTA.md.
+NEW block settings/homeTexts: the landing page wording. Public read (the
+landing page reads it signed out); create/update by the super admin only,
+only the keys texts, textsEn, updatedBy, updatedAt (texts/textsEn maps of
+at most 400 entries); delete never. Every other block is unchanged. */
 /* STAGE 2 (2026-11-03): minimal delta over the live rules published
 "Today 7:02 AM" on 2026-11-03 (see RULES_DELTA.md). Changes:
 1. announcements, dedications, sponsors, flyers, yahrzeits: public read
@@ -231,6 +236,20 @@ service cloud.firestore {
         && (!('texts' in request.resource.data) || (request.resource.data.texts is map && request.resource.data.texts.size() <= 400))
         && (!('textsEn' in request.resource.data) || (request.resource.data.textsEn is map && request.resource.data.textsEn.size() <= 400))
         && (!('layout' in request.resource.data) || (request.resource.data.layout is map && request.resource.data.layout.size() <= 400));
+      allow delete: if false;
+    }
+
+    /* 2040 phase 2 (Hanoch 2026-11-04 7:19 AM): the landing page wording, edited
+    by the super admin only. Only public landing page words, no private data, so
+    the landing page reads it with no sign-in. Exactly these keys (texts,
+    textsEn: maps of at most 400 entries). Firestore ORs the matches: the
+    settings block above is unchanged. */
+    match /settings/homeTexts {
+      allow read: if true;
+      allow create, update: if isSuperAdmin()
+        && request.resource.data.keys().hasOnly(['texts', 'textsEn', 'updatedBy', 'updatedAt'])
+        && (!('texts' in request.resource.data) || (request.resource.data.texts is map && request.resource.data.texts.size() <= 400))
+        && (!('textsEn' in request.resource.data) || (request.resource.data.textsEn is map && request.resource.data.textsEn.size() <= 400));
       allow delete: if false;
     }
 
