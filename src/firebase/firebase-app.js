@@ -32,6 +32,15 @@
     rolePromise: null
   };
   var SUPER_ADMIN_EMAIL = "hanochhason@gmail.com";
+  /* 2040 phase 2: the site root (the landing page), from this file's own address
+     (".../src/firebase/firebase-app.js"), so it is right on any host or folder. */
+  var SITE_ROOT = (function () {
+    try {
+      var s = document.currentScript && document.currentScript.src;
+      if (s) { var u = new URL(s, location.href), i = u.pathname.indexOf("/src/firebase/firebase-app.js"); if (u.origin === location.origin && i >= 0) return u.pathname.slice(0, i + 1); }
+    } catch (e) {}
+    return "/";
+  })();
   var UNAUTH_TEXT = "This account is not authorized for the system.";
   /* 2040 phase 1: the shared prayer time rule (TV reads it):
      {kind:"fixed"|"sunset", offsetMin:int, days:"all"|"weekday"|"fri"|"shabbat"|"sun-thu",
@@ -222,10 +231,19 @@
       var provider = new window.firebase.auth.GoogleAuthProvider();
       return state.auth.signInWithPopup(provider);
     },
-    signOut: function () {
-      if (!state.auth) return Promise.resolve();
-      return state.auth.signOut();
+    /* 2040 phase 2 (Hanoch 2026-11-04 9:21 AM): signing out anywhere in the
+       gabbai system goes straight to the landing page (the site root), not to
+       the signed-out gabbai page. On the landing page itself nothing moves.
+       A caller can stay with signOut({ stay: true }). */
+    signOut: function (opts) {
+      var p = state.auth ? state.auth.signOut() : Promise.resolve();
+      if (opts && opts.stay) return p;
+      var go = function () {
+        if (SITE_ROOT && location.pathname.replace(/index\.html$/, "") !== SITE_ROOT) location.href = SITE_ROOT;
+      };
+      return p.then(function (v) { go(); return v; }, function (e) { go(); throw e; });
     },
+    get siteRoot() { return SITE_ROOT; },
     /* Return Firestore congregants mapped to the TEST_DATA shape, or
        null when Firestore is unavailable/empty, so callers fall back
        to TEST_DATA. Never throws. */
@@ -522,6 +540,17 @@
         return { saved: true, id: id };
       } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
     },
+    /* 2040 phase 2 (Hanoch 9:09 AM, "לסדר"): put an existing time in its place with
+       one tap. Writes ONLY the rule (and who/when): the time, the order and the names
+       stay exactly as they are. Allowed by the existing prayerTimes update rule. */
+    setPrayerTimeRule: async function (id, rule) {
+      if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
+      if (!id || !rule || typeof rule !== "object") return { saved: false, reason: "missing-id" };
+      try {
+        await state.db.collection("prayerTimes").doc(id).update({ rule: cleanRule(rule), updatedBy: (state.user && state.user.email) || "", updatedAt: new Date().toISOString() });
+        return { saved: true, id: id };
+      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
+    },
     /* The Firestore rules decide who may delete (stage B1: every Content and
        Times gabbai and the super admin). A refusal comes back as saved:false. */
     /* 2040 phase 1 (undo of a delete): put the same document back under the
@@ -602,6 +631,40 @@
         if (he === null) delete c.texts[key]; else if (typeof he === "string") c.texts[key] = he;
         if (en === null) delete c.textsEn[key]; else if (typeof en === "string") c.textsEn[key] = en;
       });
+    },
+    /* 2040 phase 2 (Hanoch 2026-11-04 7:19 AM): the landing page wording, super
+       admin only. ONE public document settings/homeTexts =
+       { texts:{key:"he"}, textsEn:{key:"en"}, updatedBy, updatedAt } (the shared
+       contract with the landing page: it overlays non-empty values on the
+       defaults in src/home/home-texts.js). Rules: public read; create/update by
+       the super admin only, exactly these keys (RULES_DELTA.md). */
+    loadHomeTexts: async function () {
+      if (!state.ready || !state.db) return { ok: false, reason: "test-only" };
+      try {
+        var d = await state.db.collection("settings").doc("homeTexts").get();
+        var data = d.exists ? (d.data() || {}) : {};
+        var obj = function (v) { return (v && typeof v === "object" && !Array.isArray(v)) ? v : {}; };
+        return { ok: true, texts: obj(data.texts), textsEn: obj(data.textsEn), updatedBy: data.updatedBy || "" };
+      } catch (e) { return { ok: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
+    },
+    /* one line: he / en: a string sets it, null removes it (back to the default),
+       undefined leaves it. One transaction, so two edits never erase each other. */
+    saveHomeText: async function (key, he, en) {
+      if (!state.ready || !state.db || !state.user) return { saved: false, reason: "not-signed-in" };
+      if (!/^[A-Za-z0-9_.-]{1,80}$/.test(String(key || ""))) return { saved: false, reason: "bad-key" };
+      var ref = state.db.collection("settings").doc("homeTexts"), email = state.user.email || "";
+      try {
+        var out = await state.db.runTransaction(async function (tx) {
+          var snap = await tx.get(ref), d = snap.exists ? (snap.data() || {}) : {};
+          var obj = function (v) { return (v && typeof v === "object" && !Array.isArray(v)) ? JSON.parse(JSON.stringify(v)) : {}; };
+          var cur = { texts: obj(d.texts), textsEn: obj(d.textsEn) };
+          if (he === null) delete cur.texts[key]; else if (typeof he === "string") cur.texts[key] = he;
+          if (en === null) delete cur.textsEn[key]; else if (typeof en === "string") cur.textsEn[key] = en;
+          tx.set(ref, { texts: cur.texts, textsEn: cur.textsEn, updatedBy: email, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() });
+          return cur;
+        });
+        return { saved: true, texts: out.texts, textsEn: out.textsEn };
+      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
     },
     deletePrayerTime: async function (id) {
       if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
