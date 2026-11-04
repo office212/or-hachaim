@@ -12,7 +12,6 @@
 <meta property="og:locale" content="he_IL">
 <meta property="og:locale:alternate" content="en_US">
 <link rel="preload" href="src/assets/fonts/assistant-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="src/assets/fonts/frank-ruhl-libre-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="src/theme.css">
 <script src="src/firebase/firebase-config.js" defer></script>
 <script src="src/firebase/firebase-app.js" defer></script>
@@ -178,18 +177,20 @@ html { scroll-behavior: smooth; scroll-padding-top: 84px; }
   .landing-footer { margin-top: 56px; }
 }
 </style>
+<link rel="stylesheet" href="src/home/home.css">
 </head>
-<body>
-<a class="skip-link" href="#main">דלג לתוכן / Skip to content</a>
+<body class="oh-home">
+<a class="skip-link" href="#main"><span data-t="skip"></span> / <span data-t-en="skip" lang="en"></span></a>
 <header class="site-header">
 <div class="site-header__inner">
-<a class="brand" href="#top" aria-label="אור החיים, לראש העמוד"><span class="brand-he">אור החיים</span><span class="brand-en">Or Hachaim Congregation</span></a>
+<a class="brand" href="#top" aria-label="אור החיים, לראש העמוד"><span class="brand-he" data-t="brand">אור החיים</span><span class="brand-en" lang="en" data-t-en="brand">Or Hachaim Congregation</span></a>
 <nav class="site-nav" aria-label="ניווט ראשי / Main navigation">
-<a href="#zmanim">זמני היום</a>
-<a href="#about">על בית הכנסת</a>
-<a href="#visit">ביקור ומפה</a>
-<a href="#contact">קשר</a>
-<a href="#signin" class="nav-signin">כניסה</a>
+<a href="#zmanim" id="navZmanim" data-t="navZmanim" hidden></a>
+<a href="#about" data-t="navAbout"></a>
+<a href="#about-en" lang="en" dir="ltr" data-t="navEnglish"></a>
+<a href="#contact" data-t="navContact"></a>
+<a href="#visit" data-t="navVisit"></a>
+<a href="#signin" class="nav-signin" data-t="navSignin"></a>
 </nav>
 </div>
 </header>
@@ -199,14 +200,14 @@ html { scroll-behavior: smooth; scroll-padding-top: 84px; }
 <h1 class="sr-only">אור החיים / Or Hachaim Congregation</h1>
 <img class="logo" src="src/assets/logo-4k-transparent.png" alt="אור החיים / Or Hachaim Congregation" width="3840" height="1551" fetchpriority="high">
 <div class="divider" aria-hidden="true"><span></span></div>
-<p class="address" dir="ltr">321 Harold St, Staten Island, NY 10314</p>
+<p class="hero-title" data-t="heroTitle"></p>
+<p class="hero-title-en" lang="en" dir="ltr" data-t-en="heroTitle"></p>
 <div class="hero-actions">
-<a class="btn" href="https://www.google.com/maps/dir/?api=1&amp;destination=321+Harold+St%2C+Staten+Island%2C+NY+10314">ניווט לבית הכנסת</a>
-<a class="btn btn-gold" href="#zmanim">זמני היום</a>
-<a class="btn" href="tv/">זמני תפילה וזמני היום / Prayer Times and Daily Zmanim</a>
+<a class="btn hero-cta" href="tv/"><span data-t="heroPrimary"></span><small lang="en" dir="ltr" data-t-en="heroPrimary"></small></a>
 </div>
+<a class="hero-link" href="https://www.google.com/maps/dir/?api=1&amp;destination=321+Harold+St%2C+Staten+Island%2C+NY+10314"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span data-t="heroNavigate"></span><span class="hero-addr" dir="ltr">321 Harold St, Staten Island, NY 10314</span></a>
 </div>
-<p class="hero-note">Staten Island | New York</p>
+<p class="hero-note" lang="en" dir="ltr" data-t="heroEyebrow"></p>
 </section>
 
 <main class="page" id="main">
@@ -222,44 +223,70 @@ html { scroll-behavior: smooth; scroll-padding-top: 84px; }
 <div class="shabbat-band" id="shabbatBand" hidden></div>
 </section>
 
-<section class="gold-frame landing-section" id="about">
+<section class="landing-section about" id="about">
 <div class="section-head">
-<span class="eyebrow">About the Congregation</span>
-<h2>על בית הכנסת</h2>
+<span class="eyebrow" lang="en" data-t-en="aboutEyebrow">About</span>
+<h2 data-t="aboutTitle"></h2>
+<p class="section-sub" data-t="aboutSub"></p>
 <div class="divider" aria-hidden="true"><span></span></div>
 </div>
-<div class="about-body">
-<p><span class="placeholder">PLACEHOLDER / פליסהולדר</span></p>
-<p>PLACEHOLDER / פליסהולדר: a description of the congregation is to be entered here.</p>
+<p class="about-lead" data-t="aboutLead"></p>
+<div class="about-cards">
+<article class="about-card"><span class="card-rule" aria-hidden="true"></span><h3 data-t="card1Title"></h3><p data-t="card1Text"></p></article>
+<article class="about-card"><span class="card-rule" aria-hidden="true"></span><h3 data-t="card2Title"></h3><p data-t="card2Text"></p></article>
+<article class="about-card"><span class="card-rule" aria-hidden="true"></span><h3 data-t="card3Title"></h3><p data-t="card3Text"></p></article>
 </div>
+<p class="about-welcome" data-t="welcome"></p>
+<blockquote class="closing"><span class="closing-name" data-t="closingName"></span><p data-t="closing"></p></blockquote>
+</section>
+
+<section class="landing-section about about--en" id="about-en" lang="en" dir="ltr">
+<div class="section-head">
+<span class="eyebrow" lang="en" data-t-en="aboutEyebrow">About</span>
+<h2 data-t-en="aboutTitle"></h2>
+<p class="section-sub" data-t-en="aboutSub"></p>
+<div class="divider" aria-hidden="true"><span></span></div>
+</div>
+<p class="about-lead" data-t-en="aboutLead"></p>
+<div class="about-cards">
+<article class="about-card"><span class="card-rule" aria-hidden="true"></span><h3 data-t-en="card1Title"></h3><p data-t-en="card1Text"></p></article>
+<article class="about-card"><span class="card-rule" aria-hidden="true"></span><h3 data-t-en="card2Title"></h3><p data-t-en="card2Text"></p></article>
+<article class="about-card"><span class="card-rule" aria-hidden="true"></span><h3 data-t-en="card3Title"></h3><p data-t-en="card3Text"></p></article>
+</div>
+<p class="about-welcome" data-t-en="welcome"></p>
+<blockquote class="closing"><span class="closing-name" data-t-en="closingName"></span><p data-t-en="closing"></p></blockquote>
+</section>
+
+<section class="landing-section" id="contact">
+<div class="section-head">
+<span class="eyebrow" lang="en" data-t-en="contactTitle">Contact</span>
+<h2 data-t="contactTitle"></h2>
+<div class="divider" aria-hidden="true"><span></span></div>
+</div>
+<div class="contact-cards" id="contactCards"></div>
 </section>
 
 <section class="landing-section" id="visit">
 <div class="section-head">
-<span class="eyebrow">Visit &amp; Contact</span>
-<h2>ביקור ויצירת קשר</h2>
+<span class="eyebrow" lang="en" data-t-en="visitTitle">Visit</span>
+<h2 data-t="visitTitle"></h2>
 <div class="divider" aria-hidden="true"><span></span></div>
 </div>
 <div class="visit-grid">
 <div class="map-frame">
 <iframe src="https://www.google.com/maps?q=321%20Harold%20St%2C%20Staten%20Island%2C%20NY%2010314&amp;output=embed" width="100%" height="100%" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="מפה: אור החיים, 321 Harold St, Staten Island, NY 10314"></iframe>
 </div>
-<div class="gold-frame visit-card" id="contact">
-<h3>הכתובת שלנו</h3>
+<div class="gold-frame visit-card">
+<h3 data-t="addressTitle"></h3>
 <p class="addr-lines" dir="ltr">321 Harold St<br>Staten Island, NY 10314</p>
-<p class="map-caption"><a href="https://www.google.com/maps/dir/?api=1&amp;destination=321+Harold+St%2C+Staten+Island%2C+NY+10314">נווט עם גוגל מפות / Google Maps</a><a class="waze" href="https://www.waze.com/ul?ll=40.60155%2C-74.13206&amp;navigate=yes">נווט עם Waze</a></p>
-<div class="contact-list">
-<div class="contact-row"><span>טלפון / Phone</span><span class="placeholder">PLACEHOLDER / פליסהולדר</span></div>
-<div class="contact-row"><span>דוא״ל / Email</span><span class="placeholder">PLACEHOLDER / פליסהולדר</span></div>
-<div class="contact-row"><span>WhatsApp Business</span><span class="placeholder">PLACEHOLDER / פליסהולדר</span></div>
-</div>
+<p class="map-caption"><a href="https://www.google.com/maps/dir/?api=1&amp;destination=321+Harold+St%2C+Staten+Island%2C+NY+10314"><span data-t="navGoogle"></span></a><a class="waze" href="https://www.waze.com/ul?ll=40.60155%2C-74.13206&amp;navigate=yes"><span data-t="navWaze"></span></a></p>
 </div>
 </div>
 </section>
 
 <section class="gold-frame landing-section signin-box" id="signin">
-<h2>כניסה / Sign-in</h2>
-<p>כניסה לחברים ולגבאים / Sign-in for members and gabbaim</p>
+<h2 data-t="signinTitle"></h2>
+<p lang="en" dir="ltr" data-t-en="signinSub"></p>
 <button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>Sign in with Google / התחברות עם Google</span></button>
 <p class="hint" id="gateMsg"></p>
 <p class="signed-in-note" id="signedInNote">נכנסת בהצלחה / Signed in successfully.</p>
@@ -269,12 +296,80 @@ html { scroll-behavior: smooth; scroll-padding-top: 84px; }
 </main>
 
 <footer class="landing-footer">
-<span class="f-he">אור החיים</span>
-<span class="f-en">Or Hachaim Congregation</span>
+<span class="f-he" data-t="footerBrand">אור החיים</span>
+<span class="f-en" lang="en" data-t-en="footerBrand">Or Hachaim Congregation</span>
 <div class="divider" aria-hidden="true"><span></span></div>
 <p class="f-addr"><span dir="ltr">321 Harold St, Staten Island, NY 10314</span></p>
 <p class="f-small">© <span id="footerYear">2026</span> Or Hachaim Congregation</p>
 </footer>
+
+<script src="src/home/home-texts.js"></script>
+<script src="src/home/home.js"></script>
+<script>
+function signInFromGate() {
+  var fb = window.OH_FIREBASE;
+  if (!fb || !fb.signIn) {
+    document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.';
+    return;
+  }
+  if (fb.user) { fb.signOut(); return; }
+  try { sessionStorage.setItem('ohGoGabbai', '1'); } catch (e) {}
+  var r = fb.signIn();
+  if (r && r.catch) r.catch(function (e) {
+    document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e);
+  });
+}
+function landingButtonLabel(signedIn) {
+  var btn = document.querySelector('.signin-box .gsi-btn span');
+  if (btn) btn.textContent = signedIn ? 'Sign out / התנתקות' : 'Sign in with Google / התחברות עם Google';
+}
+async function refreshRoleMenu() {
+  try {
+    var fb = window.OH_FIREBASE;
+    var menu = document.getElementById('roleMenu');
+    var note = document.getElementById('signedInNote');
+    var unauth = document.getElementById('unauthMsg');
+    if (!fb || !fb.ready || !fb.user) {
+      landingButtonLabel(false);
+      if (menu) { menu.style.display = 'none'; menu.innerHTML = ''; }
+      if (note) note.style.display = 'none';
+      if (unauth) unauth.style.display = 'none';
+      return;
+    }
+    landingButtonLabel(true);
+    var role = await fb.resolveRole();
+    if (!role) return; /* still resolving: show nothing yet, never a link */
+    if (!role.authorized) {
+      if (menu) { menu.style.display = 'none'; menu.innerHTML = ''; }
+      if (note) note.style.display = 'none';
+      if (unauth) {
+        unauth.style.display = 'block';
+        unauth.textContent = fb.unauthMessage ? fb.unauthMessage() : 'חשבון זה אינו מורשה למערכת / This account is not authorized for the system.';
+      }
+      return;
+    }
+    if (unauth) unauth.style.display = 'none';
+    if (note) note.style.display = 'block';
+    var links = [];
+    /* Stage A (2026-11-03): a gabbai goes to the new gabbai home
+       (gabbai/), which shows only what this role may do. A congregant
+       without gabbai permissions keeps the direct link to their account. */
+    var isGabbai = role.isSuperAdmin || role.canFinance || role.canAdmin || role.canScreen;
+    if (isGabbai) {
+      links.push('<a class="btn" href="gabbai/">כניסה למערכת הגבאים / Gabbai system</a>');
+      try { if (sessionStorage.getItem('ohGoGabbai') === '1') { sessionStorage.removeItem('ohGoGabbai'); location.href = 'gabbai/'; return; } } catch (e) {}
+    } else if (role.canCongregant) {
+      links.push('<a href="congregant/">החשבון שלי / My Account</a>');
+    }
+    if (menu) {
+      menu.style.display = 'block';
+      menu.innerHTML = '<h3>כניסה לפי הרשאה / Your sections</h3><p>' + links.join(' | ') + '</p>';
+    }
+  } catch (e) {}
+}
+setInterval(refreshRoleMenu, 1000);
+refreshRoleMenu();
+</script>
 <script>
 /* Today's zmanim on the home page, from the same daily file the TV
    screen uses (src/zmanim/roy-daily-5787.json). Read only, no login.
@@ -344,71 +439,6 @@ var PUBLIC_ZMANIM = false;
     document.getElementById("zmanim").hidden = false;
   }).catch(function () {});
 })();
-</script>
-<script>
-function signInFromGate() {
-  var fb = window.OH_FIREBASE;
-  if (!fb || !fb.signIn) {
-    document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.';
-    return;
-  }
-  if (fb.user) { fb.signOut(); return; }
-  try { sessionStorage.setItem('ohGoGabbai', '1'); } catch (e) {}
-  var r = fb.signIn();
-  if (r && r.catch) r.catch(function (e) {
-    document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e);
-  });
-}
-function landingButtonLabel(signedIn) {
-  var btn = document.querySelector('.signin-box .gsi-btn span');
-  if (btn) btn.textContent = signedIn ? 'Sign out / התנתקות' : 'Sign in with Google / התחברות עם Google';
-}
-async function refreshRoleMenu() {
-  try {
-    var fb = window.OH_FIREBASE;
-    var menu = document.getElementById('roleMenu');
-    var note = document.getElementById('signedInNote');
-    var unauth = document.getElementById('unauthMsg');
-    if (!fb || !fb.ready || !fb.user) {
-      landingButtonLabel(false);
-      if (menu) { menu.style.display = 'none'; menu.innerHTML = ''; }
-      if (note) note.style.display = 'none';
-      if (unauth) unauth.style.display = 'none';
-      return;
-    }
-    landingButtonLabel(true);
-    var role = await fb.resolveRole();
-    if (!role) return; /* still resolving: show nothing yet, never a link */
-    if (!role.authorized) {
-      if (menu) { menu.style.display = 'none'; menu.innerHTML = ''; }
-      if (note) note.style.display = 'none';
-      if (unauth) {
-        unauth.style.display = 'block';
-        unauth.textContent = fb.unauthMessage ? fb.unauthMessage() : 'חשבון זה אינו מורשה למערכת / This account is not authorized for the system.';
-      }
-      return;
-    }
-    if (unauth) unauth.style.display = 'none';
-    if (note) note.style.display = 'block';
-    var links = [];
-    /* Stage A (2026-11-03): a gabbai goes to the new gabbai home
-       (gabbai/), which shows only what this role may do. A congregant
-       without gabbai permissions keeps the direct link to their account. */
-    var isGabbai = role.isSuperAdmin || role.canFinance || role.canAdmin || role.canScreen;
-    if (isGabbai) {
-      links.push('<a class="btn" href="gabbai/">כניסה למערכת הגבאים / Gabbai system</a>');
-      try { if (sessionStorage.getItem('ohGoGabbai') === '1') { sessionStorage.removeItem('ohGoGabbai'); location.href = 'gabbai/'; return; } } catch (e) {}
-    } else if (role.canCongregant) {
-      links.push('<a href="congregant/">החשבון שלי / My Account</a>');
-    }
-    if (menu) {
-      menu.style.display = 'block';
-      menu.innerHTML = '<h3>כניסה לפי הרשאה / Your sections</h3><p>' + links.join(' | ') + '</p>';
-    }
-  } catch (e) {}
-}
-setInterval(refreshRoleMenu, 1000);
-refreshRoleMenu();
 </script>
 </body>
 </html>
