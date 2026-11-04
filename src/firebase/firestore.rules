@@ -172,11 +172,13 @@ service cloud.firestore {
     }
 
     /* Screen content: public read. Screen gabbaim and the
-    super admin edit; only the super admin deletes. */
+    super admin edit and delete (stage B1, Hanoch 2026-11-03:
+    content gabbaim manage prayer times fully). hasScreen()
+    already includes the super admin. */
     match /prayerTimes/{docId} {
       allow read: if true;
       allow create, update: if hasScreen();
-      allow delete: if isSuperAdmin();
+      allow delete: if hasScreen();
     }
     /* Stage 2: the content editor writes announcements, dedications,
     sponsors, flyers and yahrzeits. The public (/tv/, no sign-in) reads
