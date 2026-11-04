@@ -307,7 +307,167 @@
     return out;
   }
 
-  var api = { compute: compute, nyParts: nyParts, nyToMs: nyToMs, minutesUntil: minutesUntil, addDays: addDays, hm: hm, fmt12: fmt12, countdownText: countdownText, fastActive: fastActive, SAFE_MINUTES: SAFE };
+
+  /* ---------- 2040 phase 2 (Hanoch, Nov 4 2026, 7:34 AM, the Rav's answers) ---------- */
+
+  /* 1. Erev Pesach: "סוף זמן אכילת חמץ" and "סוף זמן ביעור חמץ" per Zemaneh
+     Yosef. The site's daily file has no such field, so these are the
+     outputs of the Zemaneh Yosef engine itself (royzmanim, ROYZmanim.js
+     getSofZemanAhilathHametz / getSofZemanBiurHametz: dawn + 4 / 5 seasonal
+     hours of the Magen Avraham day, dawn to nightfall), at the shul
+     (40.60155, -74.13206, no elevation, the same BASE settings as
+     validation/run-roy-full-year.mjs, whose dawn / Shema times for 5787 they
+     match to the second), each rounded EARLIER to the whole minute (a
+     deadline is never shown a minute late). Key = 14 Nisan.
+     [achila, biur] or, when 14 Nisan is Shabbat, [achila, biur, Friday 13
+     Nisan, biur on that Friday] (the chametz is burnt on Friday; on Shabbat
+     it may be eaten until the 4th hour and is nullified by the 5th).
+     Shown only on a date the daily zmanim file covers (never a time on a
+     day without the file). */
+  var CHAMETZ = {
+    "2027-04-21": ["10:09", "11:32"],
+    "2028-04-10": ["10:17", "11:37"],
+    "2029-03-30": ["10:26", "11:44"],
+    "2030-04-17": ["10:12", "11:34"],
+    "2031-04-07": ["10:20", "11:39"],
+    "2032-03-26": ["10:30", "11:46"],
+    "2033-04-13": ["10:15", "11:36"],
+    "2034-04-03": ["10:23", "11:41"],
+    "2035-04-23": ["10:08", "11:31"],
+    "2036-04-11": ["10:16", "11:37"],
+    "2037-03-30": ["10:26", "11:44"],
+    "2038-04-19": ["10:11", "11:33"],
+    "2039-04-08": ["10:19", "11:39"],
+    "2040-03-28": ["10:28", "11:45"],
+    "2041-04-15": ["10:13", "11:35"],
+    "2042-04-04": ["10:22", "11:41"],
+    "2043-04-24": ["10:07", "11:31"],
+    "2044-04-11": ["10:16", "11:37"],
+    "2045-04-01": ["10:25", "11:42", "2045-03-31", "11:43"],
+    "2046-04-20": ["10:10", "11:33"],
+    "2047-04-10": ["10:18", "11:38"],
+    "2048-03-28": ["10:28", "11:45", "2048-03-27", "11:45"],
+    "2049-04-16": ["10:13", "11:34"],
+    "2050-04-06": ["10:21", "11:40"]
+  };
+  /* The same two times on the GRA day (sunrise to sunset, the basis of the
+     site's Sof Zman Tefillah: achila = Sof Zman Tefillah), same engine, same
+     rounding. NOT shown. Kept only so that, if the Rav prefers the GRA day,
+     the change is one word: CHAMETZ_BASIS = "gra". */
+  var CHAMETZ_GRA = {
+    "2027-04-21": ["10:40", "11:47"],
+    "2028-04-10": ["10:46", "11:52"],
+    "2029-03-30": ["10:55", "11:58"],
+    "2030-04-17": ["10:42", "11:49"],
+    "2031-04-07": ["10:49", "11:54"],
+    "2032-03-26": ["10:57", "12:00"],
+    "2033-04-13": ["10:45", "11:51"],
+    "2034-04-03": ["10:52", "11:56"],
+    "2035-04-23": ["10:38", "11:47"],
+    "2036-04-11": ["10:46", "11:51"],
+    "2037-03-30": ["10:55", "11:58"],
+    "2038-04-19": ["10:41", "11:48"],
+    "2039-04-08": ["10:48", "11:53"],
+    "2040-03-28": ["10:56", "11:59"],
+    "2041-04-15": ["10:43", "11:50"],
+    "2042-04-04": ["10:51", "11:55"],
+    "2043-04-24": ["10:38", "11:46"],
+    "2044-04-11": ["10:46", "11:51"],
+    "2045-04-01": ["10:53", "11:57", "2045-03-31", "11:57"],
+    "2046-04-20": ["10:40", "11:48"],
+    "2047-04-10": ["10:47", "11:52"],
+    "2048-03-28": ["10:56", "11:58", "2048-03-27", "11:59"],
+    "2049-04-16": ["10:42", "11:49"],
+    "2050-04-06": ["10:49", "11:54"]
+  };
+  var CHAMETZ_BASIS = "mga"; /* "mga" = Zemaneh Yosef's own chametz times (shown) | "gra" */
+  /* rows for the daily zmanim list of iso: [{ key, textKey, he, time "HH:MM" }] */
+  function chametzRows(iso, zdays, basis) {
+    if (!iso || !zdays || !zdays[iso]) return [];
+    var TBL = (basis || CHAMETZ_BASIS) === "gra" ? CHAMETZ_GRA : CHAMETZ;
+    var e = TBL[iso];
+    if (e) {
+      if (wdOf(iso) === 6) return [{ key: "achilatChametz", textKey: "zAchilatChametz", he: "סוף זמן אכילת חמץ", time: e[0] }, { key: "bitulChametz", textKey: "zBitulChametz", he: "סוף זמן ביטול חמץ", time: e[1] }];
+      return [{ key: "achilatChametz", textKey: "zAchilatChametz", he: "סוף זמן אכילת חמץ", time: e[0] }, { key: "biurChametz", textKey: "zBiurChametz", he: "סוף זמן ביעור חמץ", time: e[1] }];
+    }
+    var nx = TBL[addDays(iso, 1)];
+    if (nx && nx[2] === iso && nx[3]) return [{ key: "biurChametzFri", textKey: "zBiurChametzFri", he: "סוף זמן ביעור חמץ (ערב שבת)", time: nx[3] }];
+    return [];
+  }
+
+  /* 2. Nachem on Tisha B'Av: a note for the whole day in the insertions
+     line, switching at sunset exactly like Al HaNissim (from sunset of the
+     eve, when the fast starts, until sunset of the fast day). A Tisha B'Av
+     pushed to Sunday (nidcheh) follows the engine's fast day. */
+  function isTishaBavDay(d) { return !!(d && d.fast && /^Tish'a B'Av/.test(String(d.fast.key || ""))); }
+  function nachemNow(cal, iso, afterSunset) { return isTishaBavDay(safeDay(cal, afterSunset ? addDays(iso, 1) : iso)); }
+
+  /* 3. Candles for the second night of Yom Tov (lit on day 1, after dark).
+     Day 1 NOT Shabbat: regular Tzet Hakochavim of day 1 (the daily file's
+     minute, + 1 safe minute, like the Omer count), instead of the engine's
+     later chag-end time. Day 1 IS Shabbat: unchanged, only after Shabbat
+     ends (the engine's Motzei Shabbat time). Never earlier than nightfall;
+     with no daily file for the day the engine's (later) time stays. */
+  function secondNightCandle(cal, iso, zdays) {
+    var d = safeDay(cal, iso);
+    if (!d || !d.isYomTov || d.isYomKippur || wdOf(iso) === 6) return null;
+    var cl = d.candleLighting;
+    if (!cl || cl.kind !== "notBefore" || !cl.time) return null;
+    var dn = safeDay(cal, addDays(iso, 1));
+    if (!dn || !dn.isYomTov) return null;
+    var z = zdays && zdays[iso], tz = z ? hm(z.tzeit) : null;
+    if (tz == null) return null;
+    var t = tz + SAFE, eng = hm(cl.time);
+    if (eng == null || t >= eng) return null;
+    return { time: pad(Math.floor(t / 60)) + ":" + pad(t % 60), engineTime: cl.time };
+  }
+  /* The calendar as the TV uses it: the same engine, with rule 3 applied to
+     every day object and Yom Tov line it hands out (day, range,
+     screenState). Nothing else changes. getZdays: () -> daily zmanim map. */
+  function wrapCalendar(cal, getZdays) {
+    if (!cal || cal.__ohP2) return cal;
+    var w = Object.create(cal);
+    w.__ohP2 = true;
+    function zd() { try { return typeof getZdays === "function" ? getZdays() : (getZdays || null); } catch (e) { return null; } }
+    function fixLines(lines) {
+      if (!lines || !lines.length) return lines;
+      var z = zd(), changed = false;
+      var out = lines.map(function (l) {
+        if (!l || !l.date || !l.time) return l;
+        var f = secondNightCandle(cal, l.date, z);
+        if (!f || l.time !== f.engineTime) return l;
+        changed = true;
+        return Object.assign({}, l, { time: f.time, source: "tzeit", engineTime: l.time });
+      });
+      return changed ? out : lines;
+    }
+    function fixPanels(panels) {
+      if (!panels || !panels.length) return panels;
+      return panels.map(function (p) { return p && p.id === "yomtov-times" && p.lines ? Object.assign({}, p, { lines: fixLines(p.lines) }) : p; });
+    }
+    function fixDay(d) {
+      if (!d || !d.date) return d;
+      var f = secondNightCandle(cal, d.date, zd());
+      var o = Object.assign({}, d);
+      if (f && d.candleLighting) o.candleLighting = Object.assign({}, d.candleLighting, { time: f.time, source: "tzeit", engineTime: d.candleLighting.time });
+      o.panels = fixPanels(d.panels);
+      return o;
+    }
+    w.day = function (iso) { return fixDay(cal.day(iso)); };
+    if (typeof cal.range === "function") w.range = function (iso, n) { return (cal.range(iso, n) || []).map(fixDay); };
+    w.screenState = function (now) {
+      var s = cal.screenState(now);
+      if (!s) return s;
+      var o = Object.assign({}, s);
+      o.day = fixDay(s.day);
+      o.panels = fixPanels(s.panels);
+      return o;
+    };
+    return w;
+  }
+
+  var api = { compute: compute, nyParts: nyParts, nyToMs: nyToMs, minutesUntil: minutesUntil, addDays: addDays, hm: hm, fmt12: fmt12, countdownText: countdownText, fastActive: fastActive, SAFE_MINUTES: SAFE,
+    chametzRows: chametzRows, CHAMETZ: CHAMETZ, CHAMETZ_GRA: CHAMETZ_GRA, CHAMETZ_BASIS: CHAMETZ_BASIS, nachemNow: nachemNow, isTishaBavDay: isTishaBavDay, secondNightCandle: secondNightCandle, wrapCalendar: wrapCalendar };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (root) root.OH_DAYSTATE = api;
 })(typeof window !== "undefined" ? window : null);
