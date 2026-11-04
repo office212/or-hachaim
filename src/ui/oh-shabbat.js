@@ -137,7 +137,7 @@
   }
   function render() {
     if (!st.el || !st.data) return;
-    st.el.innerHTML = '<div class="page-head no-print"><div><h1>' + esc(L("spTitle")) + '</h1><p class="lead">' + esc(L("spSub")) + "</p></div>" + nav(st.data.shabbat) + "</div>" + controls() + sheetHtml(st.data);
+    st.el.innerHTML = '<div class="page-head no-print"><div><h1>' + esc(L("spTitle")) + '</h1><p class="lead oh-help">' + esc(L("spSub")) + "</p></div>" + nav(st.data.shabbat) + "</div>" + controls() + sheetHtml(st.data);
   }
   async function findDraft(g) {
     var SC = window.OH_SCREEN_CONTENT; if (!SC) return null;
