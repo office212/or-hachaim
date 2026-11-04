@@ -89,3 +89,5 @@ button.btn.sc-new { width: auto; padding-inline: 26px; }
 .sc-preview.is-big .sc-pv-box { flex: none; }
 .sc-preview.is-big .sc-pv-note { color: var(--gold-on-navy); }
 .sc-preview.is-big .sc-help { color: rgba(255, 255, 255, 0.75); }
+/* 2040 phase 1: without image upload permission the image field is simply not there */
+body.sc-no-upload #scImgWrap{display:none!important}
