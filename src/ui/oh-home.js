@@ -37,14 +37,14 @@
     edit: ic('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>')
   };
   /* The tiles, in the mockup order. "can" uses the existing role flags. */
+  /* 2040 phase 1 (Hanoch 5:49 AM): the home keeps the daily actions; screen texts,
+     permissions and backup moved to the one Settings page (gabbai/settings/). */
   var TILES = [
     { k: "screen", icon: I.tv, href: "admin/#screenContent", can: function (r) { return r.canScreen; }, count: true },
     { k: "times", icon: I.clock, href: "admin/#ptSection", can: function (r) { return r.canScreen; } },
     { k: "finance", icon: I.wallet, href: "finance/", can: function (r) { return r.canFinance; } },
     { k: "nedarim", icon: I.book, href: "finance/#nedarim", can: function (r) { return r.canFinance; } },
     { k: "reports", icon: I.doc, href: "finance/#reports", can: function (r) { return r.canFinance; } },
-    { k: "permissions", icon: I.shield, href: "admin/#userMgmtSection", can: function (r) { return r.isSuperAdmin; } },
-    { k: "backup", icon: I.cloud, href: "backup/", can: function (r) { return r.isSuperAdmin; } },
     { k: "activity", icon: I.list, href: "finance/#activity", can: function (r) { return r.canFinance; } },
     { k: "account", icon: I.person, href: "congregant/", can: function (r) { return r.isCongregant; } }
   ];
@@ -60,6 +60,11 @@
     try { heb = new Intl.DateTimeFormat("he-IL-u-ca-hebrew", { day: "numeric", month: "long", timeZone: tz }).format(d); } catch (e) {}
     try { en = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: tz }).format(d); } catch (e) {}
     heb = hebDay(heb);
+    if (window.OH_LANG === "en") { /* English: Wednesday, November 4 | 24 Cheshvan */
+      var hm = ""; try { hm = new Intl.DateTimeFormat("en-u-ca-hebrew", { day: "numeric", month: "long", timeZone: tz }).format(d); } catch (e) {}
+      hm = hm.replace(/Heshvan/, "Cheshvan").replace(/Tishri/, "Tishrei").replace(/Shevat|Shvat/, "Shevat").replace(/Tamuz|Tammuz/, "Tamuz");
+      return [en, hm].filter(Boolean).join(" | ");
+    }
     return [wd, heb, en].filter(Boolean).join(" | ");
   }
   /* "23 בחשוון" -> "כ״ג בחשוון" (Hebrew numerals, like the screen) */
@@ -106,7 +111,9 @@
     else if (role.isCongregant) { helloText = t("helloTextCongregant"); btn = '<a class="btn primary" href="' + ROOT + 'congregant/">' + I.person + esc(t("mainButtonCongregant")) + "</a>"; }
     if (role.canScreen && !role.canFinance && !role.isSuperAdmin) helloText = t("helloTextScreen");
 
-    var h = '<section class="hero"><div class="card hello goldframe"><span class="date">' + I.cal + esc(dateLine()) + "</span>" +
+    /* 2040 phase 1: the command bar (content gabbaim, super admin) mounts here, src/ui/oh-cmdbar.js */
+    var h = (role.isSuperAdmin || role.canScreen) ? '<div id="ohCmdMount" hidden></div>' : "";
+    h += '<section class="hero"><div class="card hello goldframe"><span class="date">' + I.cal + esc(dateLine()) + "</span>" +
       "<h1>" + esc((t("hello", "שלום,") + " " + name).trim()) + '</h1><span class="h1-en">' + esc(t("helloEn")) + "</span>" +
       (helloText ? "<p>" + esc(helloText) + "</p>" : "") + (btn ? '<div class="row">' + btn + "</div>" : "") + "</div>";
     if (role.authorized) {
@@ -115,6 +122,8 @@
         '<div class="mtv live" id="ohMtv"></div></div>';
     }
     h += "</section>";
+    /* 2040 phase 1: the command bar (content gabbaim, super admin), optional, below the greeting; src/ui/oh-cmdbar.js */
+    if (role.isSuperAdmin || role.canScreen) h += '<div id="ohCmdMount" hidden></div>';
 
     if (gabbai) {
       h += '<section class="stats">';
@@ -128,6 +137,8 @@
       }
       h += "</section>";
     }
+    /* 2040 phase 1: "the system notices before you", src/ui/oh-alerts.js */
+    if (gabbai) h += '<div id="ohAlerts" hidden></div>';
     var shown = TILES.filter(function (x) { return x.can(role); });
     if (shown.length) {
       h += '<h2 class="sec-title">' + esc(t("sectionTitle")) + " <span>" + esc(t("sectionTitleEn")) + "</span></h2>";
@@ -141,10 +152,11 @@
           '<span class="go"><b>' + esc(t("tileGo", "כניסה")) + "</b>" + I.arrow + "</span></a>";
       }).join("") + "</section>";
     }
+    /* Hanoch 2026-11-04 5:46 AM: no lock banners and no "want access?" lines.
+       A gabbai simply does not see what is not theirs; only an account with no
+       access at all hears one neutral line. */
     var na = "";
     if (!role.authorized) na = t("notAuthorized");
-    else if (role.canFinance && !role.canScreen) na = t("noAccessScreen");
-    else if (role.canScreen && !role.canFinance) na = t("noAccessFinance");
     if (na) h += '<div class="card noaccess" id="ohNoAccess">' + I.lock + "<span>" + esc(na) + "</span></div>";
     main.innerHTML = h;
     startData(user, role);
