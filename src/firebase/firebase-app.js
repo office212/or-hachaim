@@ -266,7 +266,10 @@
         var prayerTimes = [];
         pt.forEach(function (doc) {
           var d = doc.data() || {};
-          prayerTimes.push({ nameHe: d.nameHe || d.nameEn || doc.id, nameEn: d.nameEn || doc.id, time: d.time || "", order: typeof d.order === "number" ? d.order : 0 });
+          /* Stage B1: each item keeps its document id, so the admin can edit or
+             delete exactly that document. An empty English name stays empty (before,
+             the random document id was shown in its place). */
+          prayerTimes.push({ id: doc.id, nameHe: d.nameHe || d.nameEn || "", nameEn: d.nameEn || "", time: d.time || "", order: typeof d.order === "number" ? d.order : 0 });
         });
         /* Firestore returns documents by id, not by time: sort by the
            order field the admin saves, so Shacharit comes before Mincha. */
@@ -456,14 +459,53 @@
     savePrayerTime: async function (item) {
       if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
       try {
-        await state.db.collection("prayerTimes").add({
+        var ref = await state.db.collection("prayerTimes").add({
           nameEn: item.nameEn || "", nameHe: item.nameHe || item.nameEn || "",
           time: item.time || "", order: typeof item.order === "number" ? item.order : Date.now(),
           updatedBy: (state.user && state.user.email) || "",
           updatedAt: new Date().toISOString()
         });
-        return { saved: true };
-      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e) }; }
+        return { saved: true, id: ref.id };
+      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
+    },
+    /* Stage B1 (prayer times manager). Same collection, same fields as
+       savePrayerTime: nameHe, nameEn, time ("6:30 AM"), order (minutes after
+       midnight), updatedBy, updatedAt. No new collection, no new field. */
+    loadPrayerTimes: async function () {
+      if (!state.ready || !state.db) return { ok: false, reason: "test-only" };
+      try {
+        var snap = await state.db.collection("prayerTimes").get();
+        var items = [];
+        snap.forEach(function (doc) {
+          var d = doc.data() || {};
+          items.push({ id: doc.id, nameHe: d.nameHe || d.nameEn || "", nameEn: d.nameEn || "", time: d.time || "", order: typeof d.order === "number" ? d.order : 0 });
+        });
+        items.sort(function (a, b) { return a.order - b.order; });
+        return { ok: true, items: items };
+      } catch (e) { return { ok: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
+    },
+    updatePrayerTime: async function (id, item) {
+      if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
+      if (!id || !item) return { saved: false, reason: "missing-id" };
+      try {
+        await state.db.collection("prayerTimes").doc(id).update({
+          nameEn: item.nameEn || "", nameHe: item.nameHe || item.nameEn || "",
+          time: item.time || "", order: typeof item.order === "number" ? item.order : 0,
+          updatedBy: (state.user && state.user.email) || "",
+          updatedAt: new Date().toISOString()
+        });
+        return { saved: true, id: id };
+      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
+    },
+    /* The Firestore rules decide who may delete (stage B1: every Content and
+       Times gabbai and the super admin). A refusal comes back as saved:false. */
+    deletePrayerTime: async function (id) {
+      if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
+      if (!id) return { saved: false, reason: "missing-id" };
+      try {
+        await state.db.collection("prayerTimes").doc(id).delete();
+        return { saved: true, id: id };
+      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
     }
   };
 
