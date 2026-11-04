@@ -388,13 +388,37 @@
         return { saved: true, id: ref.id };
       } catch (e) { return { saved: false, reason: String(e && e.code ? e.code : (e && e.message ? e.message : e)) }; }
     },
+    /* Stage D2 (Hanoch 2026-11-04 5:19 PM): a person whose request was declined
+       may send it again. Same document join_<uid> goes back to "pending" with a
+       new createdAt (still one document, never two open requests). Only name,
+       phone, email (from sign-in), status and createdAt change; the old
+       declinedBy/declinedAt stay, which is how the super admin sees "נשלחה שוב". */
+    resendJoinRequest: async function (data) {
+      if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
+      if (!state.user || !state.user.email) return { saved: false, reason: "not-signed-in" };
+      var name = String((data && data.name) || "").replace(/\s+/g, " ").trim();
+      var phone = String((data && data.phone) || "").replace(/\s+/g, " ").trim();
+      if (name.length < 2 || name.length > 80) return { saved: false, reason: "missing-name" };
+      var digits = phone.replace(/\D/g, "");
+      if (digits.length < 7 || phone.length > 30 || !/^[0-9+()\-. ]+$/.test(phone)) return { saved: false, reason: "invalid-phone" };
+      try {
+        var ref = state.db.collection("congregants").doc("join_" + state.user.uid);
+        var ex = await ref.get();
+        if (!ex.exists) return window.OH_FIREBASE.sendJoinRequest({ name: name, phone: phone });
+        var st = memberStatus(ex.data());
+        if (st !== "declined") return { saved: true, id: ref.id, already: true, status: st };
+        await ref.update({ name: name, phone: phone, email: state.user.email, status: "pending", createdAt: new Date().toISOString() });
+        state.role = null; state.rolePromise = null;
+        return { saved: true, id: ref.id, resent: true };
+      } catch (e) { return { saved: false, reason: String(e && e.code ? e.code : (e && e.message ? e.message : e)) }; }
+    },
     loadJoinRequests: async function () {
       if (!state.ready || !state.db || !state.user) return { ok: false, reason: "not-signed-in", items: [] };
       if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { ok: false, reason: "not-super-admin", items: [] };
       try {
         var snap = await state.db.collection("congregants").where("status", "==", "pending").get();
         var out = [];
-        snap.forEach(function (doc) { var d = doc.data() || {}; out.push({ id: doc.id, name: d.name || "", phone: d.phone || "", email: d.email || "", createdAt: d.createdAt || "" }); });
+        snap.forEach(function (doc) { var d = doc.data() || {}; out.push({ id: doc.id, name: d.name || "", phone: d.phone || "", email: d.email || "", createdAt: d.createdAt || "", resent: !!d.declinedAt }); });
         out.sort(function (a, b) { return String(a.createdAt).localeCompare(String(b.createdAt)); });
         return { ok: true, items: out };
       } catch (e) { return { ok: false, reason: String(e && e.code ? e.code : (e && e.message ? e.message : e)), items: [] }; }
