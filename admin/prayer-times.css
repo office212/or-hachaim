@@ -119,6 +119,9 @@ html.oh-en .ohpt{direction:ltr}
 #ptSection .ohpt-row.sort .acts{align-items:center;flex-wrap:wrap}
 #ptSection .ohpt-row.sort .acts .to{font-size:15px;font-weight:700;color:var(--muted,#7a6f61)}
 #ptSection .ohpt-row.sort .acts .ohpt-btn{min-width:72px}
+/* cmdbar+delete (Nov 4): the quieter delete in the "לסדר" box, same size as the others (52px tall) */
+#ptSection .ohpt-row.sort .acts .ohpt-btn.del{min-width:72px;color:var(--navy,#0e2c4c);border-color:transparent;background:transparent;text-decoration:underline;text-underline-offset:4px;font-weight:600}
+#ptSection .ohpt-row.sort .acts .ohpt-btn.del:hover{border-color:var(--gold,#b48e56)}
 @media (max-width:640px){
  #ptSection .ohpt-sec{padding:10px}
  #ptSection .ohpt-sec-head .ohpt-btn.primary{width:100%}
