@@ -33,6 +33,17 @@
   };
   var SUPER_ADMIN_EMAIL = "hanochhason@gmail.com";
   var UNAUTH_TEXT = "This account is not authorized for the system.";
+  /* 2040 phase 1: the shared prayer time rule (TV reads it):
+     {kind:"fixed"|"sunset", offsetMin:int, days:"all"|"weekday"|"fri"|"shabbat"|"sun-thu",
+      from:"YYYY-MM-DD"?, until:"YYYY-MM-DD"?}. Only these keys are written. */
+  function cleanRule(r) {
+    var out = { kind: r.kind === "sunset" ? "sunset" : "fixed", offsetMin: Math.round(+r.offsetMin || 0) };
+    var DAYS = ["all", "weekday", "fri", "shabbat", "sun-thu"];
+    out.days = DAYS.indexOf(r.days) >= 0 ? r.days : "all";
+    if (/^\d{4}-\d{2}-\d{2}$/.test(r.from || "")) out.from = r.from;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(r.until || "")) out.until = r.until;
+    return out;
+  }
   function normalizePerms(v) {
     var out = [];
     var arr = Array.isArray(v) ? v : (v ? [v] : []);
@@ -204,7 +215,7 @@
       if (page === "congregant") return !!r.canCongregant;
       return !!r.authorized;
     },
-    unauthMessage: function () { return "חשבון זה אינו מורשה למערכת / This account is not authorized for the system. פנה לגבאי או למנהל העל כדי לקבל הרשאה. / Contact a gabbai or the super admin for authorization."; },
+    unauthMessage: function () { return "החשבון הזה אינו מורשה למערכת הגבאים. / This account isn't authorized for the Gabbai system."; },
     statusText: statusText,
     signIn: function () {
       if (!state.auth || !window.firebase || !window.firebase.auth) return Promise.reject(new Error("Firebase not ready"));
@@ -269,7 +280,11 @@
           /* Stage B1: each item keeps its document id, so the admin can edit or
              delete exactly that document. An empty English name stays empty (before,
              the random document id was shown in its place). */
-          prayerTimes.push({ id: doc.id, nameHe: d.nameHe || d.nameEn || "", nameEn: d.nameEn || "", time: d.time || "", order: typeof d.order === "number" ? d.order : 0 });
+          var it = { id: doc.id, nameHe: d.nameHe || d.nameEn || "", nameEn: d.nameEn || "", time: d.time || "", order: typeof d.order === "number" ? d.order : 0 };
+          /* 2040 phase 1: an optional repeat rule (days, date range, or relative
+             to sunset) rides along unchanged; docs without it are as before. */
+          if (d.rule && typeof d.rule === "object") it.rule = d.rule;
+          prayerTimes.push(it);
         });
         /* Firestore returns documents by id, not by time: sort by the
            order field the admin saves, so Shacharit comes before Mincha. */
@@ -459,12 +474,16 @@
     savePrayerTime: async function (item) {
       if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
       try {
-        var ref = await state.db.collection("prayerTimes").add({
+        var data = {
           nameEn: item.nameEn || "", nameHe: item.nameHe || item.nameEn || "",
           time: item.time || "", order: typeof item.order === "number" ? item.order : Date.now(),
           updatedBy: (state.user && state.user.email) || "",
           updatedAt: new Date().toISOString()
-        });
+        };
+        /* 2040 phase 1: optional rule {kind, offsetMin, days, from?, until?}.
+           time and order are always filled too, so older screens keep working. */
+        if (item.rule && typeof item.rule === "object") data.rule = cleanRule(item.rule);
+        var ref = await state.db.collection("prayerTimes").add(data);
         return { saved: true, id: ref.id };
       } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
     },
@@ -478,7 +497,9 @@
         var items = [];
         snap.forEach(function (doc) {
           var d = doc.data() || {};
-          items.push({ id: doc.id, nameHe: d.nameHe || d.nameEn || "", nameEn: d.nameEn || "", time: d.time || "", order: typeof d.order === "number" ? d.order : 0 });
+          var it = { id: doc.id, nameHe: d.nameHe || d.nameEn || "", nameEn: d.nameEn || "", time: d.time || "", order: typeof d.order === "number" ? d.order : 0 };
+          if (d.rule && typeof d.rule === "object") it.rule = d.rule;
+          items.push(it);
         });
         items.sort(function (a, b) { return a.order - b.order; });
         return { ok: true, items: items };
@@ -488,17 +509,100 @@
       if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
       if (!id || !item) return { saved: false, reason: "missing-id" };
       try {
-        await state.db.collection("prayerTimes").doc(id).update({
+        var data = {
           nameEn: item.nameEn || "", nameHe: item.nameHe || item.nameEn || "",
           time: item.time || "", order: typeof item.order === "number" ? item.order : 0,
           updatedBy: (state.user && state.user.email) || "",
           updatedAt: new Date().toISOString()
-        });
+        };
+        /* rule: an object sets it, null removes it, absent leaves it as is. */
+        if (item.rule && typeof item.rule === "object") data.rule = cleanRule(item.rule);
+        else if (item.rule === null && window.firebase && window.firebase.firestore) data.rule = window.firebase.firestore.FieldValue.delete();
+        await state.db.collection("prayerTimes").doc(id).update(data);
         return { saved: true, id: id };
       } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
     },
     /* The Firestore rules decide who may delete (stage B1: every Content and
        Times gabbai and the super admin). A refusal comes back as saved:false. */
+    /* 2040 phase 1 (undo of a delete): put the same document back under the
+       same id, with exactly the fields it had. Allowed by the existing create
+       rule for prayerTimes (hasScreen). */
+    restorePrayerTime: async function (id, item) {
+      if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
+      if (!id || !item) return { saved: false, reason: "missing-id" };
+      try {
+        var data = {
+          nameEn: item.nameEn || "", nameHe: item.nameHe || item.nameEn || "",
+          time: item.time || "", order: typeof item.order === "number" ? item.order : 0,
+          updatedBy: (state.user && state.user.email) || "",
+          updatedAt: new Date().toISOString()
+        };
+        if (item.rule && typeof item.rule === "object") data.rule = cleanRule(item.rule);
+        await state.db.collection("prayerTimes").doc(id).set(data);
+        return { saved: true, id: id };
+      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
+    },
+    /* 2040 phase 1: one line in the existing activityLog (area "screen"),
+       the same shape screen-content.js writes. The rules allow create for
+       the super admin, finance and screen gabbaim; a refusal is returned,
+       never thrown, so the change itself is never blocked by its log line. */
+    logActivity: async function (action, detail, extra) {
+      if (!state.ready || !state.db || !state.user) return { saved: false, reason: "not-signed-in" };
+      try {
+        var ts = window.firebase && window.firebase.firestore ? window.firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString();
+        var log = { area: (extra && extra.area) || "screen", action: String(action || ""), detail: String(detail || "").slice(0, 500),
+          who: state.user.email || "", whoUid: state.user.uid || "", when: ts };
+        if (extra && extra.itemId) log.itemId = String(extra.itemId);
+        if (extra && extra.collection) log.collection = String(extra.collection);
+        if (extra && extra.command) log.command = String(extra.command).slice(0, 300);
+        await state.db.collection("activityLog").add(log);
+        return { saved: true };
+      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
+    },
+    /* 2040 phase 1 (Hanoch 2026-11-04, 5:29 to 5:33 AM): every word on the screen
+       easy to edit, in Hebrew and English, the screen language, and the order of
+       the blocks. ONE public document settings/screenTexts =
+       { texts:{key:"he"}, textsEn:{key:"en"}, layout:{order:[ids], hidden:[ids]}, updatedBy, updatedAt }.
+       (Hanoch 5:51 AM: the TV has no language mode; it always shows its Hebrew + English look.)
+       Only public screen wording and arrangement, no private data. Rules: public
+       read; create/update by content gabbaim and the super admin, exactly these
+       keys (RULES_DELTA.md). */
+    loadScreenTexts: async function () {
+      if (!state.ready || !state.db) return { ok: false, reason: "test-only" };
+      try {
+        var d = await state.db.collection("settings").doc("screenTexts").get();
+        var data = d.exists ? (d.data() || {}) : {};
+        var obj = function (v) { return (v && typeof v === "object" && !Array.isArray(v)) ? v : {}; };
+        return { ok: true, texts: obj(data.texts), textsEn: obj(data.textsEn), layout: obj(data.layout), updatedBy: data.updatedBy || "" };
+      } catch (e) { return { ok: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
+    },
+    /* change(cur) edits a copy of {texts, textsEn, layout}; one transaction,
+       so two gabbaim editing different words never erase each other. */
+    saveScreenSettings: async function (change) {
+      if (!state.ready || !state.db || !state.user) return { saved: false, reason: "not-signed-in" };
+      var ref = state.db.collection("settings").doc("screenTexts"), email = state.user.email || "";
+      try {
+        var out = await state.db.runTransaction(async function (tx) {
+          var snap = await tx.get(ref), d = snap.exists ? (snap.data() || {}) : {};
+          var obj = function (v) { return (v && typeof v === "object" && !Array.isArray(v)) ? JSON.parse(JSON.stringify(v)) : {}; };
+          var cur = { texts: obj(d.texts), textsEn: obj(d.textsEn), layout: obj(d.layout) };
+          change(cur);
+          var data = { texts: cur.texts, textsEn: cur.textsEn, layout: cur.layout,
+            updatedBy: email, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() };
+          tx.set(ref, data);
+          return cur;
+        });
+        return { saved: true, texts: out.texts, textsEn: out.textsEn, layout: out.layout };
+      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
+    },
+    /* one word: he / en: a string sets it, null removes it (back to the default) */
+    saveScreenText: async function (key, he, en) {
+      if (!/^[A-Za-z0-9_.-]{1,80}$/.test(String(key || ""))) return { saved: false, reason: "bad-key" };
+      return this.saveScreenSettings(function (c) {
+        if (he === null) delete c.texts[key]; else if (typeof he === "string") c.texts[key] = he;
+        if (en === null) delete c.textsEn[key]; else if (typeof en === "string") c.textsEn[key] = en;
+      });
+    },
     deletePrayerTime: async function (id) {
       if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
       if (!id) return { saved: false, reason: "missing-id" };
