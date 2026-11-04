@@ -115,7 +115,7 @@
     var h = (role.isSuperAdmin || role.canScreen) ? '<div id="ohCmdMount" hidden></div>' : "";
     h += '<section class="hero"><div class="card hello goldframe"><span class="date">' + I.cal + esc(dateLine()) + "</span>" +
       "<h1>" + esc((t("hello", "שלום,") + " " + name).trim()) + '</h1><span class="h1-en">' + esc(t("helloEn")) + "</span>" +
-      (helloText ? "<p>" + esc(helloText) + "</p>" : "") + (btn ? '<div class="row">' + btn + "</div>" : "") + "</div>";
+      (helloText ? '<p class="oh-help">' + esc(helloText) + "</p>" : "") + (btn ? '<div class="row">' + btn + "</div>" : "") + "</div>";
     if (role.authorized) {
       h += '<div class="card livetv"><div class="livetv-head"><span class="live-pill"><span class="dot"></span>' + esc(financeOnly ? t("liveInShul") : t("liveOnScreen")) + "</span>" +
         '<a href="' + ROOT + 'tv/" target="_blank" rel="noopener">' + esc(t("openScreen")) + " " + I.arrow + "</a></div>" +
@@ -148,7 +148,7 @@
         var L1 = tile(x.k);
         return '<a class="card tile" data-tile="' + x.k + '" href="' + ROOT + x.href + '">' +
           (x.count ? '<span class="count" id="ohTileCount" hidden></span>' : "") +
-          '<span class="tic">' + x.icon + '</span><span class="tb"><h3>' + esc(L1.title) + '</h3><span class="en">' + esc(L1.en) + "</span><p>" + esc(L1.text) + "</p></span>" +
+          '<span class="tic">' + x.icon + '</span><span class="tb"><h3>' + esc(L1.title) + '</h3><span class="en">' + esc(L1.en) + '</span><p class="oh-help">' + esc(L1.text) + "</p></span>" +
           '<span class="go"><b>' + esc(t("tileGo", "כניסה")) + "</b>" + I.arrow + "</span></a>";
       }).join("") + "</section>";
     }
