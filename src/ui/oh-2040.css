@@ -219,3 +219,9 @@ html.oh-en .ohx .tt-cur.en{text-align:start}
 .ohx .set-tx p{margin:2px 0 0;color:var(--ink2);font-size:16px}
 .ohx .set-act{flex:0 0 auto}
 @media (max-width:640px){.ohx .set-act{flex-basis:100%}.ohx .set-act .x-btn{width:100%;justify-content:center}}
+
+/* ===== 2040 phase 2: landing page editor (admin/#htSection, super admin only) ===== */
+.ohx.ht .ht-pv{background:#fbf8f2}
+.ohx.ht .ht-pv iframe{width:1280px;height:1500px;background:#fff}
+.ohx.ht textarea.tt-in{min-height:120px;padding:10px 12px;line-height:1.5;resize:vertical;font-size:17px;font-weight:600}
+.ohx.ht .ht-shared{grid-column:1/-1}
