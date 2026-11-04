@@ -72,9 +72,9 @@
     var sec = $("ttSection"); if (!sec || S.built) return;
     S.built = true;
     sec.classList.add("ohx", "tt");
-    sec.innerHTML = '<div class="x-card"><div class="cb-head"><h2 id="ttHeading">' + esc(L("ttTitle")) + "</h2><span>" + esc(L("ttSub")) + "</span></div>" +
+    sec.innerHTML = '<div class="x-card"><div class="cb-head"><h2 id="ttHeading">' + esc(L("ttTitle")) + '</h2><span class="oh-help">' + esc(L("ttSub")) + "</span></div>" +
       '<div class="tt-grid"><div class="tt-main">' +
-      '<details class="tt-layout" id="ttLayoutBox"><summary><b>' + esc(L("ttLayoutTitle")) + "</b> <span>" + esc(L("ttLayoutSub")) + '</span></summary><div id="ttLayout"></div></details>' +
+      '<details class="tt-layout" id="ttLayoutBox"><summary><b>' + esc(L("ttLayoutTitle")) + '</b> <span class="oh-help">' + esc(L("ttLayoutSub")) + '</span></summary><div id="ttLayout"></div></details>' +
       '<input class="tt-search" id="ttSearch" type="search" placeholder="' + esc(L("ttSearch")) + '" aria-label="' + esc(L("ttSearch")) + '">' +
       '<div id="ttList" class="tt-list"></div></div>' +
       '<div class="tt-side"><div class="tt-pv-head"><b>' + esc(L("ttPreview")) + '</b><a href="../tv/" target="_blank" rel="noopener">' + esc(L("ttOpen")) + '</a></div><div class="tt-pv" id="ttPv"><iframe id="ttFrame" title="' + esc(L("ttPreview")) + '" src="about:blank"></iframe></div></div></div></div>';
