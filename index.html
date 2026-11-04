@@ -2,9 +2,10 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script>
+<script>/* 2040 phase 2: one language at a time. The choice is the same one the gabbai system keeps (localStorage "ohLang"); set before the page paints so English never flashes Hebrew first. */(function(){var l="he";try{l=localStorage.getItem("ohLang")==="en"?"en":"he";}catch(e){}window.OH_LANG=l;window.OH_I18N={active:false,landing:true};var h=document.documentElement;h.lang=l;h.dir=l==="en"?"ltr":"rtl";if(l==="en")h.classList.add("oh-en");})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>בית הכנסת אור החיים | Or Hachaim Congregation, Staten Island</title>
-<meta name="description" content="בית הכנסת אור החיים, 321 Harold St, Staten Island, NY 10314. זמני היום, מפה, ניווט ויצירת קשר. Or Hachaim Congregation, Staten Island: daily zmanim, directions and contact.">
+<meta name="description" content="בית הכנסת אור החיים, 321 Harold St, Staten Island, NY 10314. זמני תפילה, מפה, ניווט ויצירת קשר. Or Hachaim Congregation, Staten Island: Davening Times, directions and contact.">
 <meta name="theme-color" content="#0e2c4c">
 <meta property="og:type" content="website">
 <meta property="og:title" content="בית הכנסת אור החיים | Or Hachaim Congregation">
@@ -13,432 +14,133 @@
 <meta property="og:locale:alternate" content="en_US">
 <link rel="preload" href="src/assets/fonts/assistant-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="src/theme.css">
+<link rel="stylesheet" href="src/ui/oh-design.css">
+<link rel="stylesheet" href="src/home/home.css">
 <script src="src/firebase/firebase-config.js" defer></script>
 <script src="src/firebase/firebase-app.js" defer></script>
 <script type="application/ld+json">
 {"@context":"https://schema.org","@type":"Synagogue","name":"Or Hachaim Congregation","alternateName":"בית הכנסת אור החיים","address":{"@type":"PostalAddress","streetAddress":"321 Harold St","addressLocality":"Staten Island","addressRegion":"NY","postalCode":"10314","addressCountry":"US"},"geo":{"@type":"GeoCoordinates","latitude":40.60155,"longitude":-74.13206}}
 </script>
-<style>
-/* Home page only. Shared tokens and components live in src/theme.css.
-   Jerusalem stone edition: a light stone wall with one arched white
-   panel holding the logo, then clean cards. Gold only as thin lines.
-   v3: the logo's navy as a quiet second colour (slim header bar,
-   headings, primary buttons, the next zman, the footer band). */
-html { scroll-behavior: smooth; scroll-padding-top: 84px; }
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
-.skip-link { position: absolute; inset-inline-start: 12px; top: -60px; z-index: 100; background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 8px; }
-.skip-link:focus { top: 12px; }
-
-/* Header: white, translucent, a slim navy bar on top, one thin gold line below */
-.site-header { position: sticky; top: 0; z-index: 40; background: rgba(255, 255, 255, 0.9); -webkit-backdrop-filter: saturate(1.2) blur(12px); backdrop-filter: saturate(1.2) blur(12px); border-top: 4px solid var(--navy); border-bottom: 1px solid var(--line); box-shadow: inset 0 -2px 0 -1px var(--gold-hair); }
-.site-header__inner { max-width: 1180px; margin: 0 auto; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
-.brand { display: flex; flex-direction: column; text-decoration: none; line-height: 1.05; }
-.brand-he { font-family: var(--font-display-he); font-size: 27px; font-weight: 600; color: var(--navy); }
-.brand-en { font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--muted); margin-top: 5px; font-weight: 600; }
-.site-nav { display: flex; gap: 6px; align-items: center; }
-.site-nav a { color: var(--navy); text-decoration: none; font-size: 16px; font-weight: 600; padding: 9px 14px; border-radius: 999px; transition: background-color 0.2s var(--ease), color 0.2s var(--ease); white-space: nowrap; }
-.site-nav a:hover { background: var(--parchment); color: var(--navy); }
-.site-nav a.nav-signin { margin-inline-start: 10px; border: 1px solid var(--navy); background: var(--navy); color: var(--gold-on-navy); padding: 8px 20px; }
-.site-nav a.nav-signin:hover { background: var(--navy-hover); color: #f3e2bb; }
-
-/* Hero: Jerusalem stone wall in warm light, one arched panel */
-.hero { position: relative; margin: 0 calc(50% - 50vw); padding: 88px 20px 80px; overflow: hidden;
-  background-color: var(--stone);
-  background-image:
-    radial-gradient(55% 70% at 50% 38%, rgba(255, 252, 245, 0.8) 0%, rgba(255, 252, 245, 0.3) 60%, transparent 80%),
-    linear-gradient(180deg, rgba(255, 252, 246, 0.42) 0%, rgba(252, 246, 234, 0.3) 60%, rgba(240, 230, 210, 0.4) 100%),
-    url("src/assets/textures/jerusalem-stone-wall.webp");
-  background-size: auto, auto, 1600px auto; background-position: center; }
-.hero::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
-.plaque { position: relative; max-width: 700px; margin: 0 auto; text-align: center;
-  background: rgba(255, 255, 255, 0.94);
-  border-radius: 50% 50% var(--radius) var(--radius) / 210px 210px var(--radius) var(--radius);
-  padding: 86px 64px 46px;
-  box-shadow: inset 0 0 0 12px rgba(255, 255, 255, 0.94), inset 0 0 0 13px var(--gold-hair), 0 40px 80px -40px rgba(80, 60, 30, 0.55), 0 2px 6px rgba(80, 60, 30, 0.06); }
-.plaque .corner { display: none; }
-.landing-hero .logo { width: 460px; max-width: 100%; height: auto; display: block; margin: 0 auto; }
-.plaque .divider { margin: 20px auto 16px; }
-.address { font-size: 20px; font-weight: 600; color: var(--navy); margin: 0; letter-spacing: 0.01em; }
-.hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
-.hero-actions .btn { width: auto; min-width: 210px; }
-.hero-note { position: relative; color: var(--gold-text); text-align: center; margin: 26px 0 0; letter-spacing: 0.3em; text-transform: uppercase; font-size: 12px; font-weight: 700; }
-
-/* Sections */
-.landing-section { margin-top: 64px; }
-.section-head { text-align: center; margin-bottom: 26px; }
-.section-head h2 { font-family: var(--font-display-he); font-size: 38px; font-weight: 500; margin: 6px 0 0; }
-.section-head .eyebrow { display: block; }
-.section-head .divider { margin-top: 14px; }
-
-/* Today's zmanim: six clean cards, the next one in the logo's navy with gold time */
-.zmanim-dates { text-align: center; color: var(--muted); margin: -6px 0 24px; font-size: 17px; }
-.zmanim-dates strong { color: var(--navy); font-family: var(--font-display-he); font-weight: 600; font-size: 21px; }
-.zmanim-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
-.zman { position: relative; padding: 22px 12px 20px; text-align: center; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); transition: transform 0.2s var(--ease); }
-.zman .z-he { font-family: var(--font-display-he); font-size: 19px; font-weight: 600; color: var(--ink); line-height: 1.25; min-height: 2.5em; display: flex; align-items: center; justify-content: center; }
-.zman .z-en { font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-top: 2px; font-weight: 600; }
-.zman .z-time { font-size: 28px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; margin-top: 10px; white-space: nowrap; }
-.zman.is-next { background: linear-gradient(180deg, #123659 0%, var(--navy) 100%); border-color: var(--navy); box-shadow: inset 0 0 0 4px var(--navy), inset 0 0 0 5px rgba(230, 203, 146, 0.45), var(--shadow-lift); }
-.zman.is-next::before { content: "הבא"; position: absolute; top: -11px; left: 50%; transform: translateX(-50%); background: var(--gold-grad); color: var(--navy); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; padding: 2px 12px; border-radius: 999px; box-shadow: 0 0 0 2px var(--marble); }
-.zman.is-next .z-he { color: #fff; }
-.zman.is-next .z-en { color: rgba(230, 203, 146, 0.8); }
-.zman.is-next .z-time { color: var(--gold-on-navy); }
-/* Shabbat: one light card, three times */
-.shabbat-band { margin-top: 16px; display: grid; grid-template-columns: auto 1fr 1fr 1fr; align-items: center; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-.shabbat-band .sb-title { align-self: stretch; display: flex; flex-direction: column; justify-content: center; padding: 18px 34px; font-family: var(--font-display-he); font-size: 26px; font-weight: 600; color: var(--navy); text-align: center; line-height: 1.1;
-  background: linear-gradient(180deg, rgba(255, 251, 242, 0.75), rgba(246, 236, 214, 0.75)), url("src/assets/textures/jerusalem-stone.webp"); background-size: auto, 512px; border-inline-end: 1px solid var(--line); }
-.shabbat-band .sb-title small { display: block; font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; color: var(--muted); margin-top: 6px; font-family: var(--font-body); font-weight: 700; }
-.shabbat-band .sb-item { padding: 16px 18px; text-align: center; }
-.shabbat-band .sb-item + .sb-item { border-inline-start: 1px solid var(--line); }
-.shabbat-band .sb-name { font-size: 15px; color: var(--muted); }
-.shabbat-band .sb-time { font-size: 28px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
-
-/* About */
-#about { padding: 44px 48px; }
-.about-body { max-width: 720px; margin: 0 auto; text-align: center; font-size: 19px; color: var(--ink-soft); }
-
-/* Visit: map and contact side by side */
-.visit-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 20px; align-items: stretch; }
-.map-frame { height: 100%; min-height: 420px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); box-shadow: var(--shadow); background: var(--stone); }
-.map-frame iframe { width: 100%; height: 100%; min-height: 420px; border: 0; display: block; filter: saturate(0.85) sepia(0.08); }
-.visit-card h3 { margin: 0 0 6px; font-size: 26px; font-family: var(--font-display-he); font-weight: 500; }
-.visit-card .addr-lines { font-size: 20px; font-weight: 600; color: var(--navy); margin: 0 0 18px; line-height: 1.45; }
-.map-caption { margin: 0 0 8px; display: grid; gap: 10px; }
-.map-caption a { display: flex; align-items: center; justify-content: center; min-height: 52px; padding: 12px 18px; border-radius: 12px; background: var(--navy); color: var(--gold-on-navy); text-decoration: none; font-weight: 700; transition: background-color 0.2s var(--ease); }
-.map-caption a:hover { background: var(--navy-hover); color: #f3e2bb; }
-.map-caption a.waze { background: var(--paper); color: var(--navy); border: 1px solid var(--line); }
-.map-caption a.waze:hover { border-color: var(--gold); background: var(--parchment); }
-.contact-list { margin-top: 18px; border-top: 1px solid var(--line); }
-.contact-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
-.contact-row:last-child { border-bottom: none; }
-.contact-row > span:first-child { color: var(--muted); font-size: 16px; }
-
-/* Sign-in: discreet, at the end */
-.page > .signin-box { text-align: center; max-width: 600px; margin: 64px auto 0; }
-.signin-box h2 { font-family: var(--font-display-he), var(--font-display); }
-.signin-box .gsi-btn { margin: 14px auto 0; }
-.signed-in-note { display: none; margin-top: 16px; font-weight: 700; color: var(--navy); }
-#roleMenu h3 { font-size: 19px; margin: 0 0 8px; }
-#roleMenu a { font-weight: 700; }
-
-/* Footer: one navy band, like the logo, with a gold hairline */
-.landing-footer { margin-top: 80px; color: rgba(255, 255, 255, 0.82); padding: 44px 20px 30px; text-align: center;
-  background: linear-gradient(180deg, #11335a 0%, var(--navy) 55%, var(--navy-deep) 100%);
-  border-top: 3px solid var(--gold); box-shadow: inset 0 4px 0 rgba(230, 203, 146, 0.25); }
-.landing-footer .f-he { display: block; font-family: var(--font-display-he); font-size: 30px; font-weight: 600; color: var(--gold-on-navy); }
-.landing-footer .f-en { display: block; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: rgba(255, 255, 255, 0.6); margin-top: 6px; font-weight: 700; }
-.landing-footer a { color: var(--gold-on-navy); }
-.landing-footer .divider { margin: 18px auto; }
-.landing-footer .f-addr { font-size: 16px; margin: 0; }
-.landing-footer .f-small { margin-top: 14px; font-size: 13px; color: rgba(255, 255, 255, 0.55); }
-.gold-line { color: var(--gold-text); }
-
-/* Gentle entrance, once */
-@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-.plaque { animation: rise 0.8s var(--ease) both; }
-
-@media (max-width: 1100px) {
-  .zmanim-grid { grid-template-columns: repeat(3, 1fr); row-gap: 20px; }
-}
-@media (max-width: 900px) {
-  .visit-grid { grid-template-columns: 1fr; }
-  .map-frame, .map-frame iframe { min-height: 320px; }
-}
-/* Phone: feels like an app. Compact bar, swipeable section chips,
-   full-width buttons, two-column zmanim cards. */
-@media (max-width: 760px) {
-  html { scroll-padding-top: 112px; }
-  .site-header__inner { flex-wrap: wrap; gap: 8px 12px; padding: 10px 16px 8px; }
-  .brand-he { font-size: 23px; }
-  .brand-en { font-size: 10px; letter-spacing: 0.22em; }
-  .site-nav { order: 3; width: calc(100% + 32px); margin: 0 -16px; padding: 2px 16px 6px; overflow-x: auto; gap: 8px; scrollbar-width: none; }
-  .site-nav::-webkit-scrollbar { display: none; }
-  .site-nav a { font-size: 14px; padding: 7px 14px; background: var(--parchment); border: 1px solid var(--line); }
-  .site-nav a.nav-signin { margin-inline-start: 0; background: var(--navy); border-color: var(--navy); color: var(--gold-on-navy); }
-  .hero { padding: 40px 14px 44px; background-size: auto, auto, 1100px auto; }
-  .plaque { padding: 58px 22px 30px; border-radius: 50% 50% 16px 16px / 110px 110px 16px 16px; box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.94), inset 0 0 0 9px var(--gold-hair), 0 30px 60px -36px rgba(80, 60, 30, 0.55); }
-  .address { font-size: 16px; }
-  .hero-actions { flex-direction: column; gap: 10px; margin-top: 22px; }
-  .hero-actions .btn { min-width: 0; width: 100%; }
-  .hero-note { margin-top: 18px; font-size: 11px; }
-  .landing-section { margin-top: 44px; }
-  .section-head h2 { font-size: 30px; }
-  .zmanim-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; row-gap: 16px; }
-  .zman { padding: 18px 8px 16px; border-radius: 14px; }
-  .zman .z-he { font-size: 17px; }
-  .zman .z-time { font-size: 25px; }
-  .shabbat-band { grid-template-columns: 1fr 1fr 1fr; }
-  .shabbat-band .sb-title { grid-column: 1 / -1; border-inline-end: 0; border-bottom: 1px solid var(--line); padding: 12px; font-size: 22px; }
-  .shabbat-band .sb-item { padding: 14px 6px; }
-  .shabbat-band .sb-time { font-size: 22px; }
-  .shabbat-band .sb-name { font-size: 13px; }
-  #about { padding: 30px 20px; }
-  .contact-row { flex-direction: column; align-items: flex-start; gap: 4px; }
-  .landing-footer { margin-top: 56px; }
-}
-</style>
-<link rel="stylesheet" href="src/home/home.css">
 </head>
-<body class="oh-home">
-<a class="skip-link" href="#main"><span data-t="skip"></span> / <span data-t-en="skip" lang="en"></span></a>
-<header class="site-header">
+<body class="oh-home" data-no-i18n>
+<a class="skip-link" href="#main" data-k="skip"></a>
+
+<!-- id="ohaTopbar": the landing has its own top bar, so the shared gabbai bar (src/ui/oh-shell.js) does not build here; the page only borrows its language pill -->
+<header class="site-header" id="ohaTopbar">
 <div class="site-header__inner">
-<a class="brand" href="#top" aria-label="אור החיים, לראש העמוד"><span class="brand-he" data-t="brand">אור החיים</span><span class="brand-en" lang="en" data-t-en="brand">Or Hachaim Congregation</span></a>
-<nav class="site-nav" aria-label="ניווט ראשי / Main navigation">
-<a href="#zmanim" id="navZmanim" data-t="navZmanim" hidden></a>
-<a href="#about" data-t="navAbout"></a>
-<a href="#about-en" lang="en" dir="ltr" data-t="navEnglish"></a>
-<a href="#contact" data-t="navContact"></a>
-<a href="#visit" data-t="navVisit"></a>
-<a href="#signin" class="nav-signin" data-t="navSignin"></a>
+<a class="brand" href="#top"><span class="brand-txt"><span class="brand-name" data-k="brand"></span><span class="brand-sub" data-k="brandSub"></span></span></a>
+<nav class="site-nav" id="siteNav">
+<a href="#about" data-k="navAbout"></a>
+<a href="tv/" data-k="navTimes"></a>
+<a href="#contact" data-k="navContact"></a>
+<a href="#visit" data-k="navVisit"></a>
 </nav>
+<div class="header-tools">
+<span class="signin-box" hidden></span><!-- marker: firebase-app.js shows no status bar on the public landing when it finds .signin-box -->
+<span id="langSlot" class="lang-slot"></span>
+<a class="auth-btn" id="authBtn" href="gabbai/" data-state="out"><svg class="g-ic" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><svg class="go-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span class="auth-label" id="authLabel"></span></a>
 </div>
+</div>
+<p class="auth-msg" id="authMsg" role="status" hidden></p>
 </header>
 
-<section class="hero landing-hero" id="top">
+<section class="hero" id="top">
+<div class="hero-inner">
 <div class="plaque">
-<h1 class="sr-only">אור החיים / Or Hachaim Congregation</h1>
-<img class="logo" src="src/assets/logo-4k-transparent.png" alt="אור החיים / Or Hachaim Congregation" width="3840" height="1551" fetchpriority="high">
-<div class="divider" aria-hidden="true"><span></span></div>
-<p class="hero-title" data-t="heroTitle"></p>
-<p class="hero-title-en" lang="en" dir="ltr" data-t-en="heroTitle"></p>
+<h1 class="sr-only" data-k="aboutTitle"></h1>
+<img class="logo" src="src/assets/logo-4k-transparent.png" alt="אור החיים | Or Hachaim Congregation" width="3840" height="1551" fetchpriority="high">
+<span class="rule" aria-hidden="true"></span>
+<p class="hero-title" data-k="heroTitle"></p>
+<p class="hero-date" id="heroDate" hidden></p>
 <div class="hero-actions">
-<a class="btn hero-cta" href="tv/"><span data-t="heroPrimary"></span><small lang="en" dir="ltr" data-t-en="heroPrimary"></small></a>
+<a class="hero-cta" href="tv/"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg><span data-k="heroPrimary"></span></a>
 </div>
-<a class="hero-link" href="https://www.google.com/maps/dir/?api=1&amp;destination=321+Harold+St%2C+Staten+Island%2C+NY+10314"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span data-t="heroNavigate"></span><span class="hero-addr" dir="ltr">321 Harold St, Staten Island, NY 10314</span></a>
+<a class="hero-link" id="heroNav" href="#"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg><span data-k="heroNavigate"></span><span class="hero-addr" dir="ltr" data-addr="one"></span></a>
 </div>
-<p class="hero-note" lang="en" dir="ltr" data-t="heroEyebrow"></p>
+<p class="hero-note" lang="en" dir="ltr" data-k="heroEyebrow"></p>
+</div>
 </section>
 
-<main class="page" id="main">
+<main id="main">
 
-<section class="landing-section" id="zmanim" hidden>
+<section class="band band--today" id="today" hidden>
+<div class="wrap">
 <div class="section-head">
-<span class="eyebrow">Today's Zmanim</span>
-<h2>זמני היום</h2>
-<div class="divider" aria-hidden="true"><span></span></div>
+<span class="eyebrow" data-k="todayEyebrow"></span>
+<h2 data-k="todayTitle"></h2>
+<span class="rule" aria-hidden="true"></span>
 </div>
-<p class="zmanim-dates" id="zmanimDates"></p>
-<div class="zmanim-grid" id="zmanimGrid"></div>
-<div class="shabbat-band" id="shabbatBand" hidden></div>
+<div class="zmanim" id="zmanimGrid"></div>
+<div class="shabbat" id="shabbatBand" hidden></div>
+<p class="today-more"><a href="tv/"><span data-k="todayMore"></span><svg class="ic arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a></p>
+</div>
 </section>
 
-<section class="landing-section about" id="about">
+<section class="band band--about" id="about">
+<div class="wrap">
 <div class="section-head">
-<span class="eyebrow" lang="en" data-t-en="aboutEyebrow">About</span>
-<h2 data-t="aboutTitle"></h2>
-<p class="section-sub" data-t="aboutSub"></p>
-<div class="divider" aria-hidden="true"><span></span></div>
+<span class="eyebrow" data-k="aboutEyebrow"></span>
+<h2 data-k="aboutTitle"></h2>
+<p class="section-sub" data-k="aboutSub"></p>
+<span class="rule" aria-hidden="true"></span>
 </div>
-<p class="about-lead" data-t="aboutLead"></p>
+<p class="about-lead" data-k="aboutLead"></p>
 <div class="about-cards">
-<article class="about-card"><span class="card-rule" aria-hidden="true"></span><h3 data-t="card1Title"></h3><p data-t="card1Text"></p></article>
-<article class="about-card"><span class="card-rule" aria-hidden="true"></span><h3 data-t="card2Title"></h3><p data-t="card2Text"></p></article>
-<article class="about-card"><span class="card-rule" aria-hidden="true"></span><h3 data-t="card3Title"></h3><p data-t="card3Text"></p></article>
+<article class="about-card"><span class="ac-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.3c2.6-.3 4.6 1.3 5 4.2"/></svg></span><h3 data-k="card1Title"></h3><p data-k="card1Text"></p></article>
+<article class="about-card"><span class="ac-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10.2 5 7.6 4.5 4 4.8v13c3.6-.3 6.2.2 8 1.7 1.8-1.5 4.4-2 8-1.7v-13c-3.6-.3-6.2.2-8 1.7z"/><path d="M12 6.5v13"/></svg></span><h3 data-k="card2Title"></h3><p data-k="card2Text"></p></article>
+<article class="about-card"><span class="ac-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"/></svg></span><h3 data-k="card3Title"></h3><p data-k="card3Text"></p></article>
 </div>
-<p class="about-welcome" data-t="welcome"></p>
-<blockquote class="closing"><span class="closing-name" data-t="closingName"></span><p data-t="closing"></p></blockquote>
+<p class="about-welcome" data-k="welcome"></p>
+</div>
 </section>
 
-<section class="landing-section about about--en" id="about-en" lang="en" dir="ltr">
-<div class="section-head">
-<span class="eyebrow" lang="en" data-t-en="aboutEyebrow">About</span>
-<h2 data-t-en="aboutTitle"></h2>
-<p class="section-sub" data-t-en="aboutSub"></p>
-<div class="divider" aria-hidden="true"><span></span></div>
+<section class="band band--closing" aria-label="">
+<div class="wrap">
+<blockquote class="closing"><span class="closing-name" data-k="closingName"></span><p data-k="closing"></p></blockquote>
 </div>
-<p class="about-lead" data-t-en="aboutLead"></p>
-<div class="about-cards">
-<article class="about-card"><span class="card-rule" aria-hidden="true"></span><h3 data-t-en="card1Title"></h3><p data-t-en="card1Text"></p></article>
-<article class="about-card"><span class="card-rule" aria-hidden="true"></span><h3 data-t-en="card2Title"></h3><p data-t-en="card2Text"></p></article>
-<article class="about-card"><span class="card-rule" aria-hidden="true"></span><h3 data-t-en="card3Title"></h3><p data-t-en="card3Text"></p></article>
-</div>
-<p class="about-welcome" data-t-en="welcome"></p>
-<blockquote class="closing"><span class="closing-name" data-t-en="closingName"></span><p data-t-en="closing"></p></blockquote>
 </section>
 
-<section class="landing-section" id="contact">
+<section class="band band--contact" id="contact">
+<div class="wrap">
 <div class="section-head">
-<span class="eyebrow" lang="en" data-t-en="contactTitle">Contact</span>
-<h2 data-t="contactTitle"></h2>
-<div class="divider" aria-hidden="true"><span></span></div>
+<span class="eyebrow" data-k="contactEyebrow"></span>
+<h2 data-k="contactTitle"></h2>
+<span class="rule" aria-hidden="true"></span>
 </div>
 <div class="contact-cards" id="contactCards"></div>
+</div>
 </section>
 
-<section class="landing-section" id="visit">
+<section class="band band--visit" id="visit">
+<div class="wrap">
 <div class="section-head">
-<span class="eyebrow" lang="en" data-t-en="visitTitle">Visit</span>
-<h2 data-t="visitTitle"></h2>
-<div class="divider" aria-hidden="true"><span></span></div>
+<span class="eyebrow" data-k="visitEyebrow"></span>
+<h2 data-k="visitTitle"></h2>
+<span class="rule" aria-hidden="true"></span>
 </div>
 <div class="visit-grid">
-<div class="map-frame">
-<iframe src="https://www.google.com/maps?q=321%20Harold%20St%2C%20Staten%20Island%2C%20NY%2010314&amp;output=embed" width="100%" height="100%" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="מפה: אור החיים, 321 Harold St, Staten Island, NY 10314"></iframe>
+<div class="map-frame"><iframe id="mapFrame" width="100%" height="100%" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+<div class="visit-card">
+<span class="vc-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>
+<h3 data-k="addressTitle"></h3>
+<p class="addr-lines" dir="ltr"><span data-k="addressLine1"></span><br><span data-k="addressLine2"></span></p>
+<div class="nav-btns"><a class="nav-btn" id="navGoogle" href="#" target="_blank" rel="noopener"><span data-k="navGoogle"></span></a><a class="nav-btn" id="navWaze" href="#" target="_blank" rel="noopener"><span data-k="navWaze"></span></a></div>
 </div>
-<div class="gold-frame visit-card">
-<h3 data-t="addressTitle"></h3>
-<p class="addr-lines" dir="ltr">321 Harold St<br>Staten Island, NY 10314</p>
-<p class="map-caption"><a href="https://www.google.com/maps/dir/?api=1&amp;destination=321+Harold+St%2C+Staten+Island%2C+NY+10314"><span data-t="navGoogle"></span></a><a class="waze" href="https://www.waze.com/ul?ll=40.60155%2C-74.13206&amp;navigate=yes"><span data-t="navWaze"></span></a></p>
 </div>
 </div>
-</section>
-
-<section class="gold-frame landing-section signin-box" id="signin">
-<h2 data-t="signinTitle"></h2>
-<p lang="en" dir="ltr" data-t-en="signinSub"></p>
-<button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>Sign in with Google / התחברות עם Google</span></button>
-<p class="hint" id="gateMsg"></p>
-<p class="signed-in-note" id="signedInNote">נכנסת בהצלחה / Signed in successfully.</p>
-<div id="roleMenu" style="display:none;margin-top:16px"></div>
-<p class="hint" id="unauthMsg" style="display:none"></p>
 </section>
 </main>
 
-<footer class="landing-footer">
-<span class="f-he" data-t="footerBrand">אור החיים</span>
-<span class="f-en" lang="en" data-t-en="footerBrand">Or Hachaim Congregation</span>
-<div class="divider" aria-hidden="true"><span></span></div>
-<p class="f-addr"><span dir="ltr">321 Harold St, Staten Island, NY 10314</span></p>
-<p class="f-small">© <span id="footerYear">2026</span> Or Hachaim Congregation</p>
+<footer class="site-footer">
+<div class="wrap footer-inner">
+<div class="f-brand"><div><span class="f-name" data-k="footerBrand"></span><span class="f-sub" data-k="footerSub"></span></div></div>
+<div class="f-col"><p class="f-addr" dir="ltr" data-addr="one"></p><p class="f-links" id="footerLinks"></p></div>
+</div>
+<p class="f-small">© <span id="footerYear">2026</span> <span data-k="footerCopy"></span></p>
 </footer>
 
 <script src="src/home/home-texts.js"></script>
+<script src="src/ui/oh-shell.js"></script>
 <script src="src/home/home.js"></script>
-<script>
-function signInFromGate() {
-  var fb = window.OH_FIREBASE;
-  if (!fb || !fb.signIn) {
-    document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.';
-    return;
-  }
-  if (fb.user) { fb.signOut(); return; }
-  try { sessionStorage.setItem('ohGoGabbai', '1'); } catch (e) {}
-  var r = fb.signIn();
-  if (r && r.catch) r.catch(function (e) {
-    document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e);
-  });
-}
-function landingButtonLabel(signedIn) {
-  var btn = document.querySelector('.signin-box .gsi-btn span');
-  if (btn) btn.textContent = signedIn ? 'Sign out / התנתקות' : 'Sign in with Google / התחברות עם Google';
-}
-async function refreshRoleMenu() {
-  try {
-    var fb = window.OH_FIREBASE;
-    var menu = document.getElementById('roleMenu');
-    var note = document.getElementById('signedInNote');
-    var unauth = document.getElementById('unauthMsg');
-    if (!fb || !fb.ready || !fb.user) {
-      landingButtonLabel(false);
-      if (menu) { menu.style.display = 'none'; menu.innerHTML = ''; }
-      if (note) note.style.display = 'none';
-      if (unauth) unauth.style.display = 'none';
-      return;
-    }
-    landingButtonLabel(true);
-    var role = await fb.resolveRole();
-    if (!role) return; /* still resolving: show nothing yet, never a link */
-    if (!role.authorized) {
-      if (menu) { menu.style.display = 'none'; menu.innerHTML = ''; }
-      if (note) note.style.display = 'none';
-      if (unauth) {
-        unauth.style.display = 'block';
-        unauth.textContent = fb.unauthMessage ? fb.unauthMessage() : 'חשבון זה אינו מורשה למערכת / This account is not authorized for the system.';
-      }
-      return;
-    }
-    if (unauth) unauth.style.display = 'none';
-    if (note) note.style.display = 'block';
-    var links = [];
-    /* Stage A (2026-11-03): a gabbai goes to the new gabbai home
-       (gabbai/), which shows only what this role may do. A congregant
-       without gabbai permissions keeps the direct link to their account. */
-    var isGabbai = role.isSuperAdmin || role.canFinance || role.canAdmin || role.canScreen;
-    if (isGabbai) {
-      links.push('<a class="btn" href="gabbai/">כניסה למערכת הגבאים / Gabbai system</a>');
-      try { if (sessionStorage.getItem('ohGoGabbai') === '1') { sessionStorage.removeItem('ohGoGabbai'); location.href = 'gabbai/'; return; } } catch (e) {}
-    } else if (role.canCongregant) {
-      links.push('<a href="congregant/">החשבון שלי / My Account</a>');
-    }
-    if (menu) {
-      menu.style.display = 'block';
-      menu.innerHTML = '<h3>כניסה לפי הרשאה / Your sections</h3><p>' + links.join(' | ') + '</p>';
-    }
-  } catch (e) {}
-}
-setInterval(refreshRoleMenu, 1000);
-refreshRoleMenu();
-</script>
-<script>
-/* Today's zmanim on the home page, from the same daily file the TV
-   screen uses (src/zmanim/roy-daily-5787.json). Read only, no login.
-   Set PUBLIC_ZMANIM to false to hide this section until the Torah
-   approval of the public display is complete. */
-var PUBLIC_ZMANIM = false;
-(function () {
-  var y = document.getElementById("footerYear");
-  if (y) y.textContent = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric" }).format(new Date());
-  if (!PUBLIC_ZMANIM || !window.fetch) return;
-  var TZ = "America/New_York";
-  function nyKey(offsetDays) {
-    var p = {}; new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; });
-    var d = new Date(Date.UTC(+p.year, +p.month - 1, +p.day + offsetDays));
-    return d.toISOString().slice(0, 10);
-  }
-  function nyWeekday() { return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short" }).format(new Date())); }
-  function nowMins() { var p = {}; new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; }); return (+p.hour % 24) * 60 + (+p.minute); }
-  function t12(t) { if (!t) return ""; var a = String(t).split(":"), h = +a[0], ap = h >= 12 ? "PM" : "AM"; h = h % 12 || 12; return h + ":" + a[1] + " " + ap; }
-  function mins(t) { var a = String(t).split(":"); return +a[0] * 60 + (+a[1]); }
-/* Hebrew date with Hebrew letters (כ״ג בחשוון תשפ״ז), the way a
-   synagogue writes it. Intl gives the Hebrew calendar but Arabic digits. */
-  function hebrewNumeral(n) {
-  var ones = ["", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט"], tens = ["", "י", "כ", "ל", "מ", "נ", "ס", "ע", "פ", "צ"];
-  var hund = ["", "ק", "ר", "ש", "ת", "תק", "תר", "תש", "תת", "תתק"];
-  var s = hund[Math.floor(n / 100)]; n = n % 100;
-  if (n === 15) s += "טו"; else if (n === 16) s += "טז"; else s += tens[Math.floor(n / 10)] + ones[n % 10];
-  return s.length > 1 ? s.slice(0, -1) + "\u05F4" + s.slice(-1) : s + "\u05F3";
-}
-  function hebrewDateText(date, withWeekday) {
-  var opts = { timeZone: "America/New_York", day: "numeric", month: "long", year: "numeric" };
-  if (withWeekday) opts.weekday = "long";
-  return new Intl.DateTimeFormat("he-IL-u-ca-hebrew", opts).formatToParts(date).map(function (p) {
-    if (p.type === "day") return hebrewNumeral(parseInt(p.value, 10));
-    if (p.type === "year") return hebrewNumeral(parseInt(p.value, 10) % 1000);
-    return p.value;
-  }).join("");
-}
-  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-  fetch("src/zmanim/roy-daily-5787.json").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
-    if (!j || !j.days) return;
-    var day = j.days[nyKey(0)]; if (!day) return;
-    var items = [
-      ["netz", "נץ החמה", "Netz"], ["shemaGra", "סוף זמן ק״ש גר״א", "Shema, Gra"], ["chatzot", "חצות היום", "Chatzot"],
-      ["plag", "פלג המנחה", "Plag HaMincha"], ["shkiah", "שקיעה", "Shkiah"], ["tzeit", "צאת הכוכבים", "Tzeit HaKochavim"]
-    ];
-    var now = nowMins(), nextDone = false;
-    document.getElementById("zmanimGrid").innerHTML = items.map(function (it) {
-      var t = day[it[0]]; var isNext = !nextDone && t && mins(t) >= now; if (isNext) nextDone = true;
-      return '<div class="zman' + (isNext ? " is-next" : "") + '"><div class="z-he">' + esc(it[1]) + '</div><div class="z-en">' + esc(it[2]) + '</div><div class="z-time" dir="ltr">' + esc(t12(t)) + "</div></div>";
-    }).join("");
-    var heb = ""; try { heb = hebrewDateText(new Date()); } catch (e) {}
-    var greg = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "long", month: "long", day: "numeric", year: "numeric" }).format(new Date());
-    document.getElementById("zmanimDates").innerHTML = (heb ? '<strong dir="rtl">' + esc(heb) + "</strong> · " : "") + '<span dir="ltr">' + esc(greg) + "</span>";
-    /* Coming Shabbat: Friday candle lighting, Shabbat ends and Rabbeinu Tam (Saturday). */
-    var wd = nyWeekday(), toFri = wd === 6 ? -1 : (5 - wd);
-    if (wd === 6 && day.shabbatEndsMyZmanim && now > mins(day.shabbatEndsMyZmanim)) toFri = 6; /* Motzei Shabbat: show the next Shabbat */
-    var fri = j.days[nyKey(toFri)], sat = j.days[nyKey(toFri + 1)];
-    if (fri && sat && fri.candle18 && sat.shabbatEndsMyZmanim) {
-      var band = document.getElementById("shabbatBand");
-      band.innerHTML = '<div class="sb-title">שבת קודש<small>Shabbat</small></div>' +
-        '<div class="sb-item"><div class="sb-name">הדלקת נרות · Candles</div><div class="sb-time" dir="ltr">' + esc(t12(fri.candle18)) + "</div></div>" +
-        '<div class="sb-item"><div class="sb-name">צאת השבת · Shabbat ends</div><div class="sb-time" dir="ltr">' + esc(t12(sat.shabbatEndsMyZmanim)) + "</div></div>" +
-        (sat.rabbeinuTamMyZmanim ? '<div class="sb-item"><div class="sb-name">רבנו תם · Rabbeinu Tam</div><div class="sb-time" dir="ltr">' + esc(t12(sat.rabbeinuTamMyZmanim)) + "</div></div>" : "");
-      band.hidden = false;
-    }
-    document.getElementById("zmanim").hidden = false;
-  }).catch(function () {});
-})();
-</script>
 </body>
 </html>
