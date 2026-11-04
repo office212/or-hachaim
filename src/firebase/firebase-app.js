@@ -287,6 +287,49 @@
         return out;
       } catch (e) { return null; }
     },
+    /* Add a congregant to the existing "congregants" collection (the
+       rules already allow create/update for hasFinance only; no rules
+       change). Same house style as saveLedgerEntry: never throws,
+       returns { saved: true, id } or { saved: false, reason }.
+       - Fields: exactly what loadCongregants / loadOwnCongregant read
+         (name, phone, email lowercased, "" when none) plus createdBy /
+         createdAt, the same as saveUserPermission writes for users.
+       - data.id: a document id made on the client (newCongregantId)
+         and kept by the page until a confirmed save, so a retry or a
+         double tap writes the SAME document and can never create two.
+       - An email already on another record is refused
+         ("duplicate-email"): the congregant sign-in matches by email. */
+    newCongregantId: function () {
+      if (!state.ready || !state.db) return null;
+      try { return state.db.collection("congregants").doc().id; } catch (e) { return null; }
+    },
+    saveCongregant: async function (data) {
+      if (!state.ready || !state.db || !data) return { saved: false, reason: "test-only" };
+      if (!state.user) return { saved: false, reason: "not-signed-in" };
+      var name = String(data.name || "").trim();
+      if (!name) return { saved: false, reason: "missing-name" };
+      var email = String(data.email || "").trim().toLowerCase();
+      if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { saved: false, reason: "invalid-email" };
+      try {
+        var ref = data.id ? state.db.collection("congregants").doc(String(data.id)) : state.db.collection("congregants").doc();
+        if (email) {
+          var q = await state.db.collection("congregants").where("email", "==", email).limit(1).get();
+          if (!q.empty) {
+            /* the same id means this exact add was already saved (a retry) */
+            if (q.docs[0].id === ref.id) return { saved: true, id: ref.id, already: true };
+            return { saved: false, reason: "duplicate-email", id: q.docs[0].id };
+          }
+        }
+        await ref.set({
+          name: name,
+          phone: String(data.phone || "").trim(),
+          email: email,
+          createdBy: state.user.email || "",
+          createdAt: new Date().toISOString()
+        });
+        return { saved: true, id: ref.id };
+      } catch (e) { return { saved: false, reason: String(e && e.code ? e.code : (e && e.message ? e.message : e)) }; }
+    },
     loadScreenData: async function () {
       if (!state.ready || !state.db) return null;
       try {
