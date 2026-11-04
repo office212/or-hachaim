@@ -109,6 +109,73 @@
     ends: { he: "צאת השבת {a} ר״ת {b}", en: "Shabbat Ends {a} R”t {b}", a: { he: "צאת השבת", en: "Shabbat Ends" }, b: { he: "ר״ת", en: "R”t" } },
     endsYT: { he: "{a}", en: "{a}" }
   };
+  /* ===== SHEET_DEFAULTS: the shul's regular sheet, out of the box =====
+     Hanoch 2026-11-04 2:54 PM: everything on their sheet is there by default;
+     the gabbai only changes a time, removes a row or adds one. Taken from their
+     Chayei Sarah (Oct 31) sheet, row for row.
+     v3 (Hanoch 3:20 PM): the default times are suggestions that follow the
+     sunset each week (offsets below); Shacharit stays 8:30.
+     davening: used when no prayerTimes doc (Friday / Shabbat) fills the row.
+       What wins, strongest first: this week's change > "קבוע כל שבוע" (every
+       week) > a prayerTimes doc > this default.
+     regular: rows that are on the sheet every week (same wording as their sheet).
+     Calculated rows (candles, Shkiah, Shema, Shabbat ends, R"t) are not here:
+     they always come from the calendar.
+     Every default row can be removed for this week (Hidden) or from every week
+     ("הסר"); a removal is kept in settings/shabbatSheet.regular as
+     { id: "off:<row>", off: true } and an every-week time as
+     { id: "set:<row>", time: "8:15" } (no new key, same rules). */
+  var SHEET_DEFAULTS = {
+    /* Hanoch 3:20 PM: the gabbai decides every Shabbat; the default is only a
+       SUGGESTION that follows the sunset, from the offsets on their Oct 31 sheet
+       (Nov 7: Friday Shkiah 4:47, Shabbat Shkiah 4:46). Each entry is either
+       { at: "8:30" } (a fixed clock time) or { from: anchor, min: offset }:
+         from "shkiahFri" / "shkiahSat": the calendar's Shkiah that day (the same
+           minute the sheet prints), plus `min` minutes (negative = before);
+         from "minchaSat": the Mincha & Seudah Shlishit time on this week's sheet
+           (after any change), plus `min` minutes.
+       Shkiah is a whole minute already, so the result is exact (no rounding).
+       No Shkiah for that day (no calendar data) = no suggestion (the row asks
+       for a time) rather than a guessed one. */
+    davening: {
+      minchaFri: { from: "shkiahFri", min: -12 },  /* 4:35 on Nov 7 */
+      shacharit: { at: "8:30" },                   /* morning, not sunset */
+      minchaSat: { from: "shkiahSat", min: -36 },  /* 4:10 on Nov 7 */
+      arvit: { from: "shkiahSat", min: 40 }        /* 5:26 on Nov 7 */
+    },
+    regular: [
+      { id: "chavruta", group: "afternoon", time: { from: "minchaSat", min: -120 }, he: "חברותות", en: "Learning B’Chavruta" }, /* 2:10 */
+      { id: "shiur", group: "afternoon", time: { from: "minchaSat", min: -60 }, he: "שיעור", en: "Shiur" }                      /* 3:10 */
+    ]
+  };
+  /* one default -> "h:mm" (or "" when its anchor has no time). anchors: minutes since midnight */
+  function defTime(d, anchors) {
+    if (!d) return "";
+    if (typeof d === "string") return d;
+    if (d.at) return d.at;
+    var a = anchors && anchors[d.from];
+    if (typeof a !== "number" || a < 0) return "";
+    var m = a + (d.min || 0);
+    return m >= 0 && m < 1440 ? show(m) : "";
+  }
+  /* the text size of one week: whole steps, 0 = fit to the page (the default) */
+  var SIZE_MIN = -6, SIZE_MAX = 6;
+  function sizeStep(v) { v = Math.round(Number(v)); return isFinite(v) ? Math.max(SIZE_MIN, Math.min(SIZE_MAX, v)) : 0; }
+  function isMark(x) { return x && typeof x.id === "string" && /^(off|set|ord):/.test(x.id); }
+  /* settings.regular -> { off: {rowId:1}, set: {rowId:"h:mm"}, rows: [real regular rows] } */
+  function regularOf(settings) {
+    var o = { off: {}, set: {}, rows: [], order: [] }, list = (settings && Array.isArray(settings.regular)) ? settings.regular : [];
+    list.forEach(function (x) {
+      if (!x || typeof x !== "object" || !x.id) return;
+      var id = String(x.id);
+      if (/^off:/.test(id)) { if (x.off !== false) o.off[id.slice(4)] = 1; return; }
+      if (/^set:/.test(id)) { if (typeof x.time === "string" && x.time) o.set[id.slice(4)] = x.time; return; }
+      /* v3: the every-week order of the rows, one mark { id: "ord:all", ids: [rowId, ...] } */
+      if (/^ord:/.test(id)) { if (Array.isArray(x.ids)) o.order = x.ids.filter(function (k) { return typeof k === "string"; }); return; }
+      o.rows.push(x);
+    });
+    return o;
+  }
   /* which prayerTimes doc fills which davening row */
   var SLOTS = [
     { id: "minchaFri", day: "fri", re: /מנחה|קבלת\s*שבת|mincha|kabbal/i, best: /מנחה.*קבלת|קבלת.*מנחה|mincha.*kabbal/i },
@@ -118,7 +185,7 @@
   ];
   function docName(d) { return (d && (d.nameHe || d.name || d.nameEn)) || ""; }
   function docText(d) { return [d && d.nameHe, d && d.name, d && d.nameEn].filter(Boolean).join(" "); }
-  function emptyWeek() { return { times: {}, hidden: [], star: "", extra: [] }; }
+  function emptyWeek() { return { times: {}, hidden: [], star: "", extra: [], size: 0, order: [] }; }
   function weekOf(settings, iso) {
     var w = settings && settings.weeks && settings.weeks[iso];
     var o = emptyWeek();
@@ -127,6 +194,8 @@
       if (Array.isArray(w.hidden)) o.hidden = w.hidden.filter(function (x) { return typeof x === "string"; });
       if (typeof w.star === "string") o.star = w.star;
       if (Array.isArray(w.extra)) o.extra = w.extra.filter(function (x) { return x && typeof x === "object" && x.id; });
+      if (typeof w.size === "number") o.size = sizeStep(w.size);
+      if (Array.isArray(w.order)) o.order = w.order.filter(function (k) { return typeof k === "string"; });
     }
     return o;
   }
@@ -138,8 +207,9 @@
      -> { shabbat, friday, title, mev, rows:[...], week } */
   function build(inp) {
     var sh = inp.shabbat, fri = addDays(sh, -1), sb = inp.sb || {}, days = inp.days || {}, zf = days[fri] || {}, zs = days[sh] || {};
-    var week = weekOf(inp.settings, sh), rows = [], RT = inp.rt || root.OH_RABBEINU_TAM;
+    var week = weekOf(inp.settings, sh), rows = [], RT = inp.rt || root.OH_RABBEINU_TAM, reg = regularOf(inp.settings);
     function add(r) {
+      if (reg.off[r.id] && r.removable) { removed.push({ id: r.id, he: r.he || "", en: r.en || "" }); return; }
       r.he = r.he || ""; r.en = r.en || ""; r.hidden = week.hidden.indexOf(r.id) >= 0; r.star = week.star === r.id;
       if (r.parts) {
         r.parts.forEach(function (p) { p.base = p.base || ""; var o = week.times[p.key]; p.changed = typeof o === "string" && o !== "" && o !== p.base; p.time = p.changed ? o : p.base; });
@@ -153,6 +223,7 @@
       }
       rows.push(r);
     }
+    var removed = [];
     var t = function (hhmm) { var m = min24(hhmm); return m < 0 ? "" : show(m); };
     /* system rows */
     var cl = sb.candleLighting || {};
@@ -174,6 +245,8 @@
     }
     /* davening: prayerTimes rules with days fri / shabbat */
     var used = {}, timeOf = inp.timeOf || function () { return -1; };
+    /* the anchors of the suggested (default) times: the same minutes the sheet prints */
+    var anchors = { shkiahFri: min24(zf.shkiah), shkiahSat: min24(zs.shkiah) };
     var cand = (inp.docs || []).filter(function (d) { return d && d.rule && (d.rule.days === "fri" || d.rule.days === "shabbat"); }).map(function (d) {
       var iso = d.rule.days === "fri" ? fri : sh, m = timeOf(d, iso);
       return { doc: d, day: d.rule.days === "fri" ? "fri" : "sat", min: typeof m === "number" ? m : -1 };
@@ -182,17 +255,32 @@
       var pool = cand.filter(function (c) { return !used[c.doc.id] && c.day === s.day && s.re.test(docText(c.doc)) && (!s.morning || c.min < 720) && (!s.afternoon || c.min >= 720); });
       var pick = (s.best && pool.filter(function (c) { return s.best.test(docText(c.doc)); })[0]) || pool[0] || null;
       if (pick) used[pick.doc.id] = 1;
-      var w = W[s.id];
-      add({ id: s.id, group: s.day === "fri" ? "erev" : (s.morning ? "morning" : "afternoon"), kind: "davening", src: pick ? "pt" : "none",
-        ptName: pick ? docName(pick.doc) : "", he: w.he, en: w.en, base: pick ? show(pick.min) : "", rank: { minchaFri: 5, shacharit: 1, minchaSat: 6, arvit: 9.5 }[s.id] });
+      var w = W[s.id], g = s.day === "fri" ? "erev" : (s.morning ? "morning" : "afternoon");
+      var every = reg.set[s.id] ? normTyped(reg.set[s.id], g) : "", dd = SHEET_DEFAULTS.davening[s.id], def = defTime(dd, anchors);
+      var src = every ? "regular" : (pick ? "pt" : (def ? "default" : "none"));
+      add({ id: s.id, group: g, kind: "davening", src: src, removable: true, everyTime: !!every, suggest: src === "default" && !!(dd && dd.from) ? dd.from : "",
+        ptName: pick ? docName(pick.doc) : "", he: w.he, en: w.en, base: every || (pick ? show(pick.min) : def), rank: { minchaFri: 5, shacharit: 1, minchaSat: 6, arvit: 9.5 }[s.id] });
     });
     cand.forEach(function (c) {
       if (used[c.doc.id]) return;
       add({ id: "pt:" + c.doc.id, group: c.day === "fri" ? "erev" : (c.min < 720 ? "morning" : "afternoon"), kind: "davening", src: "pt", ptName: docName(c.doc),
         he: c.doc.nameHe || c.doc.name || c.doc.nameEn || "", en: c.doc.nameEn || c.doc.nameHe || c.doc.name || "", base: show(c.min), rank: 5 });
     });
+    /* the default regular rows (SHEET_DEFAULTS.regular), unless replaced or removed */
+    var regIds = {}; reg.rows.forEach(function (x) { regIds[String(x.id)] = 1; });
+    /* the learning rows follow this week's Mincha & Seudah Shlishit (as printed) */
+    var mrow = rows.filter(function (r) { return r.id === "minchaSat"; })[0];
+    var mmin = mrow && mrow.time ? parseTyped(mrow.time, "afternoon") : -1;
+    if (!(mmin >= 0)) { var md = defTime(SHEET_DEFAULTS.davening.minchaSat, anchors); mmin = md ? parseTyped(md, "afternoon") : -1; }
+    anchors.minchaSat = mmin;
+    SHEET_DEFAULTS.regular.forEach(function (x) {
+      if (regIds[x.id]) return;
+      var every = reg.set["r:" + x.id] ? normTyped(reg.set["r:" + x.id], x.group) : "", def = defTime(x.time, anchors);
+      add({ id: "r:" + x.id, rid: x.id, group: x.group, kind: "regular", src: "regular", isDefault: true, removable: true, everyTime: !!every,
+        suggest: !every && def && x.time && x.time.from ? x.time.from : "", he: x.he, en: x.en, base: every || def, rank: 5 });
+    });
     /* regular rows (every week) and this week's added rows */
-    ((inp.settings && Array.isArray(inp.settings.regular)) ? inp.settings.regular : []).forEach(function (x) {
+    reg.rows.forEach(function (x) {
       if (!x || !x.id) return;
       add({ id: "r:" + x.id, rid: x.id, group: GROUPS.indexOf(x.group) >= 0 ? x.group : "afternoon", kind: "regular", src: "regular", he: String(x.he || ""), en: String(x.en || ""), base: x.time ? (normTyped(x.time, x.group) || "") : "", rank: 5 });
     });
@@ -209,10 +297,34 @@
       if (ka >= 0 && kb >= 0) return a.rank - b.rank || a.seq - b.seq;
       return a.rank - b.rank || a.seq - b.seq;
     });
+    /* v3 (Hanoch 3:21 PM): the gabbai's own order (moved / placed rows) wins over
+       the time order: this week's order, else the every-week order */
+    var ord = week.order.length ? week.order : reg.order, ordFrom = week.order.length ? "week" : (reg.order.length ? "every" : "");
+    if (ord.length) rows = applyOrder(rows, ord);
     var mev = mevarchin(sb);
-    return { shabbat: sh, friday: fri, title: title(sb), mev: mev ? { he: mev.he, en: mev.en, hidden: week.hidden.indexOf("mev") >= 0 } : null, rows: rows, week: week };
+    return { orderFrom: ordFrom, shabbat: sh, friday: fri, title: title(sb), mev: mev ? { he: mev.he, en: mev.en, hidden: week.hidden.indexOf("mev") >= 0 } : null, rows: rows, week: week, removed: removed };
   }
 
+  /* rows (already in time order) + a list of row ids -> rows in the list's order,
+     inside each group. A row the list does not name (e.g. a row added later) keeps
+     its place after the row that comes before it in the time order. */
+  function applyOrder(rows, list) {
+    var idx = {}; list.forEach(function (id, i) { if (!(id in idx)) idx[id] = i; });
+    var out = [];
+    GROUPS.forEach(function (g) {
+      var inG = rows.filter(function (r) { return r.group === g; });
+      var res = inG.filter(function (r) { return r.id in idx; }).sort(function (a, b) { return idx[a.id] - idx[b.id]; });
+      inG.forEach(function (r, i) {
+        if (r.id in idx) return;
+        var at = 0;
+        for (var j = i - 1; j >= 0; j--) { var p = res.indexOf(inG[j]); if (p >= 0) { at = p + 1; break; } }
+        res.splice(at, 0, r);
+      });
+      out = out.concat(res);
+    });
+    rows.forEach(function (r) { if (out.indexOf(r) < 0) out.push(r); });
+    return out;
+  }
   /* What goes on the sheet in one language: [{group, rows:[{label, time, star}|{line, star}]}] */
   function lines(model, lang) {
     var en = lang === "en", out = [];
@@ -244,6 +356,33 @@
   function clone(o) { return JSON.parse(JSON.stringify(o || {})); }
   function clean(s, n) { return String(s == null ? "" : s).replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, n || 60); }
   var KEEP_WEEKS = 8;
+  /* the rows SHEET_DEFAULTS puts on the sheet (their ids in the model) */
+  function defaultIds() {
+    var o = {}; Object.keys(SHEET_DEFAULTS.davening).forEach(function (k) { o[k] = 1; });
+    SLOTS.forEach(function (x) { o[x.id] = 1; });
+    SHEET_DEFAULTS.regular.forEach(function (x) { o["r:" + x.id] = 1; });
+    return o;
+  }
+  /* the order of one group: ids replace that group's place in the order list
+     (week: this Shabbat; every: the every-week mark in regular[]; a row added
+     this week only (x:) never goes into the every-week order). Moving an
+     every-week row while this week has its own order updates both. */
+  function setOrder(s, w, ids, every) {
+    if (!Array.isArray(ids) || !ids.length || ids.length > 60) return false;
+    if (!ids.every(function (k) { return typeof k === "string" && k.length <= 64 && /^[A-Za-z0-9:_-]+$/.test(k); })) return false;
+    var merge = function (list, add) { return list.filter(function (k) { return add.indexOf(k) < 0; }).concat(add); };
+    var reg = regularOf(s);
+    if (every) {
+      var evIds = ids.filter(function (k) { return !/^x:/.test(k); });
+      var next = merge(reg.order, evIds).slice(-120);
+      var mark = s.regular.filter(function (x) { return x && /^ord:/.test(String(x.id)); })[0];
+      if (mark) mark.ids = next; else { if (s.regular.length >= 30) return false; s.regular.push({ id: "ord:all", ids: next }); }
+      if (w.order.length) w.order = merge(w.order, ids).slice(-120);
+    } else {
+      w.order = merge(w.order.length ? w.order : reg.order, ids).slice(-120);
+    }
+    return true;
+  }
   /* settings -> a copy with one change for the Shabbat `iso`. Empty weeks are
      removed; weeks older than KEEP_WEEKS before `iso` are dropped. */
   function edit(settings, iso, op) {
@@ -263,21 +402,58 @@
         if (!he && !en) return null;
         var tm = op.time ? normTyped(op.time, g) : ""; if (op.time && !tm) return null;
         var id = op.id || ("a" + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36));
+        if (!/^[A-Za-z0-9_-]{1,40}$/.test(id)) return null;
         if (op.every) { if (s.regular.length >= 30) return null; s.regular.push({ id: id, he: he, en: en, time: tm || "", group: g }); }
         else { if (w.extra.length >= 12) return null; w.extra.push({ id: id, he: he, en: en, time: tm || "", group: g }); }
+        /* v3: placed between rows: op.order = the group's row ids with the new row in place */
+        if (Array.isArray(op.order) && op.order.length && !setOrder(s, w, op.order, !!op.every)) return null;
         break;
-      case "remove": /* a row added this week, or a regular row (from every week) */
+      case "remove": /* a row added this week, a regular row or a default row (from every week) */
+        var defIds = defaultIds();
         if (/^x:/.test(op.id)) w.extra = w.extra.filter(function (x) { return "x:" + x.id !== op.id; });
-        else if (/^r:/.test(op.id)) s.regular = s.regular.filter(function (x) { return "r:" + x.id !== op.id; });
+        else if (/^r:/.test(op.id) || defIds[op.id]) {
+          s.regular = s.regular.filter(function (x) { return "r:" + x.id !== op.id && x.id !== "set:" + op.id; });
+          if (defIds[op.id] && !s.regular.some(function (x) { return x.id === "off:" + op.id; })) {
+            if (s.regular.length >= 30) return null;
+            s.regular.push({ id: "off:" + op.id, off: true });
+          }
+        }
         else return null;
         if (w.star === op.id) w.star = "";
         w.hidden = w.hidden.filter(function (x) { return x !== op.id; });
         delete w.times[op.id];
         break;
+      case "restore": /* a default row removed from every week comes back */
+        if (!defaultIds()[op.id]) return null;
+        s.regular = s.regular.filter(function (x) { return x.id !== "off:" + op.id; });
+        break;
+      case "every": /* this time on every week: id, value ("" = back to the default / Davening Times) */
+        var eid = String(op.id || ""), ev = op.value === "" || op.value == null ? "" : normTyped(op.value, op.group);
+        if (op.value && !ev) return null;
+        var realReg = /^r:/.test(eid) && s.regular.filter(function (x) { return "r:" + x.id === eid; })[0];
+        if (realReg) { if (!ev) return null; realReg.time = ev; }
+        else if (defaultIds()[eid]) {
+          s.regular = s.regular.filter(function (x) { return x.id !== "set:" + eid; });
+          if (ev) { if (s.regular.length >= 30) return null; s.regular.push({ id: "set:" + eid, time: ev }); }
+        } else return null;
+        delete w.times[eid];
+        break;
+      case "move": /* ids: the rows of ONE group in their new order; every: the every-week order (else this week) */
+        if (!setOrder(s, w, op.ids, !!op.every)) return null;
+        break;
+      case "order-reset": /* back to the time order (this week and every week) */
+        w.order = []; s.regular = s.regular.filter(function (x) { return !(x && /^ord:/.test(String(x.id))); });
+        break;
+      case "size": /* value: a whole step (-6..6), 0 / null = fit to the page */
+        if (op.value != null && op.value !== "" && !isFinite(Number(op.value))) return null;
+        w.size = op.value == null || op.value === "" ? 0 : sizeStep(op.value);
+        break;
       case "reset": w = emptyWeek(); break;
       default: return null;
     }
-    var emptyW = !Object.keys(w.times).length && !w.hidden.length && !w.star && !w.extra.length;
+    if (!w.size) delete w.size;
+    if (!w.order || !w.order.length) delete w.order;
+    var emptyW = !Object.keys(w.times).length && !w.hidden.length && !w.star && !w.extra.length && !w.size && !w.order;
     if (emptyW) delete s.weeks[iso]; else s.weeks[iso] = w;
     var oldest = addDays(iso, -7 * KEEP_WEEKS);
     Object.keys(s.weeks).forEach(function (k) { if (!/^\d{4}-\d{2}-\d{2}$/.test(k) || k < oldest) delete s.weeks[k]; });
@@ -313,7 +489,7 @@
     return out;
   }
 
-  var api = { GROUPS: GROUPS, WORDS: W, SLOTS: SLOTS, KEEP_WEEKS: KEEP_WEEKS, show: show, min24: min24, parseTyped: parseTyped, normTyped: normTyped,
+  var api = { applyOrder: applyOrder, SHEET_DEFAULTS: SHEET_DEFAULTS, defTime: defTime, sizeStep: sizeStep, SIZE_MIN: SIZE_MIN, SIZE_MAX: SIZE_MAX, defaultIds: defaultIds, regularOf: regularOf, GROUPS: GROUPS, WORDS: W, SLOTS: SLOTS, KEEP_WEEKS: KEEP_WEEKS, show: show, min24: min24, parseTyped: parseTyped, normTyped: normTyped,
     parashaEn: parashaEn, title: title, mevarchin: mevarchin, build: build, lines: lines, edit: edit, weekOf: weekOf, addDays: addDays, pdf: pdf };
   root.OH_SHEET = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
