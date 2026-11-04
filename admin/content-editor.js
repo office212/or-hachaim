@@ -299,7 +299,7 @@
       msg.textContent = "מעלה...";
       var r = await SC.uploadImage(f, $("scType").value, st.editing && st.editing.id);
       if (r.ok) { st.image = r.image; renderImage(); msg.textContent = "התמונה הועלתה. היא תוצג רק אחרי פרסום."; onChange(); }
-      else msg.textContent = r.reason === "no-image-permission" ? "אין לכם הרשאת העלאת תמונות. בקשו מהמנהל." : (r.reason === "too-big" ? "התמונה גדולה מדי (עד 5MB אחרי הקטנה)." : "ההעלאה נכשלה: " + r.reason);
+      else msg.textContent = r.reason === "no-image-permission" ? "אין הרשאה להעלאת תמונות." : (r.reason === "too-big" ? "התמונה גדולה מדי (עד 5MB אחרי הקטנה)." : "ההעלאה נכשלה: " + r.reason);
       this.value = "";
     });
     $("scYzCalc").addEventListener("click", function () {
@@ -317,7 +317,8 @@
     var role = await fb.resolveRole();
     if (!SC.canEdit(role)) { root.hidden = true; return; }
     st.role = role; root.hidden = false; bind();
-    $("scImgWrapNote").hidden = SC.canUpload(role);
+    $("scImgWrapNote").hidden = true; /* 2040 phase 1: no "no permission" notes; without upload permission the image field is not shown */
+    document.body.classList.toggle("sc-no-upload", !SC.canUpload(role));
     $("scImg").disabled = !SC.canUpload(role); /* no image upload permission: no active upload control */
     if (!st.unsub) st.unsub = SC.subscribe("editor", function (items, err) {
       if (items) { st.items = items; $("scListMsg").textContent = ""; } else $("scListMsg").textContent = "טעינת התוכן נכשלה: " + err;
