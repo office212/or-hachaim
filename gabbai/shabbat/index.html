@@ -1,21 +1,27 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>חבילת שבת | אור החיים</title>
+<!-- Shabbat sheet (2026-11-04): the shul's weekly sheet with the "לשבת הזאת" screen, src/shabbat-sheet/. -->
 <!-- 2040 phase 1 (2026-11-04): one-click Shabbat package. A printable bulletin (A4 or Letter, print or Save as PDF) and a TV announcement saved as a DRAFT. Only for content gabbaim and the super admin. Nothing is published without the gabbai's click. -->
 <link rel="stylesheet" href="../../src/ui/oh-design.css">
 <link rel="stylesheet" href="../../src/ui/oh-2040.css">
+<link rel="stylesheet" href="../../src/shabbat-sheet/sheet-editor.css">
 <script src="../../src/ui/labels.js"></script>
 <script src="../../src/firebase/firebase-config.js"></script>
 <script src="../../src/firebase/firebase-app.js"></script>
 <script src="../../src/ui/oh-ui.js"></script>
 <script src="../../src/engines/display-engine.js"></script>
 <script src="../../src/firebase/screen-content.js"></script>
+<script src="../../src/zmanim/rabbeinu-tam.js"></script>
 <script src="../../src/calendar/or-calendar.min.js"></script>
 <script src="../../src/ui/oh-times.js"></script>
 </head>
 <body class="oha" data-oha-page="shabbat">
 <main class="wrap ohx" id="ohShabbat"></main>
 <script src="../../src/ui/oh-shell.js"></script>
+<script src="../../src/shabbat-sheet/sheet-core.js"></script>
+<script src="../../src/shabbat-sheet/sheet-draw.js"></script>
+<script src="../../src/shabbat-sheet/sheet-editor.js"></script>
 <script src="../../src/ui/oh-shabbat.js"></script>
 </body>
 </html>
