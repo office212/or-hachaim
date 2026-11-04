@@ -51,6 +51,7 @@
      Runs on load and on every later change to the page. */
   var HEB = /[\u0590-\u05FF]/, LAT = /[A-Za-z]/;
   function isolateNode(node) {
+    if (global.OH_LANG === "en") return; /* 2040 phase 1: in English oh-i18n.js shows the English half instead */
     var t = node.nodeValue;
     if (!t || t.indexOf(" / ") < 0 || !HEB.test(t) || !LAT.test(t)) return;
     var first = t.split(" / ")[0];
