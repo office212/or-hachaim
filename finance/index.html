@@ -7,6 +7,8 @@
 <script src="../src/ui/oh-shell.js" defer></script>
 <script src="../src/firebase/firebase-config.js"></script>
 <script src="../src/firebase/firebase-app.js"></script>
+<link rel="stylesheet" href="../src/ui/oh-members.css">
+<script src="../src/ui/oh-members.js"></script>
 <script src="../src/engines/idempotency.js"></script>
 <script src="../src/engines/finance-states.js"></script>
 <script src="../src/ui/oh-ui.js"></script>
@@ -20,8 +22,10 @@
 <body class="gated" data-oha-page="finance">
 <div class="page">
 <div class="gate-card" id="signInGate"><h2>כניסה נדרשת / Sign-in required</h2><p class="oh-help">פיננסים מוצגים רק לאחר כניסה. / Finance is shown only after sign-in.</p><button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>Sign in with Google / התחברות עם Google</span></button><p class="hint" id="gateMsg"></p></div>
+<div id="ohJoinReqs" hidden></div>
 <p class="oh-help">היומן הוא append-only: תיקונים נעשים ברשומות תיקון, לעולם לא במחיקה. / Ledger is append-only: corrections are correction entries, never deletes. כל פעולה כספית נושאת operationId ייחודי, ושליחה כפולה נדחית. / Every financial action carries a unique operationId, and a duplicate submission is rejected. התחייבות, חיוב, תשלום, ויתרה פתוחה הם ארבעה מצבים נפרדים, לעולם לא מעורבבים. / Pledge, charge, payment, and open balance are four distinct states, never conflated.</p>
 <p id="dataSource" class="oh-help">כניסה נדרשת / Sign-in required</p><label>חיפוש מתפללים / Search congregants</label><input id="search" placeholder="חפש מתפלל / Search congregant" oninput="renderList()">
+<div id="ohInactiveToggle" hidden></div>
 <div id="list"></div>
 <h2>הוספת מתפלל / Add congregant</h2>
 <div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מייל הוא אופציונלי. / Email is optional. A congregant without email is fully managed here and cannot sign in until the super admin adds an email to this same existing record; history and balance are preserved.</p>
@@ -65,11 +69,14 @@ function who(){ var fb = window.OH_FIREBASE; return (fb && fb.user && fb.user.em
 function amt$(n){ return '<span class="amt">' + money(n) + '</span>'; }
 function renderList(){
   var q = (document.getElementById("search").value || "").toLowerCase();
-  document.getElementById("list").innerHTML = cons.filter(function(c){ return String(c.name || "").toLowerCase().includes(q); }).map(function(c){
+  /* Stage D: join requests and declined ones are never on this list; inactive
+     members only with "הצג לא פעילים". Totals and reports keep every record. */
+  var M = window.OH_MEMBERS;
+  document.getElementById("list").innerHTML = cons.filter(function(c){ return (!M || M.listed(c)) && String(c.name || "").toLowerCase().includes(q); }).map(function(c){
     var t = totals(c);
     return '<div class="gold-frame cong-card" style="margin:1rem 0"><h3>' + esc(c.name) + '</h3><p class="hint">טלפון / Phone: ' + esc(c.phone) + ' | מייל / Email: ' + (c.email ? esc(c.email) : "(none yet)") + '</p>' +
     '<p class="ledger-summary"><span>חיובים / Charges: ' + amt$(t.charges) + '</span><span>תשלומים / Payments: ' + amt$(t.payments) + '</span><strong>יתרה / Balance owed: ' + amt$(t.balance) + '</strong></p>' +
-    '<button class="btn secondary" style="width:auto" onclick="showCard(' + jsArg(c.id) + ')">פתח כרטיס / Open card</button></div>';
+    '<button class="btn secondary" style="width:auto" onclick="showCard(' + jsArg(c.id) + ')">פתח כרטיס / Open card</button>' + (M ? M.cardExtras(c) : "") + '</div>';
   }).join("") || "<p>אין מתפללים עדיין / No congregants yet.</p>";
 }
 /* One pending operationId per open card. It is created when the card
@@ -183,7 +190,8 @@ function renderActivity(){
 }
 var pledges = [];
 function renderNederCong(){
-  document.getElementById("nederCong").innerHTML = cons.map(function(c){ return '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>'; }).join("");
+  /* Stage D: only active members are offered for a new neder */
+  document.getElementById("nederCong").innerHTML = cons.filter(function(c){ return !window.OH_MEMBERS || window.OH_MEMBERS.isActive(c); }).map(function(c){ return '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>'; }).join("");
   document.getElementById("nederList").innerHTML = pledges.map(function(n){
     return "<p>" + esc(n.date) + " | " + esc(n.name) + " | " + amt$(n.amount) + " | Aliyah: " + esc(n.aliyah) + "</p>";
   }).join("") || "<p>אין נדרים עדיין / No nedarim yet.</p>";
@@ -283,7 +291,8 @@ function annualReport(){
 }
 function taxLetters(){
   var year = String(document.getElementById("taxYear").value || today().slice(0, 4)).trim();
-  var html = cons.map(function(c){
+  /* Stage D: inactive members still get their letter; join requests do not */
+  var html = cons.filter(function(c){ return !window.OH_MEMBERS || window.OH_MEMBERS.isMember(c); }).map(function(c){
     var pays = c.ledger.filter(function(e){ return e.type === "payment" && String(e.date).indexOf(year) === 0; });
     var total = pays.reduce(function(s, e){ return s + OH_UI.cents(e.amount); }, 0) / 100;
     return '<div class="gold-frame tax-letter" style="margin:1rem 0"><h3>מכתב תרומה 501c3, מוכן להדפסה / 501c3 donation letter, print-ready (' + esc(year) + '): ' + esc(c.name) + '</h3>' +
@@ -329,6 +338,8 @@ async function refreshFromFirestore(){
     var live = await fb.loadCongregants();
     if(live && live.length){ cons = live; document.getElementById('dataSource').textContent = 'Signed in as ' + email; renderList(); renderNederCong(); }
     else { cons = []; document.getElementById('dataSource').textContent = 'Signed in as ' + email + ', no congregants yet'; renderList(); renderNederCong(); }
+    /* Stage D: join requests, roles, inactive (super admin); the toggle for everyone here */
+    if(window.OH_MEMBERS) OH_MEMBERS.attach(cons, function(){ renderList(); renderNederCong(); });
   } catch(e) {}
 }
 setInterval(refreshFromFirestore, 1000);
