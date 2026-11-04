@@ -134,7 +134,7 @@ function royZmanimList(day, withShabbat, iso) {
     /* v5.1: 5788 Yom Tov weekdays carry the MyZmanim-rule end (yomTovEndsMyZmanim);
        on a weekday only Yom Kippur also carries Rabbeinu Tam, so that day is "צאת הצום". */
     day.yomTovEndsMyZmanim && yomTovEndsTonight() ? [day.rabbeinuTamMyZmanim ? lbl("yomTovEnds", "sbFastEnds", "צאת הצום", "Fast ends", day.yomTovEndsMyZmanim) : lbl("yomTovEnds", "sbYomTovEnds", "צאת החג", "Yom Tov ends", day.yomTovEndsMyZmanim)] : [],
-    day.rabbeinuTamMyZmanim ? [lbl("rabbeinuTam", "sbRabbeinuTam", "רבינו תם (המוקדם)", "Rabbeinu Tam (early)", day.rabbeinuTamMyZmanim)] : []
+    rtOf(day) ? [lbl("rabbeinuTam", "sbRabbeinuTam", "רבינו תם (המוקדם)", "Rabbeinu Tam (early)", rtOf(day))] : []
   );
 }
 /* v5.1: today's Yom Tov ends tonight only when tomorrow is not a rest day
@@ -162,6 +162,9 @@ function todayKey() { return dateKeyOffset(0); }
    without 5788 the screen would go blank on 2027-10-02. The 5788 file
    is "pending rabbi review" (no MyZmanim fields yet; Shabbat ends from
    our own 8.5 degree angle). A missing file is skipped, never invented. */
+/* Rabbeinu Tam from the ONE site basis (src/zmanim/rabbeinu-tam.js, Hanoch 2026-11-04:
+   72 zmaniyot after Shkiah, rounded up), only on the days the daily file gives one. */
+function rtOf(day) { var R = window.OH_RABBEINU_TAM; return day && day.rabbeinuTamMyZmanim && R && R.timeFor ? R.timeFor(day) : null; }
 var ROY_FILES = ["../src/zmanim/roy-daily-5787.json", "../src/zmanim/roy-daily-5788.json"];
 function loadRoyFiles(noStore) {
   return Promise.all(ROY_FILES.map(function (f) {
@@ -310,9 +313,9 @@ function renderShabbatBlock(nextKey, nextMin) {
     var wd = nyWeekday(), fri = null, sat = null;
     if (wd === 5) { fri = ROY_JSON.days[dateKeyOffset(0)]; sat = ROY_JSON.days[dateKeyOffset(1)]; }
     else if (wd === 6) { fri = ROY_JSON.days[dateKeyOffset(-1)]; sat = ROY_JSON.days[dateKeyOffset(0)]; }
-    if ((fri || sat) && shabbatWindowOpen(sat && sat.shabbatEndsMyZmanim, sat && sat.rabbeinuTamMyZmanim)) html = '<div class="sb-head"><span class="sb-kicker">' + escS(TXT("sbShabbatKodesh", null, "שבת קודש")) + '</span></div><div class="sb-times">' +
+    if ((fri || sat) && shabbatWindowOpen(sat && sat.shabbatEndsMyZmanim, rtOf(sat))) html = '<div class="sb-head"><span class="sb-kicker">' + escS(TXT("sbShabbatKodesh", null, "שבת קודש")) + '</span></div><div class="sb-times">' +
       sbCell("הדלקת נרות", fri && fri.candle18, "candle", nextKey) + sbCell("צאת שבת", sat && sat.shabbatEndsMyZmanim, "shabbatEnds", nextKey) +
-      sbCell("רבינו תם (המוקדם)", sat && sat.rabbeinuTamMyZmanim, "rabbeinuTam", nextKey) + "</div>";
+      sbCell("רבינו תם (המוקדם)", rtOf(sat), "rabbeinuTam", nextKey) + "</div>";
   }
   var sig = (yt ? "Y" : "S") + html;
   /* 2040: the layout editor can hide this block; the zmanim column then ignores it */
