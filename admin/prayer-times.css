@@ -102,3 +102,26 @@ html.oh-en .ohpt{direction:ltr}
 /* longer English labels: wrap inside the button instead of spilling out; four day buttons as 2 x 2 on phones in English */
 #ptSection .ohpt-sbtn{white-space:normal;line-height:1.15}
 @media (max-width:520px){html[lang="en"] #ptSection .ohpt-days{display:grid;grid-template-columns:1fr 1fr}}
+
+/* 2040 phase 2 (Hanoch 9:09 AM): two clear parts, ימי חול (א׳-ה׳) | שישי ושבת, and the "לסדר" box */
+#ptSection .ohpt-sec{margin:0 0 18px;padding:14px;border:1px solid var(--hair-soft,rgba(180,142,86,.22));border-radius:20px;background:var(--surface-solid,#fffdf9)}
+#ptSection .ohpt-sec + .ohpt-sec{margin-top:4px}
+#ptSection .ohpt-sec[data-sec="sh"]{background:#f8f2e6;border-color:var(--hair,rgba(180,142,86,.42))}
+#ptSection .ohpt-sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:10px;border-bottom:1.5px solid var(--gold,#b48e56)}
+#ptSection .ohpt-sec-head h3{margin:0;font-size:22px;font-weight:800;color:#0e2c4c}
+#ptSection .ohpt-sec-head p{margin:2px 0 0;font-size:15px;color:var(--muted,#7a6f61)}
+#ptSection .ohpt-sec-head .ohpt-btn.primary{min-height:52px;font-size:17px;padding:0 18px}
+#ptSection .ohpt-grp h4{margin:0;font-size:17px;font-weight:800;color:#6b4f22}
+#ptSection .ohpt-empty.small{padding:14px;font-size:16px}
+#ptSection .ohpt-sort{margin:0 0 18px;padding:14px;border:1.5px solid var(--gold,#b48e56);border-radius:20px;background:#fbf1dc}
+#ptSection .ohpt-sort h3{margin:0;font-size:20px;font-weight:800;color:#0e2c4c}
+#ptSection .ohpt-sort > p{margin:4px 0 12px;font-size:15px;color:#6b4f22;font-weight:600}
+#ptSection .ohpt-row.sort .acts{align-items:center;flex-wrap:wrap}
+#ptSection .ohpt-row.sort .acts .to{font-size:15px;font-weight:700;color:var(--muted,#7a6f61)}
+#ptSection .ohpt-row.sort .acts .ohpt-btn{min-width:72px}
+@media (max-width:640px){
+ #ptSection .ohpt-sec{padding:10px}
+ #ptSection .ohpt-sec-head .ohpt-btn.primary{width:100%}
+ #ptSection .ohpt-row.sort .acts .to{flex-basis:100%}
+ #ptSection .ohpt-row.sort .acts .ohpt-btn{flex:1}
+}
