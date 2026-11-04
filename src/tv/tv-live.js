@@ -36,7 +36,9 @@
   if (C && typeof C.load === "function" && !C.__ohShared) {
     var origLoad = C.load, shared = null;
     C.load = function (o) {
-      if (!shared) shared = origLoad.call(C, o).then(function (c) { st.cal = c; return c; }, function (e) { shared = null; throw e; });
+      /* 2040 phase 2: the calendar every part of the screen shares is the engine
+         with the Rav's second-night candle ruling applied (day-state.js wrapCalendar). */
+      if (!shared) shared = origLoad.call(C, o).then(function (c) { var w = c; try { if (DS && DS.wrapCalendar) w = DS.wrapCalendar(c, zdays); } catch (e) { w = c; } st.cal = w; return w; }, function (e) { shared = null; throw e; });
       return shared;
     };
     C.__ohShared = true;
