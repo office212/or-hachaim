@@ -67,10 +67,10 @@
   function shell() {
     var ex = C().examples(st.role).slice(0, 4);
     st.el.innerHTML = '<section class="x-card" aria-labelledby="ohCmdTitle">' +
-      '<div class="cb-head"><h2 id="ohCmdTitle">' + esc(L("cmdTitle")) + '</h2><span>' + esc(L("cmdTitleEn")) + '</span></div>' +
+      '<div class="cb-head"><h2 id="ohCmdTitle">' + esc(L("cmdTitle")) + '</h2><span class="oh-help">' + esc(L("cmdTitleEn")) + '</span></div>' +
       '<form class="cb-row" id="ohCmdForm" autocomplete="off">' + I.spark +
       '<input class="cb-input" id="ohCmdInput" dir="rtl" lang="he" type="text" enterkeyhint="go" aria-label="' + esc(L("cmdTitle")) + '" placeholder="' + esc(L("cmdPlaceholder")) + '">' +
-      '<span class="cb-kbd">Ctrl K</span><button class="x-btn primary" type="submit" id="ohCmdGo">' + esc(L("cmdGo")) + '</button></form>' +
+      '<span class="cb-kbd oh-help">Ctrl K</span><button class="x-btn primary" type="submit" id="ohCmdGo">' + esc(L("cmdGo")) + '</button></form>' +
       '<div class="cb-ex" id="ohCmdEx">' + ex.map(function (x) { return '<button type="button" class="x-chip" data-cmd="' + esc(x) + '">' + esc(x) + "</button>"; }).join("") + "</div>" +
       '<div class="cb-out" id="ohCmdOut" aria-live="polite"></div></section>';
     st.el.querySelector("#ohCmdForm").addEventListener("submit", function (e) { e.preventDefault(); run(st.el.querySelector("#ohCmdInput").value); });
@@ -91,7 +91,7 @@
       var c0 = ctx(), fd0 = t.firstDay(it.rule, c0.today, 400, c0.isYomTov); rows = rows.map(function (r) { return r.k === "שעה" ? { k: "שעה", v: t.offsetHe(it.rule.offsetMin) + " | מתעדכן כל יום (" + (fd0 === c0.today ? "היום" : t.dateHe(fd0, false)) + ": " + t.short12(it.order) + ")" } : r; });
     }
     if (st.choice && st.choice.instead) rows = rows.map(function (r) { return r.k === "פעולה" ? { k: "פעולה", v: "שינוי זמן תפילה (במקום " + st.choice.insteadLabel + ")" } : r; });
-    h += '<div class="pv" id="ohCmdPreview" data-action="' + esc(p.action) + '"><div class="pv-top"><b>' + esc(L("cmdPreview")) + "</b><span>" + esc(L("cmdPreviewNote")) + "</span></div>";
+    h += '<div class="pv" id="ohCmdPreview" data-action="' + esc(p.action) + '"><div class="pv-top"><b>' + esc(L("cmdPreview")) + '</b><span class="oh-help">' + esc(L("cmdPreviewNote")) + "</span></div>";
     h += '<div class="pv-rows">' + rows.map(function (r) { return '<div class="pv-row"><span class="k">' + esc(r.k) + '</span><span class="v">' + escT(r.v) + "</span></div>"; }).join("") + "</div>";
     (p.warnings || []).forEach(function (w, i) {
       if (st.choice && st.choice.alt && w.kind === "after-sunset") return;
