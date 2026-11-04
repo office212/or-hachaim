@@ -57,7 +57,7 @@
     if (S.msg.req) h += '<p class="ohm-msg" role="status">' + esc(S.msg.req) + "</p>";
     h += S.requests.map(function (r) {
       var open = S.open && S.open.id === r.id ? S.open.kind : "";
-      var body = '<div class="ohm-who"><b>' + esc(r.name) + '</b><span dir="ltr">' + esc(r.phone) + '</span><span dir="ltr" class="ohm-mail">' + esc(r.email) + "</span>" + (shortDate(r.createdAt) ? '<span class="ohm-when">' + esc(shortDate(r.createdAt)) + "</span>" : "") + "</div>";
+      var body = '<div class="ohm-who"><b>' + esc(r.name) + '</b><span dir="ltr">' + esc(r.phone) + '</span><span dir="ltr" class="ohm-mail">' + esc(r.email) + "</span>" + (shortDate(r.createdAt) ? '<span class="ohm-when">' + esc(shortDate(r.createdAt)) + "</span>" : "") + (r.resent ? '<span class="ohm-again" data-resent="1">נשלחה שוב</span>' : "") + "</div>";
       if (open === "approve") body += chooser("approve", r.id);
       else if (open === "decline") body += confirmBox("לדחות את הבקשה של " + r.name + "?", "כן, לדחות", "decline", r.id);
       else body += '<div class="ohm-row"><button type="button" class="ohm-btn" data-act="approve" onclick="OH_MEMBERS.openFor(\'approve\',' + arg(r.id) + ')">אשר</button><button type="button" class="ohm-btn ohm-out" data-act="decline" onclick="OH_MEMBERS.openFor(\'decline\',' + arg(r.id) + ')">דחה</button></div>';
@@ -181,20 +181,23 @@
     },
 
     /* ================= congregant page: the join screen ================= */
-    renderJoin: function (host, state) {
-      /* state: "form" | "pending" | "declined" */
+    renderJoin: function (host, state, prefill) {
+      /* state: "form" | "pending" | "declined" | "again" (the form again, after a decline) */
       if (!host) return;
       if (state === "pending") {
         host.innerHTML = '<section class="ohm-join gold-frame" data-join="sent"><h2>הבקשה נשלחה</h2><p class="ohm-big">הגבאי יאשר בקרוב.</p></section>';
         return;
       }
       if (state === "declined") {
-        host.innerHTML = '<section class="ohm-join gold-frame" data-join="declined"><h2>בקשת הצטרפות</h2><p class="ohm-big">הבקשה לא אושרה. לפרטים אפשר לפנות לגבאי.</p></section>';
+        /* Stage D2 (Hanoch 5:19 PM): a declined person may send the request again. */
+        host.innerHTML = '<section class="ohm-join gold-frame" data-join="declined"><h2>בקשת הצטרפות</h2><p class="ohm-big">הבקשה לא אושרה. לפרטים אפשר לפנות לגבאי.</p>' +
+          '<button type="button" class="ohm-btn ohm-wide" id="ohmAgain" onclick="OH_MEMBERS.again()">שלח בקשה שוב</button></section>';
         return;
       }
-      host.innerHTML = '<section class="ohm-join gold-frame" data-join="form"><h2>בקשת הצטרפות כמתפלל</h2>' +
-        '<label for="ohmName">שם מלא</label><input id="ohmName" autocomplete="name" maxlength="80">' +
-        '<label for="ohmPhone">טלפון</label><input id="ohmPhone" type="tel" inputmode="tel" autocomplete="tel" dir="ltr" maxlength="30">' +
+      var pre = (state === "again" && prefill) ? prefill : {};
+      host.innerHTML = '<section class="ohm-join gold-frame" data-join="' + (state === "again" ? "again" : "form") + '"><h2>בקשת הצטרפות כמתפלל</h2>' +
+        '<label for="ohmName">שם מלא</label><input id="ohmName" autocomplete="name" maxlength="80" value="' + esc(pre.name || "") + '">' +
+        '<label for="ohmPhone">טלפון</label><input id="ohmPhone" type="tel" inputmode="tel" autocomplete="tel" dir="ltr" maxlength="30" value="' + esc(pre.phone || "") + '">' +
         '<button type="button" class="ohm-btn ohm-wide" id="ohmSend" onclick="OH_MEMBERS.send()">שלח בקשה</button><p class="ohm-msg" id="ohmMsg" role="status"></p></section>';
     },
     send: async function () {
@@ -204,10 +207,22 @@
       if (String(name).trim().length < 2) { msg.textContent = "חסר שם מלא"; return; }
       if (String(phone).replace(/\D/g, "").length < 7) { msg.textContent = "מספר הטלפון לא תקין"; return; }
       btn.disabled = true; msg.textContent = "שולח...";
-      var r = await fb().sendJoinRequest({ name: name, phone: phone });
+      var sec = btn.closest("[data-join]"), isAgain = !!(sec && sec.getAttribute("data-join") === "again");
+      var r = isAgain ? await fb().resendJoinRequest({ name: name, phone: phone }) : await fb().sendJoinRequest({ name: name, phone: phone });
       btn.disabled = false;
       if (r && r.saved) { api.renderJoin(btn.closest("#card") || document.getElementById("card"), r.status === "declined" ? "declined" : "pending"); }
       else msg.textContent = why(r) + ". אפשר לנסות שוב.";
+    },
+    /* Stage D2: "שלח בקשה שוב" opens the same form, name and phone from the old request. */
+    again: async function () {
+      var btn = document.getElementById("ohmAgain");
+      if (!btn || btn.disabled) return;
+      btn.disabled = true;
+      var old = null;
+      try { old = await fb().loadMyJoinRequest(); } catch (e) {}
+      api.renderJoin(btn.closest("#card") || document.getElementById("card"), "again", old || {});
+      var n = document.getElementById("ohmName");
+      if (n) { try { n.focus(); } catch (e) {} }
     }
   };
   window.OH_MEMBERS = api;
