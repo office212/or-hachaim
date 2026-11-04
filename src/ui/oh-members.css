@@ -6,6 +6,7 @@
 .ohm-req:first-of-type{border-top:0}
 .ohm-who{display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline;margin-bottom:8px}
 .ohm-who b{font-size:19px;color:var(--navy,#0e2c4c)}
+.ohm-again{display:inline-block;padding:1px 9px;border-radius:999px;border:1px solid rgba(122,111,97,.45);color:var(--muted,#7a6f61);font-size:13px;background:#f4f1ea}
 .ohm-mail,.ohm-when{color:var(--muted,#7a6f61);font-size:15px;overflow-wrap:anywhere}
 .ohm-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .ohm-btn{min-height:48px;min-width:96px;padding:0 18px;border-radius:12px;border:1.5px solid var(--navy,#0e2c4c);background:var(--navy,#0e2c4c);color:#f6ecd6;font:inherit;font-weight:700;font-size:17px;cursor:pointer;width:auto}
