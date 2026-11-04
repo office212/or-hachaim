@@ -1,3 +1,10 @@
+/* SHABBAT SHEET (2026-11-04, Hanoch 1:02 to 1:25 PM): ONE addition, see RULES_DELTA.md.
+NEW block settings/shabbatSheet: the weekly Shabbat sheet's changes for one
+Shabbat (weeks) and its rows kept for every week (regular). Read: signed in
+(the same as every settings document today; the public site does not show the
+sheet). Create/update: whoever edits the screen today (hasScreen()), only the
+keys weeks, regular, updatedBy, updatedAt (weeks: a map of at most 60 weeks,
+regular: a list of at most 30 rows); delete never. Every other line is unchanged. */
 /* 2040 PHASE 2 (2026-11-04, Hanoch 7:19 AM): ONE change, see RULES_DELTA.md.
 NEW block settings/homeTexts: the landing page wording. Public read (the
 landing page reads it signed out); create/update by the super admin only,
@@ -250,6 +257,22 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['texts', 'textsEn', 'updatedBy', 'updatedAt'])
         && (!('texts' in request.resource.data) || (request.resource.data.texts is map && request.resource.data.texts.size() <= 400))
         && (!('textsEn' in request.resource.data) || (request.resource.data.textsEn is map && request.resource.data.textsEn.size() <= 400));
+      allow delete: if false;
+    }
+
+    /* Shabbat sheet (Hanoch 2026-11-04 1:02 to 1:25 PM): this Shabbat's changes to
+    the printed sheet (weeks: { "YYYY-MM-DD": {times, hidden, star, extra} }) and
+    the rows kept for every week (regular). Only Shabbat times and row names, no
+    private data. Written by whoever edits the screen today (hasScreen(), the
+    same writers as settings/screenTexts), exactly these keys, size caps.
+    Firestore ORs the matches: the settings block above is unchanged. */
+    match /settings/shabbatSheet {
+      allow read: if isSignedIn();
+      allow create, update: if hasScreen()
+        && request.resource.data.keys().hasOnly(['weeks', 'regular', 'updatedBy', 'updatedAt'])
+        && (!('weeks' in request.resource.data) || (request.resource.data.weeks is map && request.resource.data.weeks.size() <= 60))
+        && (!('regular' in request.resource.data) || (request.resource.data.regular is list && request.resource.data.regular.size() <= 30))
+        && (!('updatedBy' in request.resource.data) || (request.resource.data.updatedBy is string && request.resource.data.updatedBy.size() <= 200));
       allow delete: if false;
     }
 
