@@ -270,7 +270,9 @@
     var b = function (to, k) { return '<button type="button" class="ohpt-btn outline" data-act="sort" data-to="' + to + '" data-id="' + id + '" aria-label="' + esc(L("ptSortTo") + " " + L(k) + ": " + name) + '">' + esc(L(k)) + "</button>"; };
     return '<li class="ohpt-row sort" data-id="' + id + '" data-group="sort"><span class="t" dir="ltr">' + esc(shownTime(p)) + '</span>' +
       '<span class="n"><b>' + esc(name) + '</b>' + (p.rule ? '<span class="rl">' + esc(ruleLine(p)) + '</span>' : '') + '</span>' +
-      '<span class="acts"><span class="to">' + esc(L("ptSortTo")) + "</span>" + b("sun-thu", "ptSortWeekday") + b("fri", "ptSortFri") + b("shabbat", "ptSortShabbat") + "</span></li>";
+      '<span class="acts"><span class="to">' + esc(L("ptSortTo")) + "</span>" + b("sun-thu", "ptSortWeekday") + b("fri", "ptSortFri") + b("shabbat", "ptSortShabbat") +
+      /* cmdbar+delete (Nov 4): a quieter 4th button, the same delete as every other row (same confirm, same remove()) */
+      '<button type="button" class="ohpt-btn quiet del" data-act="del" data-id="' + id + '" aria-label="' + esc(L("ptDelete") + " " + name) + '">' + esc(L("ptDelete")) + "</button></span></li>";
   }
   /* Two clear parts (Hanoch 9:09 AM): ימי חול (א׳-ה׳) | שישי ושבת (שישי, then שבת) */
   function render() {
