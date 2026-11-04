@@ -377,3 +377,58 @@ body.oha-no-bnav .oha-bnav{display:none!important}
  body.oha.oha-no-bnav .wrap{padding-bottom:40px}
 }
 @media print{.oha-topbar,.oha-bnav{display:none!important}}
+
+/* ---------- 2040 phase 1: segmented pill control (language), Hanoch's reference ---------- */
+.oh-seg{position:relative;display:inline-flex;align-items:stretch;gap:0;padding:4px;min-height:48px;box-sizing:border-box;border-radius:999px;
+ background:linear-gradient(180deg,#0b2541,#12355b);border:1px solid rgba(201,162,92,.75);
+ box-shadow:inset 0 2px 5px rgba(0,0,0,.38),inset 0 -1px 0 rgba(255,255,255,.06),0 1px 2px rgba(14,44,76,.12);
+ font-family:"Assistant",system-ui,sans-serif;isolation:isolate;flex-shrink:0;direction:rtl}
+.oh-seg-pill{position:absolute;top:4px;bottom:4px;left:0;width:0;border-radius:999px;z-index:0;
+ background:linear-gradient(180deg,#fffdf8,#f3ead9);border:1px solid rgba(201,162,92,.55);
+ box-shadow:0 3px 9px rgba(0,0,0,.32),0 1px 2px rgba(0,0,0,.2),inset 0 1px 0 #fff;
+ transition:transform .2s ease,width .2s ease;opacity:0}
+.oh-seg.ready .oh-seg-pill{opacity:1}
+.oh-seg-b{position:relative;z-index:1;display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;min-width:48px;padding:0 18px;border:0;border-radius:999px;
+ background:transparent;color:rgba(232,238,246,.78);font:inherit;font-size:16px;font-weight:600;cursor:pointer;white-space:nowrap;transition:color .2s ease;-webkit-tap-highlight-color:transparent}
+.oh-seg-b:hover{color:#fff}
+.oh-seg-b.on{color:#0e2c4c;font-weight:800}
+.oh-seg:not(.ready) .oh-seg-b.on{background:#fbf7ef}
+.oh-seg-b:focus-visible{outline:2px solid #e3c486;outline-offset:2px}
+.oh-seg-b .flag{width:23px;height:17px;flex-shrink:0;border-radius:4px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.25))}
+.oh-seg-short{display:none}
+@media (prefers-reduced-motion:reduce){.oh-seg-pill,.oh-seg-b{transition:none!important}}
+.oha-topbar .oh-seg{margin-inline:6px}
+@media (max-width:640px){
+ .oha-topbar .oh-seg-b{padding:0 11px;gap:6px;font-size:15px}
+ .oha-topbar .oh-seg-full{display:none}.oha-topbar .oh-seg-short{display:inline}
+}
+/* English (left to right): the shared bars follow the page direction */
+html.oh-en body{font-family:"Assistant",system-ui,sans-serif}
+html.oh-en .oha-topbar,html.oh-en .oha-bnav{direction:ltr}
+html.oh-en .oha .en,html.oh-en .oha .h1-en,html.oh-en .oha .sec-title span{direction:rtl;text-align:left}
+html.oh-en .oha-topbar .oh-seg{direction:rtl}
+
+/* 2040 phase 1: the one Settings button (Hanoch 5:49 AM) */
+.oha .tb-gear{display:inline-flex;align-items:center;gap:8px;min-height:48px;min-width:48px;justify-content:center;padding:0 16px;border-radius:999px;font-weight:700;font-size:16px;color:#0e2c4c;border:1px solid var(--hair);background:#fffdf8}
+.oha .tb-gear:hover{background:var(--surface2)}
+.oha .tb-gear[aria-current="page"]{background:#0e2c4c;color:#f6ecd6;border-color:#0e2c4c}
+.oha .tb-gear .ic{width:22px;height:22px;color:var(--gold-text)}
+.oha .tb-gear[aria-current="page"] .ic{color:#e6cb92}
+.oha .tb-gear[hidden]{display:none}
+@media (max-width:640px){
+ .oha .tb-gear{padding:0;width:48px}
+ .oha .tb-gear span{display:none}
+ .oha-topbar .who{display:none!important}
+ .oha-topbar .m-name{min-width:0;flex:1 1 auto;overflow:hidden}
+ .oha-topbar .m-name,.oha-topbar .m-name span{white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
+ .oha-topbar .tb-spacer{display:none}
+ .oha-topbar .oh-seg{margin-inline:4px}
+}
+
+/* top bar: the Settings button never squeezes (English words are longer) */
+@media (min-width:641px){.oha-topbar .tb-gear{flex-shrink:0;white-space:nowrap}}
+@media (min-width:1101px){.oha-topbar .tb-out,.oha-topbar .who-txt,.oha-topbar .brand-txt{white-space:nowrap}}
+/* tablets: the compact pill (עב / EN), the gear without its word, no name next to the avatar */
+@media (min-width:641px) and (max-width:1399px){.oha .tb-gear{padding:0;width:48px}.oha .tb-gear span{display:none}.oha-topbar .oh-seg-b{padding:0 11px;gap:6px;font-size:15px}.oha-topbar .oh-seg-full{display:none}.oha-topbar .oh-seg-short{display:inline}.oha-topbar .who-txt{display:none}}
+@media (min-width:641px) and (max-width:1023px){.oha-topbar{flex-wrap:wrap;row-gap:8px;padding:10px 20px;gap:12px}}
+@media (min-width:1400px) and (max-width:1599px){html[lang="en"] .oha .tb-gear{padding:0;width:48px}html[lang="en"] .oha .tb-gear span{display:none}html[lang="en"] .oha-topbar .who-txt{display:none}}
