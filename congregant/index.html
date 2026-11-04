@@ -62,7 +62,7 @@ async function refreshCong(){
     var fb = window.OH_FIREBASE;
     if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastCongUser !== null){ _lastCongUser = null; document.getElementById('congSource').textContent = 'כניסה נדרשת / Sign-in required'; document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>'; } return; }
     var role = await fb.resolveRole();
-    if(!role || !fb.canAccess('congregant')){ document.body.classList.add('gated'); if(role) document.getElementById('gateMsg').textContent = 'חשבון זה אינו מורשה למערכת / This account is not authorized for the system. פנה לגבאי או למנהל העל כדי לקבל הרשאה. / Contact a gabbai or the super admin for authorization.'; _lastCongUser = null; document.getElementById('congSource').textContent = 'כניסה נדרשת / Sign-in required'; document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>'; return; }
+    if(!role || !fb.canAccess('congregant')){ document.body.classList.add('gated'); if(role){ if(role.authorized){ location.replace('../gabbai/'); return; } document.getElementById('gateMsg').textContent = (window.OH_LABELS && window.OH_LABELS.notAuthorized) || 'החשבון הזה אינו מורשה למערכת הגבאים.'; } /* 2040 phase 1: no access prompts; a gabbai on a page that is not theirs goes home */ _lastCongUser = null; document.getElementById('congSource').textContent = 'כניסה נדרשת / Sign-in required'; document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>'; return; }
     var email = fb.user.email || '';
     if(email === _lastCongUser) return;
     document.body.classList.remove('gated'); document.getElementById('gateMsg').textContent = '';
