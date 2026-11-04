@@ -26,7 +26,7 @@
 <h2>הוספת מתפלל / Add congregant</h2>
 <div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מייל הוא אופציונלי. / Email is optional. A congregant without email is fully managed here and cannot sign in until the super admin adds an email to this same existing record; history and balance are preserved.</p>
 <label>Name</label><input id="newName"><label>Phone</label><input id="newPhone"><label>Email (optional, Google login later)</label><input id="newEmail">
-<button class="btn" onclick="addCong()">הוסף מתפלל / Add congregant</button><p id="addMsg"></p></div>
+<button class="btn" id="addCongBtn" onclick="addCong()">הוסף מתפלל / Add congregant</button><p id="addMsg"></p></div>
 <div id="printArea"></div>
 <h2 id="nedarim">נדרים / Nedarim, fast entry for Motzei Shabbat</h2>
 <div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">לחיצה אחת לכל נדר: שם, סכום, עלייה. / One click per neder: name, amount, aliyah. A neder creates a ledger charge, stored as a ledger entry with source "neder", so the append-only rules apply to it.</p>
@@ -132,11 +132,44 @@ function exportCSV(id){
   var csv = "\uFEFFdate,type,amount,description,enteredBy\n" + c.ledger.map(function(e){ return [e.date, e.type, e.amount, e.description, e.enteredBy].map(csvCell).join(","); }).join("\n");
   var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv;charset=utf-8"})); a.download = String(c.id).replace(/[^\w-]/g, "_") + "-statement-" + today() + ".csv"; a.click();
 }
-function addCong(){
-  var n = document.getElementById("newName").value.trim(); if(!n){ document.getElementById("addMsg").textContent = "Enter a name."; return; }
-  cons.push({ id: "local-" + Date.now(), name: n, phone: document.getElementById("newPhone").value.trim(), email: document.getElementById("newEmail").value.trim().toLowerCase(), ledger: [] });
-  logActivity(who(), "Added congregant " + n + " (this view only, not saved to Firestore yet)", "congregants");
-  document.getElementById("addMsg").textContent = "Added to this view only, not saved to Firestore yet."; renderList(); renderNederCong();
+/* Add a mitpalel: saved to Firestore through saveCongregant (the
+   existing congregants collection and rules). One pending document id
+   is kept until a confirmed save, so a double tap or a retry writes the
+   same document and never creates two. Nothing is added on screen
+   unless it was saved. The test-only path (no Firestore) keeps the old
+   local preview, as addEntry does. */
+var pendingCongId = null;
+/* Hebrew and English kept in their own direction, so the punctuation of
+   one never jumps into the other on a right-to-left page. */
+function addMsg(he, en){ document.getElementById("addMsg").innerHTML = '<bdi dir="rtl">' + esc(he) + '</bdi> / <bdi dir="ltr">' + esc(en) + '</bdi>'; }
+async function addCong(){
+  var btn = document.getElementById("addCongBtn");
+  if(btn.disabled) return; /* a save is already running */
+  var n = document.getElementById("newName").value.trim();
+  var phone = document.getElementById("newPhone").value.trim();
+  var email = document.getElementById("newEmail").value.trim().toLowerCase();
+  if(!n){ addMsg("הזן שם", "Enter a name."); return; }
+  if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ addMsg("המייל לא תקין", "The email is not valid."); return; }
+  if(email && cons.some(function(c){ return String(c.email || "").toLowerCase() === email; })){ addMsg("כבר קיים מתפלל עם המייל הזה", "Already exists: a mitpalel with this email."); return; }
+  var fb = window.OH_FIREBASE;
+  if(!pendingCongId && fb && fb.newCongregantId) pendingCongId = fb.newCongregantId();
+  btn.disabled = true; addMsg("שומר...", "Saving...");
+  var r = (fb && fb.saveCongregant) ? await fb.saveCongregant({ id: pendingCongId, name: n, phone: phone, email: email }) : { saved: false, reason: "test-only" };
+  btn.disabled = false;
+  if(r.saved || r.reason === "test-only"){
+    var id = r.saved ? r.id : "local-" + Date.now();
+    if(!cons.some(function(c){ return c.id === id; })) cons.push({ id: id, name: n, phone: phone, email: email, ledger: [] });
+    pendingCongId = null; /* the next add gets a new id */
+    ["newName", "newPhone", "newEmail"].forEach(function(f){ document.getElementById(f).value = ""; });
+    logActivity(who(), (r.saved ? "הוסיף מתפלל / Added mitpalel: " : "תצוגה מקומית / Local preview: ") + n, "מתפללים / Mitpalelim");
+    if(r.saved) addMsg("נשמר", "Saved."); else addMsg("תצוגה מקומית בלבד", "Local preview only, not saved.");
+    renderList(); renderNederCong();
+  } else if(r.reason === "duplicate-email"){
+    addMsg("כבר קיים מתפלל עם המייל הזה", "Already exists: a mitpalel with this email.");
+  } else {
+    var why = { "permission-denied": ["אין הרשאה", "No permission"], "unavailable": ["אין חיבור", "No connection"], "not-signed-in": ["לא מחובר", "Not signed in"] }[r.reason] || [r.reason, r.reason];
+    addMsg("לא נשמר (" + why[0] + "). לחץ שוב לנסות.", "Not saved (" + why[1] + "). Press again to retry.");
+  }
 }
 var activity = [];
 function logActivity(by, action, area){
