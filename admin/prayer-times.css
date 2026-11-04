@@ -72,3 +72,33 @@
  .ohpt-form input[type=time]{max-width:none}
  .ohpt-form .row .ohpt-btn{flex:1}
 }
+
+/* 2040 phase 1: the rule line under a name (days, dates, relative to sunset) */
+#ptSection .ohpt-row .n .rl{display:block;font-size:14px;font-weight:600;color:#7a5c32;margin-top:2px}
+html.oh-en .ohpt{direction:ltr}
+
+/* 2040 phase 1: day groups, four big day buttons, "more options" (Hanoch 5:41 / 5:47 AM) */
+#ptSection .ohpt-grp{list-style:none;margin:14px 0 4px;padding:0}
+#ptSection .ohpt-grp:first-child{margin-top:0}
+#ptSection .ohpt-grp h3{margin:0;font-size:18px;font-weight:800;color:#0e2c4c;padding-bottom:6px;border-bottom:1.5px solid var(--gold,#b48e56)}
+#ptSection .ohpt-fs{border:0;margin:14px 0 4px;padding:0}
+#ptSection .ohpt-fs legend{font-weight:700;font-size:16px;margin-bottom:6px;padding:0}
+#ptSection .ohpt-seg{display:flex;flex-wrap:wrap;gap:8px}
+#ptSection .ohpt-sbtn{flex:1 1 0;min-width:64px;min-height:52px;border-radius:14px;border:1.5px solid var(--hair,#dccbb0);background:#fffdf9;font:inherit;font-size:18px;font-weight:700;color:var(--ink,#26231e);cursor:pointer;padding:0 10px;white-space:nowrap}
+#ptSection .ohpt-sbtn[aria-checked="true"]{background:#0e2c4c;border-color:#0e2c4c;color:#f6ecd6}
+#ptSection .ohpt-sbtn:focus-visible{outline:2px solid var(--gold,#b48e56);outline-offset:2px}
+#ptSection .ohpt-seg.small .ohpt-sbtn{font-size:16px;min-height:48px}
+#ptSection .ohpt-more{margin:12px 0 4px}
+#ptSection .ohpt-more summary{cursor:pointer;min-height:48px;display:inline-flex;align-items:center;font-weight:700;color:#6b4f22;text-decoration:underline;text-underline-offset:4px}
+#ptSection .ohpt-off{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px}
+#ptSection .ohpt-off input{width:96px;min-height:52px;font-size:20px;text-align:center}
+#ptSection .ohpt-off .ohpt-seg{flex:1 1 220px}
+#ptSection .ohpt-dgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+#ptSection .ohpt-dgrid label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:15px}
+#ptSection .ohpt-dgrid input{min-height:52px}
+#ptSection .ohpt-hint{margin:6px 0 0;color:#6b4f22;font-weight:600;font-size:15px}
+#ptSection .ohpt-hint:empty{display:none}
+@media (max-width:520px){#ptSection .ohpt-dgrid{grid-template-columns:1fr}}
+/* longer English labels: wrap inside the button instead of spilling out; four day buttons as 2 x 2 on phones in English */
+#ptSection .ohpt-sbtn{white-space:normal;line-height:1.15}
+@media (max-width:520px){html[lang="en"] #ptSection .ohpt-days{display:grid;grid-template-columns:1fr 1fr}}
