@@ -11,7 +11,12 @@
    Builds (a) the printable "עלון שבת" (A4 or Letter, the browser's print / Save
    as PDF) and (b) a TV announcement saved as a DRAFT through the existing
    screen-content flow. Nothing is published until the gabbai presses the
-   publish button. No AI, no outside service. */
+   publish button. No AI, no outside service.
+   Shabbat sheet (2026-11-04, Hanoch 1:02 to 1:25 PM): on top of the page, the
+   shul's own weekly sheet "דף זמני שבת" with the "לשבת הזאת" screen (change a
+   time, hide, add a row, ⭐ one row, PDF / image, Hebrew / English / both, with
+   background or clean for printing): src/shabbat-sheet/ (sheet-core.js,
+   sheet-draw.js, sheet-editor.js). The bulletin above moved under one button. */
 (function () {
   "use strict";
   var DEF = {
@@ -23,9 +28,11 @@
     spFailed: "השמירה נכשלה, שום דבר לא השתנה. נסו שוב", spBulletin: "עלון שבת", spShul: "בית הכנסת אור החיים",
     spShabbatTimes: "זמני השבת", spDayTimes: "זמני היום בשבת", spPrayers: "זמני תפילה", spReading: "קריאת התורה",
     spMevarchim: "שבת מברכים", spSponsors: "חסויות והקדשות", spYahrzeit: "יארצייט השבוע", spNotices: "הודעות",
-    spFooter: "321 Harold St, Staten Island, NY 10314 | orhachaimsi.org", spPreviewTitle: "כך תיראה ההודעה על המסך"
+    spFooter: "321 Harold St, Staten Island, NY 10314 | orhachaimsi.org", spPreviewTitle: "כך תיראה ההודעה על המסך",
+    spMore: "העלון המורחב", spLess: "סגירת העלון"
   };
-  function L(k) { var o = window.OH_LABELS || {}; return (o[k] !== undefined && o[k] !== null && o[k] !== "") ? o[k] : DEF[k]; }
+  var DEF_EN = { spMore: "Full bulletin", spLess: "Close the bulletin" };
+  function L(k) { var o = window.OH_LABELS || {}; return (o[k] !== undefined && o[k] !== null && o[k] !== "") ? o[k] : (window.OH_LANG === "en" && DEF_EN[k]) || DEF[k]; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function escT(s) { return esc(s).replace(/\b(\d{1,2}:\d{2}(?:\s?[AP]M)?)/g, '<bdi dir="ltr">$1</bdi>'); }
   function T() { return window.OH_TIMES; }
@@ -126,7 +133,6 @@
   }
   function controls() {
     var d = st.draft, h = '<div class="x-card sh-ctl no-print" id="ohShCtl"><div class="sh-ctl-row">';
-    h += '<button type="button" class="x-btn primary" id="ohShPrint">' + esc(L("spPrint")) + "</button>";
     if (!d) h += '<button type="button" class="x-btn" id="ohShDraft">' + esc(L("spDraft")) + "</button>";
     else if (d.status === "draft") h += '<button type="button" class="x-btn primary" id="ohShPublish">' + esc(L("spPublish")) + '</button><button type="button" class="x-btn ghost" id="ohShArchive">' + esc(L("spArchive")) + "</button>";
     h += "</div>";
@@ -137,7 +143,12 @@
   }
   function render() {
     if (!st.el || !st.data) return;
-    st.el.innerHTML = '<div class="page-head no-print"><div><h1>' + esc(L("spTitle")) + '</h1><p class="lead oh-help">' + esc(L("spSub")) + "</p></div>" + nav(st.data.shabbat) + "</div>" + controls() + sheetHtml(st.data);
+    /* the sheet screen (#ohSheetEd) is built once per page and keeps its own state */
+    if (!document.getElementById("ohShTop")) st.el.innerHTML = '<div id="ohShTop"></div><div id="ohSheetEd" class="no-print"></div><div id="ohShRest"></div>';
+    document.getElementById("ohShTop").innerHTML = '<div class="page-head no-print"><div><h1>' + esc(L("spTitle")) + '</h1><p class="lead oh-help">' + esc(L("spSub")) + "</p></div>" + nav(st.data.shabbat) + "</div>";
+    var more = '<div class="sh-more no-print"><button type="button" class="x-btn ghost" id="ohShMore" aria-expanded="' + !!st.showBulletin + '">' + esc(L(st.showBulletin ? "spLess" : "spMore")) + "</button>" +
+      (st.showBulletin ? ' <button type="button" class="x-btn" id="ohShPrint">' + esc(L("spPrint")) + "</button>" : "") + "</div>";
+    document.getElementById("ohShRest").innerHTML = controls() + more + (st.showBulletin ? sheetHtml(st.data) : "");
   }
   async function findDraft(g) {
     var SC = window.OH_SCREEN_CONTENT; if (!SC) return null;
@@ -161,10 +172,18 @@
     var items = await new Promise(function (res) { var done = false, un = window.OH_SCREEN_CONTENT.subscribe("editor", function (it) { if (done) return; done = true; try { un(); } catch (e) {} res(it || []); }); setTimeout(function () { if (!done) { done = true; res([]); } }, 8000); });
     var sb = null, day = null; try { sb = cal ? cal.shabbatBlock(sh) : null; day = cal ? cal.day(sh) : null; } catch (e) {}
     st.data = gather({ shabbat: sh, sb: sb, day: day, daily: daily && daily.days, zman: t.zman, isYomTov: cal && cal.isYomTov ? function (iso) { try { return !!cal.isYomTov(iso); } catch (e) { return false; } } : null, docs: docs, items: items });
+    var isYT = cal && cal.isYomTov ? function (iso) { try { return !!cal.isYomTov(iso); } catch (e) { return false; } } : null;
+    var sheetSettings = {}; try { var sdb = fb()._db && fb()._db(); if (sdb) { var sd = await sdb.collection("settings").doc("shabbatSheet").get(); if (sd.exists) sheetSettings = sd.data() || {}; } } catch (e) {}
     var want = draftItem(st.data);
     st.draft = (items || []).filter(function (x) { return x.type === "announcement" && x.status !== "archived" && x.titleHe === want.titleHe && x.endDate === sh; })[0] || null;
     if (st.draft) { st.msg = st.draft.status === "published" ? L("spPublished") : L("spDraftExists"); st.msgKind = st.draft.status === "published" ? "ok" : "warn"; }
     render();
+    if (window.OH_SHEET_EDITOR) {
+      try {
+        window.OH_SHEET_EDITOR.mount(document.getElementById("ohSheetEd"), { shabbat: sh, sb: sb, days: (daily && daily.days) || {}, docs: docs, settings: sheetSettings, ptHref: root + "admin/#ptSection",
+          timeOf: function (d, iso) { return t.timeOn(d, iso, t.zman, isYT); } });
+      } catch (e) {}
+    }
     document.body.setAttribute("data-sh-ready", sh);
   }
   async function act(id) {
@@ -194,6 +213,7 @@
   document.addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
     if (b.id === "ohShSignIn") { var f = fb(); if (f && f.signIn) { var r = f.signIn(); if (r && r.catch) r.catch(function () {}); } return; }
+    if (b.id === "ohShMore") { st.showBulletin = !st.showBulletin; render(); return; }
     if (/^ohSh(Print|Draft|Publish|Archive)$/.test(b.id)) act(b.id);
   });
   window.OH_SHABBAT = { gather: gather, draftItem: draftItem, sheetHtml: sheetHtml, _state: st };
