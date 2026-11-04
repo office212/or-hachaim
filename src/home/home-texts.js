@@ -1,24 +1,55 @@
 /* Or Hachaim | every word of the public landing page (index.html), in one file.
-   Hebrew in "he", English in "en", same keys in both. To change a word, change it
-   here only (one line). Empty value = that line is hidden on the page.
+   2040 phase 2 (Nov 4 2026). The page shows ONE language at a time (עב | EN pill,
+   Hebrew first). Hebrew in "he", English in "en", same keys in both.
+   - These are the DEFAULTS. The super admin can change any of them from the
+     gabbai system: Firestore settings/homeTexts {texts (Hebrew), textsEn (English),
+     updatedBy, updatedAt}. A non-empty saved value replaces the default here.
+   - info[key] = { desc: what the line is (short Hebrew), group: where it is on the
+     page, shared: true for a value that is the same in both languages (phones,
+     email, address): one field, saved in "texts" only }.
+   - groups = the order and names of the page parts, for the editor.
+   - Empty default = that line is hidden on the page.
    Source of the About text: Hanoch, Nov 4 2026, 5:55 AM (English in the house
-   register: Shul, Tefillah, per Hanoch 5:56 AM). Contact: Hanoch, 5:58 AM. */
+   register: Shul, Tefillah). Contact: Hanoch, 5:58 AM. */
 window.OH_HOME_TEXTS = {
   he: {
+    pageTitle: "בית הכנסת אור החיים | Or Hachaim Congregation, Staten Island",
     brand: "אור החיים",
+    brandSub: "Or Hachaim Congregation",
     skip: "דלג לתוכן",
     navAbout: "אודות",
-    navEnglish: "English",
+    navTimes: "זמני תפילה",
     navContact: "צור קשר",
-    navVisit: "ביקור ומפה",
-    navZmanim: "זמני היום",
-    navSignin: "כניסה",
+    navVisit: "הגעה",
+    signin: "כניסה",
+    signinGabbai: "מערכת הגבאים",
+    signinAccount: "החשבון שלי",
+    signinOut: "יציאה",
+    signinBusy: "רגע...",
+    signinUnauth: "החשבון הזה אינו מורשה למערכת הגבאים.",
+    signinError: "הכניסה לא הצליחה. אפשר לנסות שוב.",
+    langLabel: "שפה",
 
     heroEyebrow: "OR HACHAIM CONGREGATION OF STATEN ISLAND",
     heroTitle: "קהילה של מסורת, תורה ואחדות",
     heroPrimary: "זמני תפילה וזמני היום",
     heroNavigate: "ניווט לבית הכנסת",
 
+    todayEyebrow: "היום",
+    todayTitle: "זמני היום",
+    zNetz: "נץ החמה",
+    zShema: "סוף זמן ק״ש גר״א",
+    zChatzot: "חצות היום",
+    zPlag: "פלג המנחה",
+    zShkiah: "שקיעה",
+    zTzet: "צאת הכוכבים",
+    shabbatTitle: "שבת קודש",
+    shabbatCandles: "הדלקת נרות",
+    shabbatEnds: "צאת השבת",
+    shabbatRT: "רבנו תם",
+    todayMore: "לכל זמני התפילה",
+
+    aboutEyebrow: "אודות",
     aboutTitle: "בית הכנסת אור החיים",
     aboutSub: "קהילה של מסורת, תורה ואחדות",
     aboutLead: "בית הכנסת הספרדי אור החיים - Or Hachaim Congregation, השוכן בשכונת ווילוברוק שבסטטן איילנד, הוא הרבה יותר מבית כנסת. זהו בית חם לקהילה ספרדית ותיקה, שורשית ומיוחדת, המושתתת על ערכי התורה, המסורת, התפילה והאחדות.",
@@ -32,29 +63,66 @@ window.OH_HOME_TEXTS = {
     closingName: "אור החיים",
     closing: "מקום שבו התפילה מחברת, התורה מאחדת והלב תמיד מוצא בית.",
 
+    contactEyebrow: "נשמח לשמוע",
     contactTitle: "צור קשר",
     phoneLabel: "טלפון",
     emailLabel: "אימייל",
     whatsappLabel: "וואטסאפ",
+    phone1: "(646) 529-2504",
+    phone2: "(347) 244-9382",
+    email: "orhachaimcong@gmail.com",
 
+    visitEyebrow: "הגעה",
     visitTitle: "ביקור ומפה",
     addressTitle: "הכתובת שלנו",
+    addressLine1: "321 Harold St",
+    addressLine2: "Staten Island, NY 10314",
     navGoogle: "ניווט עם Google Maps",
     navWaze: "ניווט עם Waze",
     mapTitle: "מפה: אור החיים, 321 Harold St, Staten Island, NY 10314",
 
-    signinTitle: "כניסה לחברים ולגבאים",
-
-    footerBrand: "אור החיים"
+    footerBrand: "אור החיים",
+    footerSub: "Or Hachaim Congregation",
+    footerCopy: "Or Hachaim Congregation"
   },
   en: {
-    brand: "Or Hachaim Congregation",
+    pageTitle: "Or Hachaim Congregation, Staten Island | בית הכנסת אור החיים",
+    brand: "Or Hachaim",
+    brandSub: "Congregation of Staten Island",
     skip: "Skip to content",
+    navAbout: "About",
+    navTimes: "Davening Times",
+    navContact: "Contact",
+    navVisit: "Directions",
+    signin: "Sign in",
+    signinGabbai: "Gabbai System",
+    signinAccount: "My Account",
+    signinOut: "Sign out",
+    signinBusy: "One moment...",
+    signinUnauth: "This account isn't authorized for the Gabbai system.",
+    signinError: "Sign-in didn't go through. Please try again.",
+    langLabel: "Language",
+
+    heroEyebrow: "OR HACHAIM CONGREGATION OF STATEN ISLAND",
     heroTitle: "A Community of Torah, Tradition and Unity",
     heroPrimary: "Davening Times and Daily Zmanim",
+    heroNavigate: "Directions to the Shul",
+
+    todayEyebrow: "Today",
+    todayTitle: "Today's Zmanim",
+    zNetz: "Netz",
+    zShema: "Shema, Gra",
+    zChatzot: "Chatzot",
+    zPlag: "Plag HaMincha",
+    zShkiah: "Shkiah",
+    zTzet: "Tzet Hakochavim",
+    shabbatTitle: "Shabbat",
+    shabbatCandles: "Candle Lighting",
+    shabbatEnds: "Shabbat Ends",
+    shabbatRT: "Rabbeinu Tam",
+    todayMore: "All Davening Times",
 
     aboutEyebrow: "About",
-    aboutEyebrowHe: "",
     aboutTitle: "Or Hachaim Congregation",
     aboutSub: "A Community of Torah, Tradition and Unity",
     aboutLead: "Or Hachaim Sephardic Congregation, located in the heart of Willowbrook, Staten Island, is much more than a Shul. It is a warm and welcoming home to a longstanding Sephardic community, deeply rooted in Torah, tradition, Tefillah, and the timeless values of Jewish life.",
@@ -68,22 +136,103 @@ window.OH_HOME_TEXTS = {
     closingName: "Or Hachaim",
     closing: "Where Tefillah brings people together, Torah strengthens our bonds, and everyone has a place to call home.",
 
+    contactEyebrow: "Get in touch",
     contactTitle: "Contact",
-    visitTitle: "Visit & Directions",
     phoneLabel: "Phone",
     emailLabel: "Email",
     whatsappLabel: "WhatsApp",
-    navGoogle: "Google Maps",
-    signinSub: "Sign-in for members and gabbaim",
 
-    footerBrand: "Or Hachaim Congregation"
+    visitEyebrow: "Find Us",
+    visitTitle: "Visit & Directions",
+    addressTitle: "Our Address",
+    navGoogle: "Google Maps",
+    navWaze: "Waze",
+    mapTitle: "Map: Or Hachaim Congregation, 321 Harold St, Staten Island, NY 10314",
+
+    footerBrand: "Or Hachaim",
+    footerSub: "Congregation of Staten Island",
+    footerCopy: "Or Hachaim Congregation"
   },
-  /* Contact details (Hanoch, Nov 4 2026, 5:58 AM). Remove a line to hide it. */
-  contact: {
-    phones: [
-      { show: "(646) 529-2504", tel: "+16465292504", wa: "16465292504" },
-      { show: "(347) 244-9382", tel: "+13472449382", wa: "13472449382" }
-    ],
-    email: "orhachaimcong@gmail.com"
+  groups: [
+    { id: "top", he: "סרגל עליון וכניסה", en: "Top bar and sign-in" },
+    { id: "hero", he: "פתיח (החלק הראשון בדף)", en: "Opening" },
+    { id: "today", he: "זמני היום", en: "Today's Zmanim" },
+    { id: "about", he: "אודות", en: "About" },
+    { id: "contact", he: "צור קשר", en: "Contact" },
+    { id: "visit", he: "הגעה ומפה", en: "Directions and map" },
+    { id: "footer", he: "תחתית הדף", en: "Footer" }
+  ],
+  info: {
+    pageTitle: { group: "top", desc: "שם הדף בלשונית הדפדפן ובגוגל" },
+    brand: { group: "top", desc: "השם בפינה העליונה" },
+    brandSub: { group: "top", desc: "שורה קטנה מתחת לשם בפינה" },
+    skip: { group: "top", desc: "קישור נגישות: דלג לתוכן" },
+    navAbout: { group: "top", desc: "תפריט: אודות" },
+    navTimes: { group: "top", desc: "תפריט: זמני תפילה" },
+    navContact: { group: "top", desc: "תפריט: צור קשר" },
+    navVisit: { group: "top", desc: "תפריט: הגעה" },
+    signin: { group: "top", desc: "כפתור הכניסה עם Google" },
+    signinGabbai: { group: "top", desc: "הכפתור אחרי כניסה של גבאי" },
+    signinAccount: { group: "top", desc: "הכפתור אחרי כניסה של מתפלל" },
+    signinOut: { group: "top", desc: "הכפתור לחשבון לא מורשה: יציאה" },
+    signinBusy: { group: "top", desc: "בזמן הכניסה" },
+    signinUnauth: { group: "top", desc: "הודעה לחשבון לא מורשה" },
+    signinError: { group: "top", desc: "הודעה כשהכניסה נכשלה" },
+    langLabel: { group: "top", desc: "שם בורר השפה (לקוראי מסך)" },
+
+    heroEyebrow: { group: "hero", desc: "שורה קטנה מעל הכותרת" },
+    heroTitle: { group: "hero", desc: "הכותרת הגדולה מתחת ללוגו" },
+    heroPrimary: { group: "hero", desc: "הכפתור הראשי: זמני תפילה" },
+    heroNavigate: { group: "hero", desc: "קישור הניווט מתחת לכפתור" },
+
+    todayEyebrow: { group: "today", desc: "מילה קטנה מעל הכותרת" },
+    todayTitle: { group: "today", desc: "כותרת המקטע" },
+    zNetz: { group: "today", desc: "שם הזמן: נץ" },
+    zShema: { group: "today", desc: "שם הזמן: סוף זמן קריאת שמע" },
+    zChatzot: { group: "today", desc: "שם הזמן: חצות" },
+    zPlag: { group: "today", desc: "שם הזמן: פלג המנחה" },
+    zShkiah: { group: "today", desc: "שם הזמן: שקיעה" },
+    zTzet: { group: "today", desc: "שם הזמן: צאת הכוכבים" },
+    shabbatTitle: { group: "today", desc: "כותרת פס השבת" },
+    shabbatCandles: { group: "today", desc: "שבת: הדלקת נרות" },
+    shabbatEnds: { group: "today", desc: "שבת: צאת השבת" },
+    shabbatRT: { group: "today", desc: "שבת: רבנו תם" },
+    todayMore: { group: "today", desc: "קישור לכל זמני התפילה" },
+
+    aboutEyebrow: { group: "about", desc: "מילה קטנה מעל הכותרת" },
+    aboutTitle: { group: "about", desc: "כותרת האודות" },
+    aboutSub: { group: "about", desc: "שורת משנה מתחת לכותרת" },
+    aboutLead: { group: "about", desc: "פסקת הפתיחה" },
+    card1Title: { group: "about", desc: "כרטיס 1: כותרת" },
+    card1Text: { group: "about", desc: "כרטיס 1: טקסט" },
+    card2Title: { group: "about", desc: "כרטיס 2: כותרת" },
+    card2Text: { group: "about", desc: "כרטיס 2: טקסט" },
+    card3Title: { group: "about", desc: "כרטיס 3: כותרת" },
+    card3Text: { group: "about", desc: "כרטיס 3: טקסט" },
+    welcome: { group: "about", desc: "משפט ברוכים הבאים (ריק = לא מוצג)" },
+    closingName: { group: "about", desc: "שם קטן מעל משפט הסיום" },
+    closing: { group: "about", desc: "משפט הסיום" },
+
+    contactEyebrow: { group: "contact", desc: "מילה קטנה מעל הכותרת" },
+    contactTitle: { group: "contact", desc: "כותרת המקטע" },
+    phoneLabel: { group: "contact", desc: "כותרת כרטיס הטלפון" },
+    emailLabel: { group: "contact", desc: "כותרת כרטיס האימייל" },
+    whatsappLabel: { group: "contact", desc: "כותרת כרטיס הוואטסאפ" },
+    phone1: { group: "contact", desc: "טלפון ראשון (גם וואטסאפ)", shared: true },
+    phone2: { group: "contact", desc: "טלפון שני (גם וואטסאפ)", shared: true },
+    email: { group: "contact", desc: "כתובת האימייל הציבורית", shared: true },
+
+    visitEyebrow: { group: "visit", desc: "מילה קטנה מעל הכותרת" },
+    visitTitle: { group: "visit", desc: "כותרת המקטע" },
+    addressTitle: { group: "visit", desc: "כותרת כרטיס הכתובת" },
+    addressLine1: { group: "visit", desc: "כתובת: רחוב ומספר", shared: true },
+    addressLine2: { group: "visit", desc: "כתובת: עיר ומיקוד", shared: true },
+    navGoogle: { group: "visit", desc: "כפתור ניווט Google Maps" },
+    navWaze: { group: "visit", desc: "כפתור ניווט Waze" },
+    mapTitle: { group: "visit", desc: "תיאור המפה (לקוראי מסך)" },
+
+    footerBrand: { group: "footer", desc: "השם בתחתית" },
+    footerSub: { group: "footer", desc: "שורה קטנה מתחת לשם" },
+    footerCopy: { group: "footer", desc: "שם בשורת הזכויות ©" }
   }
 };
