@@ -7,7 +7,7 @@
    first. Firestore itself (the live listener) is never touched here; the
    screen keeps its own copy of the last prayer times and board items.
    Nothing private is cached: /tv/ reads only public data. */
-var VERSION = "oh-tv-2040-p1-v2";
+var VERSION = "oh-tv-2040-p2-v1"; /* phase 2: a new name, so every TV re-caches the new code at once */
 var CORE = [
   "./",
   "../screen/screen.css", "../screen/content.css", "../screen/screen.js", "../screen/content-board.js",
