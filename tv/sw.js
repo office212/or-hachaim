@@ -7,7 +7,7 @@
    first. Firestore itself (the live listener) is never touched here; the
    screen keeps its own copy of the last prayer times and board items.
    Nothing private is cached: /tv/ reads only public data. */
-var VERSION = "oh-tv-2040-p2-v1"; /* phase 2: a new name, so every TV re-caches the new code at once */
+var VERSION = "oh-tv-2040-rt72-v1"; /* Rabbeinu Tam 72 zmaniyot (2026-11-04): a new name, so every TV re-caches the new code at once */
 var CORE = [
   "./",
   "../screen/screen.css", "../screen/content.css", "../screen/screen.js", "../screen/content-board.js",
@@ -16,7 +16,7 @@ var CORE = [
   "../src/engines/shabbat-safe.js", "../src/engines/display-engine.js", "../src/ui/oh-ui.js",
   "../src/calendar/or-calendar.min.js", "../src/calendar/screen-calendar.js", "../src/calendar/oh-hooks.js",
   "../src/tv/tv-texts.js", "../src/tv/day-state.js", "../src/tv/prayer-rules.js", "../src/tv/tv-live.js", "../src/tv/sunset-5787.json",
-  "../src/zmanim/roy-daily-5787.json",
+  "../src/zmanim/roy-daily-5787.json", "../src/zmanim/rabbeinu-tam.js",
   "../src/assets/logo-4k-transparent.png", "../src/assets/textures/jerusalem-stone-wall.webp",
   "../src/assets/fonts/assistant-var.woff2", "../src/assets/fonts/frank-ruhl-libre-var.woff2"
 ];
