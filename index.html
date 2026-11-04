@@ -353,6 +353,7 @@ function signInFromGate() {
     return;
   }
   if (fb.user) { fb.signOut(); return; }
+  try { sessionStorage.setItem('ohGoGabbai', '1'); } catch (e) {}
   var r = fb.signIn();
   if (r && r.catch) r.catch(function (e) {
     document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e);
@@ -390,15 +391,15 @@ async function refreshRoleMenu() {
     if (unauth) unauth.style.display = 'none';
     if (note) note.style.display = 'block';
     var links = [];
-    if (role.isSuperAdmin) {
-      /* Task list for super admin, exactly: Finance, Admin. */
-      links.push('<a href="finance/">פיננסים / Finance</a>');
-      links.push('<a href="admin/">ממשק גבאי / Gabbai admin</a>');
-    } else {
-      /* Otherwise the union of what this role allows, and nothing else. */
-      if (role.canFinance) links.push('<a href="finance/">פיננסים / Finance</a>');
-      if (role.canAdmin) links.push('<a href="admin/">ממשק גבאי / Gabbai admin</a>');
-      if (role.canCongregant) links.push('<a href="congregant/">החשבון שלי / My Account</a>');
+    /* Stage A (2026-11-03): a gabbai goes to the new gabbai home
+       (gabbai/), which shows only what this role may do. A congregant
+       without gabbai permissions keeps the direct link to their account. */
+    var isGabbai = role.isSuperAdmin || role.canFinance || role.canAdmin || role.canScreen;
+    if (isGabbai) {
+      links.push('<a class="btn" href="gabbai/">כניסה למערכת הגבאים / Gabbai system</a>');
+      try { if (sessionStorage.getItem('ohGoGabbai') === '1') { sessionStorage.removeItem('ohGoGabbai'); location.href = 'gabbai/'; return; } } catch (e) {}
+    } else if (role.canCongregant) {
+      links.push('<a href="congregant/">החשבון שלי / My Account</a>');
     }
     if (menu) {
       menu.style.display = 'block';
