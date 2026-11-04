@@ -100,6 +100,8 @@
   }
 
   function renderRole(user, role) {
+    /* Stage D: a signed-in person who is not a member yet goes to the join screen */
+    if (role && !role.authorized && (role.canRequestJoin || role.joinStatus)) { location.replace(ROOT + "congregant/"); return; }
     var S = window.OH_SHELL || {};
     var name = S.firstName ? S.firstName(user) : "";
     var gabbai = role.isSuperAdmin || role.canScreen || role.canFinance;
@@ -139,6 +141,8 @@
     }
     /* 2040 phase 1: "the system notices before you", src/ui/oh-alerts.js */
     if (gabbai) h += '<div id="ohAlerts" hidden></div>';
+    /* Stage D: the super admin sees waiting join requests here, one tap to them */
+    if (role.isSuperAdmin) h += '<a class="card noaccess" id="ohJoinAlert" hidden href="' + ROOT + 'finance/#ohJoinReqs" style="min-height:48px;text-decoration:none"></a>';
     var shown = TILES.filter(function (x) { return x.can(role); });
     if (shown.length) {
       h += '<h2 class="sec-title">' + esc(t("sectionTitle")) + " <span>" + esc(t("sectionTitleEn")) + "</span></h2>";
@@ -159,6 +163,13 @@
     if (!role.authorized) na = t("notAuthorized");
     if (na) h += '<div class="card noaccess" id="ohNoAccess">' + I.lock + "<span>" + esc(na) + "</span></div>";
     main.innerHTML = h;
+    var fb = window.OH_FIREBASE;
+    if (role.isSuperAdmin && fb && fb.loadJoinRequests) {
+      fb.loadJoinRequests().then(function (r) {
+        var el = document.getElementById("ohJoinAlert"), n = r && r.ok ? r.items.length : 0;
+        if (el && n) { el.textContent = "בקשות הצטרפות (" + n + ")"; el.hidden = false; }
+      }, function () {});
+    }
     startData(user, role);
   }
 
