@@ -276,6 +276,12 @@
       setAuth("gabbai");
       if (goGabbaiFlag(false) && window.top === window) { location.href = "gabbai/"; }
     } else if (role.canCongregant) { setAuth("account"); goGabbaiFlag(false); }
+    else if (role.canRequestJoin || role.joinStatus) {
+      /* Stage D: not a member yet; "החשבון שלי" opens the join request screen,
+         and right after signing in it opens by itself. */
+      setAuth("account");
+      if (goGabbaiFlag(false) && window.top === window) { location.href = "congregant/"; }
+    }
     else { setAuth("unauth"); goGabbaiFlag(false); if (!shownUnauth) { shownUnauth = true; say("signinUnauth"); } }
   }
 
