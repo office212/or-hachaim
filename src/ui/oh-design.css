@@ -432,3 +432,8 @@ html.oh-en .oha-topbar .oh-seg{direction:rtl}
 @media (min-width:641px) and (max-width:1399px){.oha .tb-gear{padding:0;width:48px}.oha .tb-gear span{display:none}.oha-topbar .oh-seg-b{padding:0 11px;gap:6px;font-size:15px}.oha-topbar .oh-seg-full{display:none}.oha-topbar .oh-seg-short{display:inline}.oha-topbar .who-txt{display:none}}
 @media (min-width:641px) and (max-width:1023px){.oha-topbar{flex-wrap:wrap;row-gap:8px;padding:10px 20px;gap:12px}}
 @media (min-width:1400px) and (max-width:1599px){html[lang="en"] .oha .tb-gear{padding:0;width:48px}html[lang="en"] .oha .tb-gear span{display:none}html[lang="en"] .oha-topbar .who-txt{display:none}}
+
+/* 2040 phase 2 (Hanoch 2026-11-04 9:42 AM): explanation and help texts are for the super
+   admin only. Every such text carries class "oh-help"; oh-shell.js adds "oh-sa" to <html>
+   once the signed-in account is the super admin. Hidden until then (no flash). */
+html:not(.oh-sa) .oh-help{display:none !important}
