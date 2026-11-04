@@ -94,9 +94,10 @@ function TXP(key, fbHe, fbEn) { var X = window.OH_TV_TEXTS; return X ? X.pair(ke
 function TXJ(key, sep, fbHe, fbEn) { var q = TXP(key, fbHe, fbEn); return q.s ? q.p + sep + q.s : q.p; }
 /* an engine label (Hebrew, e.g. "הדלקת נרות") with a gabbai's Hebrew override */
 function TXL(he) { var X = window.OH_TV_TEXTS; return X && he ? X.fromHe(he) : he; }
-function royZmanimList(day, withShabbat) {
+function royZmanimList(day, withShabbat, iso) {
   if (arguments.length === 0) { day = ROY_DAY; withShabbat = true; }
   if (!day) return null;
+  if (!iso && day === ROY_DAY) iso = ROY_DAY_KEY;
   var map = [
     ["alot", "zAlot", "עלות השחר (שוות)", "Alot (equal minutes)"],
     ["talis", "zTalis", "זמן טלית ותפילין", "Talis and Tefillin"],
@@ -112,6 +113,18 @@ function royZmanimList(day, withShabbat) {
   ];
   function lbl(key, k, fbHe, fbEn, time) { var q = TXP(k, fbHe, fbEn); return { key: key, he: q.p, en: q.s, time: time }; }
   var list = map.filter(function (m) { return !!day[m[0]]; }).map(function (m) { return lbl(m[0], m[1], m[2], m[3], day[m[0]]); });
+  /* 2040 phase 2 (the Rav, via Hanoch, Nov 4): on Erev Pesach the two chametz
+     deadlines per Zemaneh Yosef join the list in time order (src/tv/day-state.js
+     chametzRows; Friday too when Erev Pesach is Shabbat). Only on a day the
+     daily file covers. */
+  var DSx = window.OH_DAYSTATE;
+  if (iso && DSx && DSx.chametzRows && ROY_JSON && ROY_JSON.days) {
+    DSx.chametzRows(iso, ROY_JSON.days).forEach(function (c) {
+      var row = lbl(c.key, c.textKey, c.he, "", c.time), at = list.length;
+      for (var i = 0; i < list.length; i++) { if (mins(list[i].time) > mins(c.time)) { at = i; break; } }
+      list.splice(at, 0, row);
+    });
+  }
   if (!withShabbat) return list;
   /* v5: Shabbat ends and Rabbeinu Tam stay in the "next zman" list (the
      hero card), but they are SHOWN only once, in the Shabbat section of
@@ -343,6 +356,17 @@ function renderInsertions() {
   var el = document.getElementById("insStrip"); if (!el) return;
   var list = calReady() && window.OH_CALENDAR.insertions ? (window.OH_CALENDAR.insertions(new Date()) || []) : [];
   list = insertionWords(list);
+  /* 2040 phase 2 (the Rav, via Hanoch, Nov 4): נחם on Tisha B'Av, a note for the
+     whole day like על הניסים (switches at sunset), placed before עננו. */
+  try {
+    var DSn = window.OH_DAYSTATE, stn = window.OH_CALENDAR.state ? window.OH_CALENDAR.state(new Date()) : null;
+    var calN = window.OH_TV && window.OH_TV.cal;
+    if (DSn && DSn.nachemNow && calN && stn && stn.now && DSn.nachemNow(calN, stn.now.iso, !!stn.hebrewDateSwitchedAtSunset)) {
+      var nItem = { text: TXL("נחם") }, at = list.length;
+      for (var ni = 0; ni < list.length; ni++) { if (list[ni].text === TXL("עננו")) { at = ni; break; } }
+      list.splice(at, 0, nItem);
+    }
+  } catch (e) {}
   /* a short insertion never breaks inside, and its " | " stays with it */
   var html = list.map(function (x, i) { return '<span class="ins-item' + (x.omer ? " ins-omer" : "") + (String(x.text).length <= 26 ? " nw" : "") + '">' + (i ? '<span class="ins-sep">| </span>' : "") + escS(x.text) + "</span>"; }).join(" ");
   if (html === _insSig) { insSeps(el, false); return; }
@@ -388,7 +412,7 @@ function renderZmanim() {
   var tomorrow = false;
   if (!shown.length && ROY_JSON && ROY_JSON.days) {
     var tom = ROY_JSON.days[dateKeyOffset(1)];
-    var tl = royZmanimList(tom, false) || [];
+    var tl = royZmanimList(tom, false, dateKeyOffset(1)) || [];
     if (tl.length) { shown = tl; tomorrow = true; }
   }
   shown.forEach(function (z) {
