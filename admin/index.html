@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="../src/theme.css">
 <link rel="stylesheet" href="content-editor.css">
 <link rel="stylesheet" href="../src/ui/oh-design.css">
+<link rel="stylesheet" href="prayer-times.css">
 <script src="../src/ui/labels.js"></script>
 <script src="../src/ui/oh-shell.js" defer></script>
 <script src="../src/firebase/firebase-config.js"></script>
@@ -36,14 +37,7 @@
 </div>
 </div>
 <div id="finOnlyNote" class="note" hidden><strong>פיננסים בלבד / Finance only:</strong> לחשבון זה אין הרשאת תוכן וזמנים, ולכן זמני התפילה ותוכן המסך לא מוצגים ולא נשמרים כאן.<br><span dir="ltr">This account has no Content and Times permission, so prayer times and screen content are not shown or saved here.</span><br><a href="../finance/">מעבר לפיננסים / Go to Finance</a></div>
-<div id="ptSection" hidden>
-<h2>זמני תפילות / Prayer Times</h2><p id="ptSource">כניסה נדרשת / Sign-in required</p>
-<div class="gold-frame" style="padding:1rem"><div id="ptList"></div>
-<label>שם התפילה בעברית / Hebrew name</label><input id="ptNameHe" placeholder="למשל שחרית">
-<label>שם באנגלית / English name</label><input id="ptName" placeholder="e.g. Shacharit" dir="ltr">
-<label>שעה / Time</label><input id="ptTime" placeholder="7:00 AM" dir="ltr" inputmode="text">
-<button class="btn" onclick="addPT()">הוסף זמן תפילה / Add prayer time</button><p id="ptMsg"></p></div>
-</div>
+<section id="ptSection" class="ohpt" hidden aria-labelledby="ptHeading"></section>
 <section id="screenContent" class="sc" hidden aria-labelledby="scHeading">
 <div class="sc-head">
 <div><h2 id="scHeading">תוכן המסך / Screen content</h2>
@@ -126,30 +120,7 @@
 <h2>כללי שבת לכל עמוד / Shabbat rules per page</h2>
 <div class="gold-frame" style="padding:1rem"><p>בטיחות שבת נאכפת על ידי המערכת, לא על ידי זיכרון הגבאי. / Shabbat safety is system-enforced, not gabbai memory. Weekday-only items, payment text, and donation QR are hidden automatically on Shabbat and Yom Tov, even if a gabbai forgot to flag them. Each page also marks its own weekday-only items. On the screen, weekday-only items are hidden from Shabbat entry to Shabbat exit. Use the Shabbat preview toggle on the screen to test this.</p></div>
 <script>
-var pts = [];
-/* Prayer times: Hebrew and English names are separate fields (the TV
-   shows Hebrew large and English small); the time is checked and
-   normalised to "7:00 AM"; "order" is the minute of the day, so the
-   TV lists them in time order. Firestore text is escaped. */
-function ptMinutes(t){ var m = String(t).trim().match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/); if(!m) return -1; var h = +m[1] % 12, mi = +m[2]; if(+m[1] > 12 || mi > 59) return -1; if(/p/i.test(m[3])) h += 12; return h * 60 + mi; }
-function ptNormal(t){ var m = String(t).trim().match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/); return m ? (+m[1]) + ":" + m[2] + " " + m[3].toUpperCase() : ""; }
-function renderPT(){
-  var esc = OH_UI.esc;
-  var list = pts.slice().sort(function(a, b){ return (a.order || 0) - (b.order || 0); });
-  document.getElementById("ptList").innerHTML = list.length ? list.map(function(p){ return "<p>" + esc(p.nameHe) + " / " + esc(p.nameEn) + ": <span dir=\"ltr\">" + esc(p.time) + "</span></p>"; }).join("") : "<p>אין זמני תפילה עדיין / No prayer times yet.</p>";
-}
-function addPT(){
-  var he = document.getElementById("ptNameHe").value.trim(), n = document.getElementById("ptName").value.trim(), raw = document.getElementById("ptTime").value;
-  var msg = document.getElementById("ptMsg"), t = ptNormal(raw), order = ptMinutes(raw);
-  if(!(he || n) || !t || order < 0){ msg.textContent = "הזן שם ושעה בפורמט 7:00 AM / Enter a name and a time like 7:00 AM."; return; }
-  var item = { nameHe: he || n, nameEn: n || he, time: t, order: order };
-  pts.push(item); renderPT(); msg.textContent = "Added to this view. Saving to Firestore below, if signed in.";
-  if(window.OH_FIREBASE && window.OH_FIREBASE.savePrayerTime){
-    window.OH_FIREBASE.savePrayerTime(item).then(function(r){
-      msg.textContent = (r && r.saved) ? "Also saved to Firestore. Reload the screen page to see it." : "Local only: Firestore save failed or denied (" + (r && r.reason ? r.reason : "unknown") + ").";
-    }).catch(function(){ msg.textContent = "Local only: Firestore save error."; });
-  }
-}
+/* Stage B1: the prayer times manager lives in prayer-times.js (window.OH_PT). */
 var _lastPTUser = null;
 function signInFromGate(){
   var fb = window.OH_FIREBASE;
@@ -161,21 +132,18 @@ function signInFromGate(){
 async function refreshPT(){
   try {
     var fb = window.OH_FIREBASE;
-    if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastPTUser !== null){ _lastPTUser = null; document.getElementById('ptSource').textContent = 'כניסה נדרשת / Sign-in required'; pts = []; renderPT(); } return; }
+    if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastPTUser !== null){ _lastPTUser = null; if(window.OH_PT) OH_PT.hide(); } return; }
     var role = await fb.resolveRole();
-    if(!role || !fb.canAccess('admin')){ document.body.classList.add('gated'); if(role) document.getElementById('gateMsg').textContent = 'חשבון זה אינו מורשה למערכת / This account is not authorized for the system. פנה לגבאי או למנהל העל כדי לקבל הרשאה. / Contact a gabbai or the super admin for authorization.'; _lastPTUser = null; document.getElementById('ptSource').textContent = 'כניסה נדרשת / Sign-in required'; pts = []; renderPT(); return; }
+    if(!role || !fb.canAccess('admin')){ document.body.classList.add('gated'); if(role) document.getElementById('gateMsg').textContent = 'חשבון זה אינו מורשה למערכת / This account is not authorized for the system. פנה לגבאי או למנהל העל כדי לקבל הרשאה. / Contact a gabbai or the super admin for authorization.'; _lastPTUser = null; if(window.OH_PT) OH_PT.hide(); return; }
     document.body.classList.remove('gated'); document.getElementById('gateMsg').textContent = '';
     /* Stage 2: prayer times are content and times; a finance-only account sees a note instead. */
     var canContent = !!(window.OH_SCREEN_CONTENT && window.OH_SCREEN_CONTENT.canEdit(role));
-    document.getElementById('ptSection').hidden = !canContent;
     document.getElementById('finOnlyNote').hidden = canContent;
-    if(!canContent){ _lastPTUser = null; return; }
+    if(!canContent){ _lastPTUser = null; if(window.OH_PT) OH_PT.hide(); else document.getElementById('ptSection').hidden = true; return; }
     var email = fb.user.email || '';
     if(email === _lastPTUser) return;
     _lastPTUser = email;
-    var live = await fb.loadScreenData();
-    if(live && live.prayerTimes && live.prayerTimes.length){ document.getElementById('ptSource').textContent = 'Signed in as ' + email; pts = live.prayerTimes; renderPT(); }
-    else { document.getElementById('ptSource').textContent = 'Signed in as ' + email + ', no prayer times yet'; pts = []; renderPT(); }
+    if(window.OH_PT) OH_PT.show({ email: email, isSuperAdmin: !!role.isSuperAdmin });
   } catch(e) {}
 }
 setInterval(refreshPT, 1000);
@@ -235,7 +203,7 @@ async function checkUmVisibility(){
 }
 setInterval(checkUmVisibility, 1000);
 checkUmVisibility();
-renderPT();
 </script>
+<script src="prayer-times.js"></script>
 <script src="content-editor.js"></script>
 </div></body></html>
