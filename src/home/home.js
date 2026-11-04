@@ -187,13 +187,15 @@
     var fri = ZJ.days[nyKey(toFri)], sat = ZJ.days[nyKey(toFri + 1)], band = document.getElementById("shabbatBand");
     if (fri && sat && fri.candle18 && sat.shabbatEndsMyZmanim) {
       function cell(k, t) { return t && w(k) ? '<div class="sb-item"><span class="sb-name">' + esc(w(k)) + '</span><span class="sb-time" dir="ltr">' + esc(t12(t)) + "</span></div>" : ""; }
-      band.innerHTML = '<div class="sb-title">' + esc(w("shabbatTitle")) + "</div>" + cell("shabbatCandles", fri.candle18) + cell("shabbatEnds", sat.shabbatEndsMyZmanim) + cell("shabbatRT", sat.rabbeinuTamMyZmanim);
+      band.innerHTML = '<div class="sb-title">' + esc(w("shabbatTitle")) + "</div>" + cell("shabbatCandles", fri.candle18) + cell("shabbatEnds", sat.shabbatEndsMyZmanim) + cell("shabbatRT", window.OH_RABBEINU_TAM && sat.rabbeinuTamMyZmanim ? window.OH_RABBEINU_TAM.timeFor(sat) : null);
       band.hidden = false;
     } else band.hidden = true;
     sec.hidden = false;
   }
   function loadZmanim() {
     if (!window.fetch) return;
+    /* Rabbeinu Tam: the ONE site basis (src/zmanim/rabbeinu-tam.js, 72 zmaniyot after Shkiah), loaded only when the zmanim are public */
+    if (PUBLIC_ZMANIM && !window.OH_RABBEINU_TAM) { var rs = document.createElement("script"); rs.src = "src/zmanim/rabbeinu-tam.js"; rs.onload = function () { if (ZJ) zmanim(); }; document.head.appendChild(rs); }
     fetch("src/zmanim/roy-daily-5787.json").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
       if (j && j.days) { ZJ = j; dateLine(); zmanim(); }
     }).catch(function () {});
