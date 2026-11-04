@@ -37,6 +37,15 @@
   function fmtAmPm(min) { var h = Math.floor(min / 60) % 24, m = min % 60, ap = h >= 12 ? "PM" : "AM", h12 = h % 12; if (h12 === 0) h12 = 12; return h12 + ":" + pad(m) + " " + ap; }
   function wdOf(iso) { var p = iso.split("-"); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2], 12)).getUTCDay(); }
   function validRule(r) { return !!(r && typeof r === "object" && (r.kind === "fixed" || r.kind === "sunset")); }
+  /* 2040 phase 2: the prayer-times manager now splits "ימי חול (א׳-ה׳)" from
+     "שישי ושבת" (rule.days "sun-thu" / "fri" / "shabbat"). A document that
+     carries only the days (no kind) is a fixed time on those days, so a
+     weekday time can never leak onto Friday or Shabbat. */
+  function normRule(r) {
+    if (validRule(r)) return r;
+    if (r && typeof r === "object" && !r.kind && typeof r.days === "string" && r.days !== "all" && DAYS.indexOf(r.days) >= 0) return Object.assign({}, r, { kind: "fixed" });
+    return null;
+  }
 
   /* Does the rule apply on this date? isYomTov(iso) -> bool */
   function dayMatches(rule, iso, isYomTov) {
@@ -68,8 +77,8 @@
 
   /* One document on one date -> { min, time } or null (not shown that day) */
   function timeFor(doc, iso, ctx) {
-    var r = doc.rule;
-    if (!validRule(r)) {
+    var r = normRule(doc.rule);
+    if (!r) {
       var lm = typeof doc.order === "number" ? doc.order : parseTime12(doc.time);
       return { min: lm, time: doc.time || "", legacy: true };
     }
@@ -88,7 +97,7 @@
     var rows = [];
     (docs || []).forEach(function (doc) {
       var t = timeFor(doc, iso, ctx); if (!t) return;
-      rows.push({ id: doc.id, nameHe: doc.nameHe || doc.nameEn || "", nameEn: doc.nameEn || "", time: t.time, min: t.min, iso: iso, group: group || "", legacy: !!t.legacy, rule: validRule(doc.rule) ? doc.rule : null });
+      rows.push({ id: doc.id, nameHe: doc.nameHe || doc.nameEn || "", nameEn: doc.nameEn || "", time: t.time, min: t.min, iso: iso, group: group || "", legacy: !!t.legacy, rule: normRule(doc.rule) });
     });
     rows.sort(function (a, b) { return (a.min == null ? 9999 : a.min) - (b.min == null ? 9999 : b.min); });
     return rows;
