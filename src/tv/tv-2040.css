@@ -1,0 +1,112 @@
+/* Or Hachaim TV | the living screen (2040 phase 1), on top of screen.css.
+   Same materials as the screen: Jerusalem stone, white panels, thin gold,
+   the logo's navy. No red, no crown. Sizes in vh like screen.css. */
+
+/* header: the state title above the Hebrew date (Shabbat, chag, fast...) */
+.ds-title { font-family: var(--font-display-he); font-size: 4.2vh; font-weight: 700; color: #fff; line-height: 1.05; margin-bottom: 0.3vh; }
+.ds-title[hidden] { display: none; }
+.ds-title .ds-sub { display: block; font-family: var(--font-body); font-size: 2vh; font-weight: 600; color: var(--gold-on-navy); letter-spacing: 0.02em; margin-top: 0.4vh; }
+body.has-ds-title #hebrewDateLine { font-size: 3vh; }
+body.has-ds-title #dateLine { font-size: 1.7vh; margin-top: 0.2vh; }
+
+/* the state card, top of the centre column */
+.ds-card { margin: 0 0 1.1vh; padding: 1.3vh 2vh 1.4vh; border-radius: 1vh; text-align: center; line-height: 1.2;
+  background: var(--gold-tint); border: 1px solid var(--gold-hair); color: var(--ink); }
+.ds-card[hidden] { display: none; }
+.ds-card-head { display: flex; align-items: baseline; justify-content: center; gap: 1.6vh; flex-wrap: wrap; }
+.ds-card-title { font-family: var(--font-display-he); font-size: 3.6vh; font-weight: 700; color: var(--navy); }
+.ds-card-time { font-size: 4.6vh; font-weight: 800; color: var(--navy); font-variant-numeric: tabular-nums; }
+.ds-card-cd { margin-top: 0.4vh; font-size: 2.8vh; font-weight: 700; color: var(--gold-text); font-variant-numeric: tabular-nums; }
+.ds-lines { list-style: none; margin: 0.8vh auto 0; padding: 0; max-width: 92%; }
+.ds-lines li { display: flex; align-items: baseline; justify-content: space-between; gap: 1.4vh; padding: 0.35vh 0.4vh; font-size: 2.35vh; font-weight: 600; border-top: 1px solid rgba(180, 142, 86, 0.25); }
+.ds-lines li:first-child { border-top: 0; }
+.ds-lines li span { text-align: start; }
+.ds-lines li b { font-size: 2.8vh; color: var(--navy); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ds-lines li:only-child, .ds-lines li:not(:has(b)) { justify-content: center; }
+.ds-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8vh; margin-top: 1vh; }
+.ds-card.only-chips { padding: 0.9vh 1.4vh; background: transparent; border: 0; }
+.ds-card.only-chips .ds-chips { margin-top: 0; }
+.ds-chip { display: inline-flex; align-items: baseline; gap: 0.8vh; padding: 0.5vh 1.6vh; border-radius: 99vh; font-size: 2.2vh; font-weight: 700; color: var(--navy);
+  background: #fff; border: 1px solid var(--gold); }
+.ds-chip b { font-variant-numeric: tabular-nums; }
+.ds-chip.big { font-size: 2.6vh; background: var(--navy); color: #fff; border-color: var(--navy); }
+
+/* Shabbat and Yom Tov: the card is navy with light gold, like the next zman */
+.ds-card.k-shabbat, .ds-card.k-yomtov, .ds-card.k-yomkippur {
+  background: linear-gradient(180deg, #133a61 0%, var(--navy) 100%); border-color: var(--navy);
+  box-shadow: inset 0 0 0 0.3vh var(--navy), inset 0 0 0 0.4vh rgba(230, 203, 146, 0.45); color: #fff; }
+.ds-card.k-shabbat .ds-card-title, .ds-card.k-yomtov .ds-card-title, .ds-card.k-yomkippur .ds-card-title { color: var(--gold-on-navy); font-size: 4vh; }
+.ds-card.k-shabbat .ds-lines li, .ds-card.k-yomtov .ds-lines li, .ds-card.k-yomkippur .ds-lines li { color: #f4efe6; border-top-color: rgba(230, 203, 146, 0.25); }
+.ds-card.k-shabbat .ds-lines li b, .ds-card.k-yomtov .ds-lines li b, .ds-card.k-yomkippur .ds-lines li b { color: var(--gold-on-navy); }
+.ds-card.k-shabbat .ds-chip, .ds-card.k-yomtov .ds-chip { background: rgba(255, 255, 255, 0.08); color: var(--gold-on-navy); border-color: rgba(230, 203, 146, 0.6); }
+
+/* erev Shabbat / erev chag: the countdown to candle lighting is the hero */
+.ds-card.k-erev-shabbat, .ds-card.k-erev-yomtov, .ds-card.k-erev-yomkippur { background: linear-gradient(180deg, #f8edd2 0%, #efd9a8 100%); border-color: var(--gold); }
+.ds-card.k-erev-shabbat .ds-card-cd, .ds-card.k-erev-yomtov .ds-card-cd, .ds-card.k-erev-yomkippur .ds-card-cd { font-size: 3.2vh; color: var(--navy); }
+
+/* a fast: quiet, stone grey, no gold glow */
+.ds-card.k-fast { background: #f1ede6; border-color: #b9ad9a; }
+.ds-card.k-fast .ds-card-title { color: var(--ink); }
+.ds-card.k-fast .ds-card-cd { color: var(--ink-soft); }
+
+/* Chanukah: a row of small lights (one per candle tonight, and the shamash) */
+.ds-candles { display: flex; justify-content: center; align-items: flex-end; gap: 1vh; margin: 0.8vh 0 0.2vh; direction: ltr; }
+.ds-candles .cnd { width: 1vh; height: 3vh; border-radius: 0.3vh; background: linear-gradient(180deg, #f2e2bc, #d8b977); position: relative; }
+.ds-candles .cnd::before { content: ""; position: absolute; left: 50%; top: -1.6vh; width: 1vh; height: 1.4vh; transform: translateX(-50%); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: radial-gradient(circle at 50% 70%, #fff6d8 0%, #f3c85e 55%, rgba(243, 200, 94, 0) 75%); }
+.ds-candles .cnd.shamash { height: 4vh; margin-inline-start: 1.4vh; }
+
+/* Rosh Chodesh, Chol HaMoed, Purim: light card */
+.ds-card.k-roshchodesh, .ds-card.k-cholhamoed, .ds-card.k-purim, .ds-card.k-chanukah, .ds-card.k-motzei-shabbat, .ds-card.k-motzei-yomtov { background: #fffdf8; border-color: var(--gold); }
+
+/* prayer column: the next minyan, with its countdown */
+.next-minyan { display: flex; align-items: baseline; justify-content: center; flex-wrap: wrap; gap: 0.3vh 1.2vh; margin: 0 0 0.9vh; padding: 0.7vh 1vh; border-radius: 0.8vh;
+  background: var(--gold-tint); border: 1px solid var(--gold-hair); font-size: 2.2vh; line-height: 1.25; }
+.next-minyan[hidden] { display: none; }
+.next-minyan .nm-label { color: var(--muted); font-weight: 600; }
+.next-minyan .nm-name { color: var(--ink); font-weight: 800; }
+.next-minyan .nm-time { color: var(--navy); font-weight: 800; font-variant-numeric: tabular-nums; }
+.next-minyan .nm-cd { color: var(--gold-text); font-weight: 800; font-variant-numeric: tabular-nums; }
+#prayerList .pt-group { margin: 0.9vh 0 0.2vh; padding: 0 1vh; font-size: 1.9vh; font-weight: 800; letter-spacing: 0.04em; color: var(--gold-text); }
+#prayerList .pt-group:first-child { margin-top: 0; }
+
+/* offline: one small, quiet badge; the old footer note steps aside */
+.oh-offline { position: fixed; bottom: 1.2vh; inset-inline-start: 1.6vh; z-index: 60; padding: 0.45vh 1.3vh; border-radius: 99vh; font-size: 1.7vh; font-weight: 700;
+  color: var(--ink-soft); background: rgba(255, 253, 248, 0.92); border: 1px solid var(--gold-hair); box-shadow: 0 0.3vh 1vh rgba(0, 0, 0, 0.12); }
+.oh-offline[hidden] { display: none; }
+.oh-offline::before { content: ""; display: inline-block; width: 1vh; height: 1vh; border-radius: 50%; background: #b9ad9a; margin-inline-end: 0.8vh; vertical-align: middle; }
+body.tv-offline #offlineNote { display: none !important; }
+
+@media (max-width: 900px) {
+  .ds-title { font-size: 26px; }
+  .ds-title .ds-sub { font-size: 15px; }
+  .ds-card-title { font-size: 24px; } .ds-card-time { font-size: 28px; } .ds-card-cd { font-size: 18px; }
+  .ds-lines li { font-size: 16px; } .ds-lines li b { font-size: 18px; }
+  .ds-chip { font-size: 15px; } .next-minyan { font-size: 16px; }
+  .oh-offline { font-size: 13px; }
+}
+
+/* ---------- 2040: the block layout a gabbai can change (settings/screenTexts.layout) ---------- */
+.oh-hide { display: none !important; }
+@media (min-width: 901px) {
+  .tv main.oh-layout { grid-template-columns: var(--oh-cols, 1fr 1.14fr 1fr); }
+}
+
+/* ---------- 2040: one highlighted thing at a time (Hanoch, Nov 4 5:47) ----------
+   body.focus-card   : a countdown card (candle lighting, end of a fast) is THE highlight
+   body.focus-minyan : the next minyan within the hour (strip with its countdown + its row)
+   body.focus-zman   : otherwise the next zman row, as before
+   Everything else that was "next" is shown calm: same words, no fill. */
+body:not(.focus-zman) .col-zmanim .zman-row.next,
+body:not(.focus-minyan) .col-prayers .zman-row.next { background: none; border: 0; border-bottom: 1px solid rgba(180, 142, 86, 0.22); border-radius: 0; box-shadow: none; padding: 0.34vh 1vh; margin: 0; }
+body:not(.focus-zman) .col-zmanim .zman-row.next .zn .he,
+body:not(.focus-minyan) .col-prayers .zman-row.next .zn .he { color: var(--ink); }
+body:not(.focus-zman) .col-zmanim .zman-row.next .zt,
+body:not(.focus-minyan) .col-prayers .zman-row.next .zt { color: var(--navy); }
+body:not(.focus-zman) .col-zmanim .zman-row.next .zn .en,
+body:not(.focus-minyan) .col-prayers .zman-row.next .zn .en { color: var(--muted); }
+body:not(.focus-zman) .shabbat-sec .sb-cell.next { background: none; box-shadow: none; border-color: var(--gold-hair); }
+body:not(.focus-zman) .shabbat-sec .sb-cell.next .sb-l { color: var(--muted); }
+body:not(.focus-zman) .shabbat-sec .sb-cell.next .sb-t { color: var(--navy); }
+body:not(.focus-minyan) .next-minyan { background: transparent; border-color: transparent; }
+body:not(.focus-minyan) .next-minyan .nm-cd { display: none; }
