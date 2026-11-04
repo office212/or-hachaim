@@ -86,33 +86,42 @@ function displayTime(t24) {
   var h12 = h % 12; if (h12 === 0) h12 = 12;
   return h12 + ":" + m;
 }
+/* 2040 (Hanoch, Nov 4): every word on the TV comes from src/tv/tv-texts.js and
+   can be changed by a gabbai (settings/screenTexts). Without that file the
+   literal fallback below is shown, exactly as before. */
+function TXT(key, vars, fb) { var X = window.OH_TV_TEXTS; return X ? X.t(key, vars) : (fb || ""); }
+function TXP(key, fbHe, fbEn) { var X = window.OH_TV_TEXTS; return X ? X.pair(key) : { p: fbHe || "", s: fbEn || "" }; }
+function TXJ(key, sep, fbHe, fbEn) { var q = TXP(key, fbHe, fbEn); return q.s ? q.p + sep + q.s : q.p; }
+/* an engine label (Hebrew, e.g. "הדלקת נרות") with a gabbai's Hebrew override */
+function TXL(he) { var X = window.OH_TV_TEXTS; return X && he ? X.fromHe(he) : he; }
 function royZmanimList(day, withShabbat) {
   if (arguments.length === 0) { day = ROY_DAY; withShabbat = true; }
   if (!day) return null;
   var map = [
-    ["alot", "עלות השחר (שוות)", "Alot (equal minutes)"],
-    ["talis", "זמן טלית ותפילין", "Talis and Tefillin"],
-    ["netz", "נץ החמה", "Netz"],
-    ["shemaMagen", "סוף זמן קריאת שמע מגן אברהם (שוות)", "Shema, Magen Avraham (equal minutes)"],
-    ["shemaGra", "סוף זמן קריאת שמע גרא", "Shema, Gra"],
-    ["tefillah", "סוף זמן תפילה", "Sof Zman Tefillah"],
-    ["chatzot", "חצות יום", "Chatzot"],
-    ["minchaGedola", "מנחה גדולה", "Mincha Gedola"],
-    ["plag", "פלג המנחה", "Plag HaMincha"],
-    ["shkiah", "שקיעה", "Shkiah"],
-    ["tzeit", "צאת הכוכבים", "Tzeit HaKochavim"]
+    ["alot", "zAlot", "עלות השחר (שוות)", "Alot (equal minutes)"],
+    ["talis", "zTalis", "זמן טלית ותפילין", "Talis and Tefillin"],
+    ["netz", "zNetz", "נץ החמה", "Netz"],
+    ["shemaMagen", "zShemaMagen", "סוף זמן קריאת שמע מגן אברהם (שוות)", "Shema, Magen Avraham (equal minutes)"],
+    ["shemaGra", "zShemaGra", "סוף זמן קריאת שמע גרא", "Shema, Gra"],
+    ["tefillah", "zTefillah", "סוף זמן תפילה", "Sof Zman Tefillah"],
+    ["chatzot", "zChatzot", "חצות יום", "Chatzot"],
+    ["minchaGedola", "zMinchaGedola", "מנחה גדולה", "Mincha Gedola"],
+    ["plag", "zPlag", "פלג המנחה", "Plag HaMincha"],
+    ["shkiah", "zShkiah", "שקיעה", "Shkiah"],
+    ["tzeit", "zTzeit", "צאת הכוכבים", "Tzeit HaKochavim"]
   ];
-  var list = map.filter(function (m) { return !!day[m[0]]; }).map(function (m) { return { key: m[0], he: m[1], en: m[2], time: day[m[0]] }; });
+  function lbl(key, k, fbHe, fbEn, time) { var q = TXP(k, fbHe, fbEn); return { key: key, he: q.p, en: q.s, time: time }; }
+  var list = map.filter(function (m) { return !!day[m[0]]; }).map(function (m) { return lbl(m[0], m[1], m[2], m[3], day[m[0]]); });
   if (!withShabbat) return list;
   /* v5: Shabbat ends and Rabbeinu Tam stay in the "next zman" list (the
      hero card), but they are SHOWN only once, in the Shabbat section of
      the right column (renderShabbatBlock), never twice. */
   return list.concat(
-    day.shabbatEndsMyZmanim ? [{ key: "shabbatEnds", he: "צאת שבת", en: "Shabbat ends", time: day.shabbatEndsMyZmanim }] : [],
+    day.shabbatEndsMyZmanim ? [lbl("shabbatEnds", "sbShabbatEnds", "צאת שבת", "Shabbat ends", day.shabbatEndsMyZmanim)] : [],
     /* v5.1: 5788 Yom Tov weekdays carry the MyZmanim-rule end (yomTovEndsMyZmanim);
        on a weekday only Yom Kippur also carries Rabbeinu Tam, so that day is "צאת הצום". */
-    day.yomTovEndsMyZmanim && yomTovEndsTonight() ? [day.rabbeinuTamMyZmanim ? { key: "yomTovEnds", he: "צאת הצום", en: "Fast ends", time: day.yomTovEndsMyZmanim } : { key: "yomTovEnds", he: "צאת החג", en: "Yom Tov ends", time: day.yomTovEndsMyZmanim }] : [],
-    day.rabbeinuTamMyZmanim ? [{ key: "rabbeinuTam", he: "רבינו תם (המוקדם)", en: "Rabbeinu Tam (early)", time: day.rabbeinuTamMyZmanim }] : []
+    day.yomTovEndsMyZmanim && yomTovEndsTonight() ? [day.rabbeinuTamMyZmanim ? lbl("yomTovEnds", "sbFastEnds", "צאת הצום", "Fast ends", day.yomTovEndsMyZmanim) : lbl("yomTovEnds", "sbYomTovEnds", "צאת החג", "Yom Tov ends", day.yomTovEndsMyZmanim)] : [],
+    day.rabbeinuTamMyZmanim ? [lbl("rabbeinuTam", "sbRabbeinuTam", "רבינו תם (המוקדם)", "Rabbeinu Tam (early)", day.rabbeinuTamMyZmanim)] : []
   );
 }
 /* v5.1: today's Yom Tov ends tonight only when tomorrow is not a rest day
@@ -166,10 +175,13 @@ function ensureToday() {
   renderZmanim(); renderShabbatBlock();
 }
 function countdownText(m) {
-  if (m <= 0) return "עכשיו · Now";
-  if (m < 60) return "בעוד " + m + " דקות · in " + m + " min";
+  /* hidden while SHOW_NEXT_COUNTDOWN is false; same words as the rest of the TV */
+  if (m <= 0) return TXT("cdNow", null, "עכשיו");
+  if (m === 1) return TXT("cdOneMinute", null, "בעוד דקה אחת");
+  if (m < 60) return TXT("cdMinutes", { n: m }, "בעוד " + m + " דקות");
   var h = Math.floor(m / 60), r = m % 60;
-  return "בעוד " + h + ":" + (r < 10 ? "0" : "") + r + " שעות · in " + h + "h " + r + "m";
+  if (h === 1) return r ? TXT("cdOneHourMin", { m: r }, "בעוד שעה ו-" + r + " דק׳") : TXT("cdOneHour", null, "בעוד שעה");
+  return r ? TXT("cdHoursMin", { h: h, m: r }, "בעוד " + h + " שעות ו-" + r + " דק׳") : TXT("cdHours", { h: h }, "בעוד " + h + " שעות");
 }
 /* Plan 1.1, 1.2, 1.3 are NO: no countdown to the next time. The only
    countdown on the screen is the netz window below (5 minutes before
@@ -188,8 +200,15 @@ function nextZman(list, now) {
    the zmanim rows). Text and times come only from the calendar module
    and the daily JSON. */
 function escS(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+function haftarahLine(h) {
+  return TXT("sbHaftarah", { text: h.displayHe }, "הפטרה: " + h.displayHe);
+}
+function moladLine(m) {
+  if (!window.OH_TV_TEXTS || m.hour == null) return m.textHe || "";
+  return TXT("moladLine", { day: m.dowHe, h: m.hour, mm: (m.minutes < 10 ? "0" : "") + m.minutes, ch: m.chalakim });
+}
 function sbCell(label, time, key, nextKey) {
-  return '<div class="sb-cell' + (key && key === nextKey ? " next" : "") + '"><span class="sb-l">' + escS(label) + '</span><span class="sb-t" dir="ltr">' + (time ? escS(displayTime(time)) : "--") + "</span></div>";
+  return '<div class="sb-cell' + (key && key === nextKey ? " next" : "") + '"><span class="sb-l">' + escS(TXL(label)) + '</span><span class="sb-t" dir="ltr">' + (time ? escS(displayTime(time)) : "--") + "</span></div>";
 }
 function sbRow(label, time, isNext, missing) {
   return '<div class="zman-row sb-row' + (isNext ? " next" : "") + '"><span class="zn"><span class="he">' + escS(label) + '</span></span><span class="zt" dir="ltr">' + (time ? escS(displayTime(time)) : (missing ? "--" : "")) + "</span></div>";
@@ -197,7 +216,7 @@ function sbRow(label, time, isNext, missing) {
 var _sbSig = "";
 /* v5.2: shown under a Shabbat / Yom Tov time that was computed by MyZmanim's
    rules (5788, field myZmanimSource "model"), never under a MyZmanim file value */
-var MODEL_NOTE = '<p class="sb-model">חישוב לפי כללי MyZmanim</p>';
+var MODEL_NOTE_HTML = function () { return '<p class="sb-model">' + escS(TXT("sbModelNote", null, "חישוב לפי כללי MyZmanim")) + "</p>"; };
 function calReady() { return !!(window.OH_CALENDAR && window.OH_CALENDAR.ready && window.OH_CALENDAR.ready()); }
 /* Is this Shabbat's block on now? Friday (all day) and Saturday until the
    end of Shabbat and Rabbeinu Tam (+5 min). */
@@ -238,7 +257,7 @@ function renderShabbatBlock(nextKey, nextMin) {
       /* highlighted only when it is really the next time on the screen (the same one as the next-zman line) */
       if (!nextDone && l.time && (l.date > today || mins(l.time) >= now)) { isNext = l.date === today && (nextMin == null || mins(l.time) <= nextMin); nextDone = true; }
       if (l.time && l.source === "MyZmanim-rules") model = true;
-      rows += sbRow((l.weekdayHe && !dropDay ? l.weekdayHe + ", " : "") + l.he, l.time, isNext, l.missing);
+      rows += sbRow((l.weekdayHe && !dropDay ? TXL(l.weekdayHe) + ", " : "") + TXL(l.he), l.time, isNext, l.missing);
     });
     var inStretchShabbat = sb && sb.shabbat >= yt.first && sb.shabbat <= yt.last;
     /* v5.3 (rabbi's ruling, Nov 3: everything per Zemaneh Yosef, Sephardi haftarah only):
@@ -249,40 +268,41 @@ function renderShabbatBlock(nextKey, nextMin) {
     var shabbatNow = inStretchShabbat && ((sb.shabbat === today && !afterSunset) || (afterSunset && sb.shabbat === dateKeyOffset(1)));
     html = '<div class="sb-head"><span class="sb-parasha">' + escS(yt.titleHe) + "</span>" +
       (inStretchShabbat && sb.parashaHe ? '<span class="sb-kicker">' + escS(sb.parashaHe) + "</span>" : "") + "</div>" +
-      (shabbatNow && sb.haftarah && sb.haftarah.displayHe ? '<p class="sb-haftarah">הפטרה: ' + escS(sb.haftarah.displayHe) + "</p>" : "") +
-      '<div class="sb-list">' + rows + "</div>" + (model ? MODEL_NOTE : "");
+      (shabbatNow && sb.haftarah && sb.haftarah.displayHe ? '<p class="sb-haftarah">' + escS(haftarahLine(sb.haftarah)) + "</p>" : "") +
+      '<div class="sb-list">' + rows + "</div>" + (model ? MODEL_NOTE_HTML() : "");
   } else if (sb && shabbatWindowOpen(sb.end && sb.end.time, sb.end && sb.end.rabbeinuTam)) {
     var special = (sb.special || []).map(function (x) { return x && x.he; }).filter(Boolean);
     var cells = "";
     if (sb.candleLighting) cells += sbCell(sb.candleLighting.label || "הדלקת נרות", sb.candleLighting.time, "candle", nextKey);
     if (sb.end) {
       cells += sbCell(sb.end.label || "צאת שבת", sb.end.time, "shabbatEnds", nextKey);
-      if (sb.end.rabbeinuTam || sb.end.rabbeinuTamMissing) cells += sbCell("רבינו תם (המוקדם)", sb.end.rabbeinuTam, "rabbeinuTam", nextKey);
+      if (sb.end.rabbeinuTam || sb.end.rabbeinuTamMissing) cells += sbCell(TXT("sbRabbeinuTam", null, "רבינו תם (המוקדם)"), sb.end.rabbeinuTam, "rabbeinuTam", nextKey);
     } else if (sb.candleLightingSaturdayNight) {
       cells += sbCell(sb.candleLightingSaturdayNight.label || "הדלקת נרות", sb.candleLightingSaturdayNight.time, "candleSat", nextKey);
     }
-    html = '<div class="sb-head"><span class="sb-kicker">שבת קודש</span>' + (sb.parashaHe ? '<span class="sb-parasha">' + escS(sb.parashaHe) + "</span>" : "") + "</div>";
+    html = '<div class="sb-head"><span class="sb-kicker">' + escS(TXT("sbShabbatKodesh", null, "שבת קודש")) + "</span>" + (sb.parashaHe ? '<span class="sb-parasha">' + escS(sb.parashaHe) + "</span>" : "") + "</div>";
     if (special.length) html += '<p class="sb-special">' + special.map(escS).join(" | ") + "</p>";
-    if (sb.haftarah && sb.haftarah.displayHe) html += '<p class="sb-haftarah">הפטרה: ' + escS(sb.haftarah.displayHe) + "</p>";
+    if (sb.haftarah && sb.haftarah.displayHe) html += '<p class="sb-haftarah">' + escS(haftarahLine(sb.haftarah)) + "</p>";
     html += '<div class="sb-times">' + cells + "</div>";
     if (sb.mevarchim && sb.mevarchim.molad && sb.mevarchim.molad.textHe) {
       var mevSaid = special.indexOf(sb.mevarchim.he) >= 0;
-      html += '<p class="sb-molad">' + (mevSaid ? "" : escS(sb.mevarchim.he) + " | ") + escS(sb.mevarchim.molad.textHe) + "</p>";
+      html += '<p class="sb-molad">' + (mevSaid ? "" : escS(sb.mevarchim.he) + " | ") + escS(moladLine(sb.mevarchim.molad)) + "</p>";
     }
     /* v5.2: a 5788 end / Rabbeinu Tam computed by MyZmanim's rules (no MyZmanim file yet) says so, small */
     var sbModel = (sb.end && ((sb.end.time && sb.end.source === "MyZmanim-rules") || (sb.end.rabbeinuTam && sb.end.rabbeinuTamSource === "MyZmanim-rules"))) ||
       (!sb.end && sb.candleLightingSaturdayNight && sb.candleLightingSaturdayNight.time && sb.candleLightingSaturdayNight.source === "MyZmanim-rules");
-    if (sbModel) html += MODEL_NOTE;
+    if (sbModel) html += MODEL_NOTE_HTML();
   } else if (!calReady() && ROY_JSON) {
     /* calendar module not loaded: the three times from the daily JSON, Friday and Shabbat only */
     var wd = nyWeekday(), fri = null, sat = null;
     if (wd === 5) { fri = ROY_JSON.days[dateKeyOffset(0)]; sat = ROY_JSON.days[dateKeyOffset(1)]; }
     else if (wd === 6) { fri = ROY_JSON.days[dateKeyOffset(-1)]; sat = ROY_JSON.days[dateKeyOffset(0)]; }
-    if ((fri || sat) && shabbatWindowOpen(sat && sat.shabbatEndsMyZmanim, sat && sat.rabbeinuTamMyZmanim)) html = '<div class="sb-head"><span class="sb-kicker">שבת קודש</span></div><div class="sb-times">' +
+    if ((fri || sat) && shabbatWindowOpen(sat && sat.shabbatEndsMyZmanim, sat && sat.rabbeinuTamMyZmanim)) html = '<div class="sb-head"><span class="sb-kicker">' + escS(TXT("sbShabbatKodesh", null, "שבת קודש")) + '</span></div><div class="sb-times">' +
       sbCell("הדלקת נרות", fri && fri.candle18, "candle", nextKey) + sbCell("צאת שבת", sat && sat.shabbatEndsMyZmanim, "shabbatEnds", nextKey) +
       sbCell("רבינו תם (המוקדם)", sat && sat.rabbeinuTamMyZmanim, "rabbeinuTam", nextKey) + "</div>";
   }
   var sig = (yt ? "Y" : "S") + html;
+  /* 2040: the layout editor can hide this block; the zmanim column then ignores it */
   if (sig === _sbSig) return;
   _sbSig = sig;
   el.innerHTML = html;
@@ -294,12 +314,37 @@ function renderShabbatBlock(nextKey, nextMin) {
    line at the very top of the centre column, no heading, several joined
    with " | "; hidden on a day with none. Not a board. */
 var _insSig = null;
+/* 2040: the insertions with a gabbai's words for the fixed ones.
+   The Omer line: tonight's count only from tzeit + 1 minute (never before
+   nightfall, so no one counts early from the screen); between sunset and
+   that minute the day's count stays. */
+function insertionWords(list) {
+  var st = null, d = null;
+  try { st = window.OH_CALENDAR.state ? window.OH_CALENDAR.state(new Date()) : null; d = st && st.day; } catch (e) {}
+  var after = !!(st && st.hebrewDateSwitchedAtSunset);
+  var beforeTzeit = after && ROY_DAY && ROY_DAY.tzeit && nowMinsNY() < mins(ROY_DAY.tzeit) + 1;
+  var out = [];
+  list.forEach(function (x) {
+    x = String(x);
+    if (/לעומר/.test(x) && d && d.omer) {
+      var o = beforeTzeit ? d.omer.today : (after ? d.omer.tonight : d.omer.today);
+      if (!o || !(o.nusachHe || o.day)) return;
+      out.push({ omer: true, text: o.nusachHe || (o.day + " לעומר") }); /* the nusach is the calendar's (marked for the rabbi), not an editable word */
+      return;
+    }
+    var m = /^ממוסף: (.*)$/.exec(x);
+    if (m) { out.push({ text: TXT("insFromMusaf", { text: TXL(m[1]) }, x) }); return; }
+    out.push({ text: TXL(x) });
+  });
+  return out;
+}
 function renderInsertions() {
   if (isScreenGated()) return;
   var el = document.getElementById("insStrip"); if (!el) return;
   var list = calReady() && window.OH_CALENDAR.insertions ? (window.OH_CALENDAR.insertions(new Date()) || []) : [];
+  list = insertionWords(list);
   /* a short insertion never breaks inside, and its " | " stays with it */
-  var html = list.map(function (x, i) { return '<span class="ins-item' + (String(x).length <= 26 ? " nw" : "") + '">' + (i ? '<span class="ins-sep">| </span>' : "") + escS(x) + "</span>"; }).join(" ");
+  var html = list.map(function (x, i) { return '<span class="ins-item' + (x.omer ? " ins-omer" : "") + (String(x.text).length <= 26 ? " nw" : "") + '">' + (i ? '<span class="ins-sep">| </span>' : "") + escS(x.text) + "</span>"; }).join(" ");
   if (html === _insSig) { insSeps(el, false); return; }
   _insSig = html;
   el.innerHTML = html;
@@ -328,7 +373,7 @@ function insSeps(el, fresh) {
 /* One row: Hebrew name large, English small under it, time on the
    far side. Same markup for zmanim, prayers and the Shabbat block. */
 function zRow(he, en, time, isNext) {
-  return '<div class="zman-row' + (isNext ? " next" : "") + '"><span class="zn"><span class="he">' + he + '</span><span class="en">' + en + '</span></span><span class="zt" dir="ltr">' + time + "</span></div>";
+  return '<div class="zman-row' + (isNext ? " next" : "") + '"><span class="zn"><span class="he">' + escS(he) + '</span>' + (en ? '<span class="en">' + escS(en) + '</span>' : "") + '</span><span class="zt" dir="ltr">' + time + "</span></div>";
 }
 function renderZmanim() {
   if (isScreenGated()) return;
@@ -355,13 +400,14 @@ function renderZmanim() {
   });
   var zl = document.getElementById("zmanList");
   if (zl) {
-    var out = html || "<p>אין זמני יום טעונים כרגע / No daily times loaded yet.</p>";
+    var out = html || "<p>" + escS(TXJ("zNoneLoaded", " / ", "אין זמני יום טעונים כרגע", "No daily times loaded yet.")) + "</p>";
     if (zl.innerHTML !== out) { zl.innerHTML = out; try { localStorage.setItem("orHachaimLastZman", out); } catch (e) {} }
   }
   var lab = document.getElementById("zmanDayLabel");
   if (lab) {
     lab.hidden = !tomorrow;
-    var lt = tomorrow ? '<span class="he">זמני מחר</span><span class="en">Tomorrow</span>' : "";
+    var tq = TXP("zTomorrow", "זמני מחר", "Tomorrow");
+    var lt = tomorrow ? '<span class="he">' + escS(tq.p) + "</span>" + (tq.s ? '<span class="en">' + escS(tq.s) + "</span>" : "") : "";
     if (lab.innerHTML !== lt) lab.innerHTML = lt;
   }
   var colZ = document.querySelector(".col-zmanim"); if (colZ) colZ.classList.toggle("is-tomorrow", tomorrow);
@@ -369,20 +415,21 @@ function renderZmanim() {
   renderInsertions();
   var heroName = document.getElementById("nextHeroName"), heroTime = document.getElementById("nextHeroTime"), heroCd = document.getElementById("nextHeroCountdown"), heroLine = document.getElementById("nextHeroLine");
   var label = "", tText = "", cd = "";
-  if (nz) { label = nz.he + " / " + nz.en; tText = displayTime(nz.time); cd = countdownText(mins(nz.time) - now); }
+  if (nz) { label = nz.en ? nz.he + " / " + nz.en : nz.he; tText = displayTime(nz.time); cd = countdownText(mins(nz.time) - now); }
   else if (ROY_JSON) {
     var tom = ROY_JSON.days[dateKeyOffset(1)];
-    if (tom && tom.alot) { label = "עלות השחר מחר / Alot tomorrow"; tText = displayTime(tom.alot); cd = countdownText(1440 - now + mins(tom.alot)); }
-    else { label = "אין זמנים נוספים היום / No more times today"; tText = ""; cd = ""; }
+    if (tom && tom.alot) { label = TXJ("zAlotTomorrow", " / ", "עלות השחר מחר", "Alot tomorrow"); tText = displayTime(tom.alot); cd = countdownText(1440 - now + mins(tom.alot)); }
+    else { label = TXJ("zNoMore", " / ", "אין זמנים נוספים היום", "No more times today"); tText = ""; cd = ""; }
   }
   /* Hebrew name large, English small under it (label is "Hebrew / English"). */
   if (heroName) {
     var lp = label.split(" / ");
-    heroName.innerHTML = '<span class="he">' + lp[0] + "</span>" + (lp[1] ? '<span class="en">' + lp[1] + "</span>" : "");
+    var hn = '<span class="he">' + escS(lp[0]) + "</span>" + (lp[1] ? '<span class="en">' + escS(lp[1]) + "</span>" : "");
+    if (heroName.innerHTML !== hn) heroName.innerHTML = hn;
   }
   if (heroTime) heroTime.textContent = tText;
   if (heroCd) heroCd.textContent = SHOW_NEXT_COUNTDOWN ? cd : ""; /* plan 1.1-1.3: no countdowns, only the netz one */
-  if (heroLine) heroLine.textContent = label && tText ? ("הזמן הבא: " + label + " " + tText) : "";
+  if (heroLine) heroLine.textContent = label && tText ? (TXT("nextZmanLabel", null, "הזמן הבא") + ": " + label + " " + tText) : "";
   var box = document.getElementById("netzBox");
   if (box) {
     if (!ROY_DAY) { box.style.display = "none"; return; } /* v5: inside the slim next-zman line (centre, top) */
@@ -390,7 +437,7 @@ function renderZmanim() {
     if (now >= netz - 5 && now < netz) {
       box.style.display = "inline-block";
       var left = netz - now;
-      box.textContent = "הנץ בעוד " + left + (left === 1 ? " דקה" : " דקות") + " · Netz in " + left + " min";
+      box.textContent = TXJ(left === 1 ? "zNetzCountdownOne" : "zNetzCountdown", " · ", "הנץ בעוד " + left + (left === 1 ? " דקה" : " דקות"), "Netz in " + left + " min").replace(/\{n\}/g, left);
     } else { box.style.display = "none"; }
   }
 }
@@ -402,21 +449,27 @@ function renderZmanim() {
    Kiddush Levana, Eruv Tavshilin, fasts) are gone: those come from the
    calendar (right column, the insertions line, or calendar boards). */
 var BOARDS = [
-  { he: "ברוכים הבאים", en: "Welcome", body: "PLACEHOLDER / פליסהולדר: welcome text to be entered by a gabbai." },
-  { he: "לוח שיעורים", en: "Shiur Schedule", body: "PLACEHOLDER / פליסהולדר: shiur schedule to be entered by a gabbai." },
-  { he: "היום יום", en: "Hayom Yom", body: "PLACEHOLDER / פליסהולדר: Hayom Yom entry to be entered by a gabbai." },
-  { he: "הלכה יומית", en: "Daily Halacha", body: "PLACEHOLDER / פליסהולדר: daily halacha, 365 cycle, to be entered by a gabbai." },
-  { he: "מזל טוב", en: "Mazal Tov", body: "PLACEHOLDER / פליסהולדר: Mazal Tov notice to be entered by a gabbai." },
-  { he: "הזכרות", en: "Hazkarot", body: "PLACEHOLDER / פליסהולדר: hazkarot and condolences to be entered by a gabbai." },
-  { he: "נותני חסות: קידוש וסעודה שלישית", en: "Kiddush and Seudah Shlishit Sponsors", body: "PLACEHOLDER / פליסהולדר: Kiddush and Seudah Shlishit sponsors to be entered by a gabbai." },
-  { he: "פרנס היום", en: "Parnas Hayom", body: "PLACEHOLDER / פליסהולדר: Parnas Hayom and Ner LaMaor to be entered by a gabbai." },
-  { he: "ברכת הרב", en: "Rabbi Message", body: "PLACEHOLDER / פליסהולדר: rabbi message and Shabbat blessing to be entered by a gabbai." },
-  { he: "פליירים", en: "Flyers", body: "PLACEHOLDER / פליסהולדר: date-windowed flyers, shown only inside their start and end dates, to be entered by a gabbai. Not yet saved to Firestore." },
-  { he: "נותני חסות לפי תאריך", en: "Date-Windowed Sponsorships", body: "PLACEHOLDER / פליסהולדר: date-windowed sponsorships, shown only inside their start and end dates, to be entered by a gabbai. Not yet saved to Firestore." },
-  { he: "הקדשות קבועות", en: "Permanent Dedications", body: "PLACEHOLDER / פליסהולדר: permanent dedications to be entered by a gabbai. Not yet saved to Firestore." },
-  { he: "מגבית", en: "Campaign Board", body: "PLACEHOLDER / פליסהולדר: campaign board to be entered by a gabbai. Weekday only, hidden on Shabbat.", weekdayOnly: true },
-  { he: "יורצייט", en: "Yahrzeit", body: "PLACEHOLDER / פליסהולדר: yahrzeit added once, recurs yearly in its week, to be entered by a gabbai. Not yet saved to Firestore." }
+  { k: "phWelcome", he: "ברוכים הבאים", en: "Welcome", body: "PLACEHOLDER / פליסהולדר: welcome text to be entered by a gabbai." },
+  { k: "phShiurim", he: "לוח שיעורים", en: "Shiur Schedule", body: "PLACEHOLDER / פליסהולדר: shiur schedule to be entered by a gabbai." },
+  { k: "phHayomYom", he: "היום יום", en: "Hayom Yom", body: "PLACEHOLDER / פליסהולדר: Hayom Yom entry to be entered by a gabbai." },
+  { k: "phHalacha", he: "הלכה יומית", en: "Daily Halacha", body: "PLACEHOLDER / פליסהולדר: daily halacha, 365 cycle, to be entered by a gabbai." },
+  { k: "phMazalTov", he: "מזל טוב", en: "Mazal Tov", body: "PLACEHOLDER / פליסהולדר: Mazal Tov notice to be entered by a gabbai." },
+  { k: "phHazkarot", he: "הזכרות", en: "Hazkarot", body: "PLACEHOLDER / פליסהולדר: hazkarot and condolences to be entered by a gabbai." },
+  { k: "phSponsors", he: "נותני חסות: קידוש וסעודה שלישית", en: "Kiddush and Seudah Shelishit Sponsors", body: "PLACEHOLDER / פליסהולדר: Kiddush and Seudah Shlishit sponsors to be entered by a gabbai." },
+  { k: "phParnas", he: "פרנס היום", en: "Parnas Hayom", body: "PLACEHOLDER / פליסהולדר: Parnas Hayom and Ner LaMaor to be entered by a gabbai." },
+  { k: "phRabbi", he: "ברכת הרב", en: "Message from the Rav", body: "PLACEHOLDER / פליסהולדר: rabbi message and Shabbat blessing to be entered by a gabbai." },
+  { k: "phFlyers", he: "פליירים", en: "Flyers", body: "PLACEHOLDER / פליסהולדר: date-windowed flyers, shown only inside their start and end dates, to be entered by a gabbai. Not yet saved to Firestore." },
+  { k: "phDated", he: "נותני חסות לפי תאריך", en: "Sponsorships by Date", body: "PLACEHOLDER / פליסהולדר: date-windowed sponsorships, shown only inside their start and end dates, to be entered by a gabbai. Not yet saved to Firestore." },
+  { k: "phDedications", he: "הקדשות קבועות", en: "Permanent Dedications", body: "PLACEHOLDER / פליסהולדר: permanent dedications to be entered by a gabbai. Not yet saved to Firestore." },
+  { k: "phCampaign", he: "מגבית", en: "Campaign", body: "PLACEHOLDER / פליסהולדר: campaign board to be entered by a gabbai. Weekday only, hidden on Shabbat.", weekdayOnly: true },
+  { k: "phYahrzeit", he: "יורצייט", en: "Yahrzeit", body: "PLACEHOLDER / פליסהולדר: yahrzeit added once, recurs yearly in its week, to be entered by a gabbai. Not yet saved to Firestore." }
 ];
+/* 2040: a placeholder board's words come from tv-texts (k, k + "Body") */
+function boardWords(b) {
+  if (!b.k || !window.OH_TV_TEXTS) return b;
+  var q = TXP(b.k, b.he, b.en), body = TXT(b.k + "Body", null, b.body);
+  return { he: q.p, en: q.s, body: body, weekdayOnly: b.weekdayOnly };
+}
 var zi = 0, zoneTimer = null;
 function visibleBoards() {
   if (!isShabbatDay()) return BOARDS;
@@ -436,7 +489,7 @@ function currentBoards() {
   var all = live.concat(cal);
   if (all.length) return all;
   if (window.OH_BOARDS && window.OH_BOARDS.isPreview()) return [];
-  return visibleBoards().map(function (b) { return { he: b.he, en: b.en, html: '<p class="board-body">' + escBoard(b.body) + "</p>", cls: "" }; });
+  return visibleBoards().map(boardWords).map(function (b) { return { he: b.he, en: b.en, html: '<p class="board-body">' + escBoard(b.body) + "</p>", cls: "" }; });
 }
 function renderZone() {
   if (isScreenGated()) return;
@@ -449,7 +502,7 @@ function renderZone() {
   el.className = z.cls || "";
   var colC = el.closest ? el.closest(".col-center") : null;
   if (colC) colC.classList.toggle("has-flyer", /\bis-flyer\b/.test(z.cls || ""));
-  el.innerHTML = '<div class="cb-inner"><h3>' + escBoard(z.he) + (z.en ? '<span class="en">' + escBoard(z.en) + "</span>" : "") + "</h3>" + z.html + "</div>";
+  el.innerHTML = '<div class="cb-inner"><h3>' + escBoard(z.cls === "is-cal" ? TXL(z.he) : z.he) + (z.en ? '<span class="en">' + escBoard(z.en) + "</span>" : "") + "</h3>" + z.html + "</div>";
   if (idx) idx.textContent = boards.length > 1 ? ((zi % boards.length) + 1) + " / " + boards.length : "";
   try { localStorage.setItem("orHachaimLastZone", el.innerHTML); } catch (e) {}
   zi++;
@@ -465,7 +518,7 @@ function updateOfflineNote() {
   var stamp = new Date().toLocaleString("en-US", { timeZone: "America/New_York", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   if (navigator.onLine) { lastOnlineStamp = stamp; el.textContent = ""; el.classList.remove("is-offline"); }
   else {
-    el.textContent = "אין חיבור, מוצג המידע האחרון · Offline" + (lastOnlineStamp ? ", " + lastOnlineStamp : "");
+    el.textContent = TXJ("offlineOld", " · ", "אין חיבור, מוצג המידע האחרון", "Offline") + (lastOnlineStamp ? ", " + lastOnlineStamp : "");
     el.classList.add("is-offline");
   }
   if (!navigator.onLine && !isScreenGated()) {
@@ -568,7 +621,7 @@ if (/[?&]preview\b/.test(location.search)) document.body.classList.add("preview"
 var shabToggle = document.getElementById("shabbatToggle");
 if (shabToggle) shabToggle.addEventListener("click", function () {
   document.body.classList.toggle("shabbat");
-  this.textContent = document.body.classList.contains("shabbat") ? "צא מתצוגת שבת / Exit Shabbat preview" : "תצוגת שבת / Shabbat preview";
+  this.textContent = document.body.classList.contains("shabbat") ? TXJ("shabbatPreviewExitBtn", " / ", "צא מתצוגת שבת", "Exit Shabbat preview") : TXJ("shabbatPreviewBtn", " / ", "תצוגת שבת", "Shabbat preview");
   applyBurnShift(); applyWeekdayHiding(); renderZone();
 });
 tick(); renderZone(); applyBurnShift(); updateOfflineNote();
