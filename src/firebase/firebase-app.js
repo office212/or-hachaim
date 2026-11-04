@@ -75,6 +75,12 @@
      the known permissions (finance, screen = content and times, times,
      both) are kept from a users document. */
   var KNOWN_PERMS = ["finance", "screen", "times", "both"];
+  /* Stage D (Hanoch 2026-11-04): a congregant record's status. No status
+     (every record written before stage D) means active. */
+  function memberStatus(d) {
+    var st = d && typeof d.status === "string" ? d.status : "";
+    return (st === "pending" || st === "declined" || st === "inactive") ? st : "active";
+  }
   function buildRole(user, userDoc, hasCongregant, userDocByEmail, claims) {
     var email = (user.email || "").toLowerCase();
     var role = { email: email, uid: user.uid, isSuperAdmin: email === SUPER_ADMIN_EMAIL,
@@ -152,14 +158,23 @@
             if (!eq.empty) userDocByEmail = eq.docs[0].data() || {};
           } catch (e) {}
         }
-        var hasCong = false;
+        var hasCong = false, joinStatus = null;
         if (state.user.email) {
           try {
-            var s = await state.db.collection("congregants").where("email", "==", state.user.email).limit(1).get();
-            hasCong = !s.empty;
+            /* Stage D: a join request ("pending") or a declined one is not a member
+               yet; an active record (or one with no status, as all older ones) is. */
+            var s = await state.db.collection("congregants").where("email", "==", state.user.email).limit(5).get();
+            s.forEach(function (doc) {
+              var st = memberStatus(doc.data());
+              if (st === "active" || st === "inactive") hasCong = true;
+              else if (!joinStatus || st === "pending") joinStatus = st;
+            });
           } catch (e) {}
         }
         state.role = buildRole(state.user, userDoc, hasCong, userDocByEmail, tokenClaims);
+        state.role.joinStatus = hasCong ? null : joinStatus;
+        /* Stage D: a signed-in person with no access at all may ask to join. */
+        state.role.canRequestJoin = !state.role.authorized && !hasCong && state.role.joinStatus !== "pending" && state.role.joinStatus !== "declined";
         return state.role;
       } catch (e) {
         state.role = buildRole(state.user, null, false, null, null);
@@ -256,7 +271,9 @@
         var out = [];
         snap.forEach(function (doc) {
           var d = doc.data() || {};
-          out.push({ id: doc.id, name: d.name || doc.id, phone: d.phone || "", email: d.email || "", ledger: [] });
+          /* Stage D: status rides along (pending / active / inactive / declined);
+             the finance page decides what it lists, totals keep every record. */
+          out.push({ id: doc.id, name: d.name || doc.id, phone: d.phone || "", email: d.email || "", status: memberStatus(d), createdAt: d.createdAt || "", ledger: [] });
         });
         var led = await state.db.collection("ledgerEntries").get();
         led.forEach(function (doc) {
@@ -275,8 +292,10 @@
       if (!state.ready || !state.db || !state.user || !state.user.email) return null;
       try {
         var snap = await state.db.collection("congregants").where("email", "==", state.user.email).get();
-        if (snap.empty) return null;
-        var doc = snap.docs[0];
+        /* Stage D: a join request (pending or declined) is not a member record. */
+        var docs = snap.docs.filter(function (x) { var st = memberStatus(x.data()); return st === "active" || st === "inactive"; });
+        if (!docs.length) return null;
+        var doc = docs[0];
         var d = doc.data() || {};
         var out = { id: doc.id, name: d.name || doc.id, phone: d.phone || "", email: d.email || "", ledger: [] };
         var led = await state.db.collection("ledgerEntries").where("congregantId", "==", doc.id).get();
@@ -328,6 +347,129 @@
           createdAt: new Date().toISOString()
         });
         return { saved: true, id: ref.id };
+      } catch (e) { return { saved: false, reason: String(e && e.code ? e.code : (e && e.message ? e.message : e)) }; }
+    },
+    /* ---------- Stage D (Hanoch 2026-11-04 4:12-4:14 PM): members, join requests, roles ----------
+       No new collection. A join request is a congregants document with id
+       "join_" + the person's uid and status "pending" (the rules allow exactly
+       that shape, once). Only the super admin approves, declines, makes a member
+       inactive or active again, and changes roles. Nobody deletes a member.
+       Roles stay where they live today: custom claims through the existing
+       setUserClaims function, mirrored in a users document (the same path the
+       "גבאים והרשאות" section uses). */
+    memberStatus: memberStatus,
+    ROLE_KEYS: ["member", "screen", "finance", "both"],
+    loadMyJoinRequest: async function () {
+      if (!state.ready || !state.db || !state.user) return null;
+      try {
+        var d = await state.db.collection("congregants").doc("join_" + state.user.uid).get();
+        if (!d.exists) return null;
+        var x = d.data() || {};
+        return { id: d.id, name: x.name || "", phone: x.phone || "", status: memberStatus(x) };
+      } catch (e) { return null; }
+    },
+    sendJoinRequest: async function (data) {
+      if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
+      if (!state.user || !state.user.email) return { saved: false, reason: "not-signed-in" };
+      var name = String((data && data.name) || "").replace(/\s+/g, " ").trim();
+      var phone = String((data && data.phone) || "").replace(/\s+/g, " ").trim();
+      if (name.length < 2 || name.length > 80) return { saved: false, reason: "missing-name" };
+      var digits = phone.replace(/\D/g, "");
+      if (digits.length < 7 || phone.length > 30 || !/^[0-9+()\-. ]+$/.test(phone)) return { saved: false, reason: "invalid-phone" };
+      try {
+        var ref = state.db.collection("congregants").doc("join_" + state.user.uid);
+        /* one request per person: a second tap or a retry finds the first one */
+        try {
+          var ex = await ref.get();
+          if (ex.exists) return { saved: true, id: ref.id, already: true, status: memberStatus(ex.data()) };
+        } catch (e) {}
+        await ref.set({ name: name, phone: phone, email: state.user.email, status: "pending", createdAt: new Date().toISOString() });
+        state.role = null; state.rolePromise = null; /* the next resolveRole reads the request */
+        return { saved: true, id: ref.id };
+      } catch (e) { return { saved: false, reason: String(e && e.code ? e.code : (e && e.message ? e.message : e)) }; }
+    },
+    loadJoinRequests: async function () {
+      if (!state.ready || !state.db || !state.user) return { ok: false, reason: "not-signed-in", items: [] };
+      if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { ok: false, reason: "not-super-admin", items: [] };
+      try {
+        var snap = await state.db.collection("congregants").where("status", "==", "pending").get();
+        var out = [];
+        snap.forEach(function (doc) { var d = doc.data() || {}; out.push({ id: doc.id, name: d.name || "", phone: d.phone || "", email: d.email || "", createdAt: d.createdAt || "" }); });
+        out.sort(function (a, b) { return String(a.createdAt).localeCompare(String(b.createdAt)); });
+        return { ok: true, items: out };
+      } catch (e) { return { ok: false, reason: String(e && e.code ? e.code : (e && e.message ? e.message : e)), items: [] }; }
+    },
+    /* Super admin: pending -> active (approve) or declined; active <-> inactive. */
+    setMemberStatus: async function (id, status) {
+      if (!state.ready || !state.db || !state.user) return { saved: false, reason: "not-signed-in" };
+      if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { saved: false, reason: "not-super-admin" };
+      var key = { active: "active", inactive: "inactive", declined: "declined", approve: "approved" }[status];
+      if (!id || !key) return { saved: false, reason: "invalid-status" };
+      try {
+        var ref = state.db.collection("congregants").doc(String(id));
+        var now = new Date().toISOString(), data;
+        if (status === "approve") data = { status: "active", approvedBy: state.user.email, approvedAt: now };
+        else if (status === "declined") data = { status: "declined", declinedBy: state.user.email, declinedAt: now };
+        else if (status === "inactive") data = { status: "inactive", inactiveBy: state.user.email, inactiveAt: now };
+        else data = { status: "active", activeBy: state.user.email, activeAt: now };
+        await ref.update(data);
+        return { saved: true, id: String(id), status: data.status };
+      } catch (e) { return { saved: false, reason: String(e && e.code ? e.code : (e && e.message ? e.message : e)) }; }
+    },
+    /* Super admin: the role of each email, from the users documents (the same
+       list "גבאים והרשאות" shows). Returns { email: "screen"|"finance"|"both" }. */
+    loadMemberRoles: async function () {
+      var r = await window.OH_FIREBASE.listUsers();
+      var map = {};
+      if (r && r.ok) r.users.forEach(function (u) {
+        var em = String(u.email || "").toLowerCase(), p = String(u.permissions || "").toLowerCase();
+        if (p === "times") p = "screen";
+        if (!em || ["finance", "screen", "both"].indexOf(p) < 0) return;
+        var prev = map[em];
+        if (prev && prev.perm !== p) p = "both";
+        map[em] = { perm: p, imageUpload: !!u.imageUpload || !!(prev && prev.imageUpload) };
+      });
+      return { ok: !!(r && r.ok), roles: map, reason: r && r.reason };
+    },
+    /* Super admin: one tap role change. role: member | screen | finance | both.
+       member removes the gabbai access (claims revoke + the users documents of
+       that email); the others grant through the existing claims function and
+       mirror it in one users document. Image upload stays as it was when the
+       new role still has Content and Times. The super admin's own access is
+       never touched. */
+    setMemberRole: async function (email, role) {
+      if (!state.ready || !state.db || !state.user) return { saved: false, reason: "not-signed-in" };
+      if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { saved: false, reason: "not-super-admin" };
+      var em = String(email || "").trim().toLowerCase();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) return { saved: false, reason: "invalid-email" };
+      if (em === SUPER_ADMIN_EMAIL) return { saved: false, reason: "super-admin-protected" };
+      if (["member", "screen", "finance", "both"].indexOf(role) < 0) return { saved: false, reason: "invalid-role" };
+      var FB = window.OH_FIREBASE;
+      try {
+        var q = await state.db.collection("users").where("email", "==", em).get();
+        var img = false;
+        q.forEach(function (d) { if ((d.data() || {}).imageUpload === true) img = true; });
+        if (role === "member") {
+          var rv = await FB.revokeUserClaims(em);
+          if (!(rv && rv.ok) && !(rv && rv.reason === "auth-user-not-found")) return { saved: false, reason: (rv && rv.reason) || "claims-revoke-failed" };
+          var ids = []; q.forEach(function (d) { ids.push(d.id); });
+          for (var i = 0; i < ids.length; i++) await state.db.collection("users").doc(ids[i]).delete();
+          return { saved: true, role: "member" };
+        }
+        var keepImg = img && role !== "finance";
+        var g = await FB.grantUserClaims(em, role, keepImg, "grant");
+        if (!(g && g.ok) && !(g && g.reason === "auth-user-not-found")) return { saved: false, reason: (g && g.reason) || "claims-grant-failed" };
+        /* every users document of this email gets the new role (a uid document
+           and an automatic-id one can both exist; the rules read the uid one) */
+        var upd = { email: em, permissions: role, imageUpload: keepImg, updatedBy: state.user.email, updatedAt: new Date().toISOString() };
+        if (q.empty) {
+          upd.createdBy = state.user.email; upd.createdAt = upd.updatedAt;
+          await state.db.collection("users").add(upd);
+        } else {
+          var uids = []; q.forEach(function (d) { uids.push(d.id); });
+          for (var j = 0; j < uids.length; j++) await state.db.collection("users").doc(uids[j]).update(upd);
+        }
+        return { saved: true, role: role, viaClaims: !!(g && g.ok), pending: !(g && g.ok) };
       } catch (e) { return { saved: false, reason: String(e && e.code ? e.code : (e && e.message ? e.message : e)) }; }
     },
     loadScreenData: async function () {
