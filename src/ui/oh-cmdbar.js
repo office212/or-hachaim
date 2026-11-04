@@ -122,8 +122,18 @@
     st.plan = null; st.choice = null;
     if (r.type === "error") { out(msg("warn", "<b>" + escT(r.message) + "</b>", r.suggestions && r.suggestions.length ? '<div style="margin-top:6px">' + esc(L("cmdTry")) + "</div>" + chips(r.suggestions) : "")); return r; }
     if (r.type === "help") { out(msg("info", esc(L("cmdHelp")), chips(r.suggestions))); return r; }
+    /* cmdbar v2: "מה הזמנים", "מתי מנחה" -> the list as it is now, with one-tap actions; nothing is written */
+    if (r.type === "list") { out(msg("info", "<b>" + escT(r.message) + "</b>", '<ul class="cb-list">' + (r.items || []).map(function (x) { return "<li>" + escT(x) + "</li>"; }).join("") + "</ul>" + (r.suggestions && r.suggestions.length ? '<div style="margin-top:6px">' + esc(L("cmdTry")) + "</div>" + chips(r.suggestions) : ""))); return r; }
     if (r.type === "undo") { await undoLast(); return r; }
     if (r.type === "nav") { out(msg("info", esc(L("cmdNavGo")) + " " + esc(r.label) + "...")); var href = rootPath() + r.href; if (r.href === "tv/") window.open(href, "_blank", "noopener"); else location.href = href; return r; }
+    /* v2: a time with no days is never saved to "לסדר": ask "מתי?" with one-tap chips; no "אשר" until a day is chosen */
+    if (r.plan && r.plan.when) { var w = r.plan.when; st.when = w; out(msg("info", "<b>" + escT(w.message) + "</b>" + (w.sub ? ' <span class="cb-when-sub">' + escT(w.sub) + "</span>" : ""),
+      '<div class="cb-sug cb-when" data-when="1">' + w.choices.map(function (c) { return '<button type="button" class="x-chip" data-cmd="' + esc(c.cmd) + '">' + esc(c.label) + "</button>"; }).join("") +
+      '<button type="button" class="x-chip" data-whendate="1" aria-expanded="false">' + esc(w.date.label) + "</button></div>" +
+      '<div class="cb-when-date" id="ohCmdWhenDate" hidden><div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px"><label for="ohCmdDate" style="font-weight:600">' + esc(w.date.label) + '</label>' +
+      '<input type="date" id="ohCmdDate" min="' + esc(w.date.min) + '" style="min-height:48px;min-width:160px;padding:0 12px;font:inherit;font-size:16px;border:1px solid var(--hair-soft,#d8cfbd);border-radius:12px;background:#fff;color:var(--ink2,#0e2c4c)">' +
+      '<button type="button" class="x-btn primary" id="ohCmdDateGo">' + esc(w.date.go) + "</button></div></div>" +
+      '<div class="cb-sug"><button type="button" class="x-btn ghost" id="ohCmdCancel">' + esc(L("cmdClose")) + "</button></div>")); return r; }
     st.plan = r.plan; st.choice = { alt: null, instead: "", publish: r.plan.publish !== false };
     out(previewHtml());
     return r;
@@ -135,7 +145,9 @@
     if (b.hasAttribute("data-alt")) { var w = st.plan.warnings[+b.getAttribute("data-alt")]; if (w && w.alt) { st.choice.alt = w.alt.item; out(previewHtml()); } return; }
     if (b.hasAttribute("data-instead")) { var id = b.getAttribute("data-instead"); st.choice.instead = id; var d = (st.plan.others || []).filter(function (x) { return x.id === id; })[0]; st.choice.insteadLabel = d ? docLabel(d) : ""; st.choice.insteadDoc = d || null; out(previewHtml()); return; }
     if (b.hasAttribute("data-pub")) { st.choice.publish = b.getAttribute("data-pub") === "1"; var end = st.el.querySelector("#ohCmdEnd"); var v = end && end.value; out(previewHtml()); if (v) { var e2 = st.el.querySelector("#ohCmdEnd"); if (e2) e2.value = v; } return; }
-    if (b.id === "ohCmdCancel") { st.plan = null; out(""); return; }
+    if (b.hasAttribute("data-whendate")) { var bx = st.el.querySelector("#ohCmdWhenDate"); if (bx) { bx.hidden = false; b.setAttribute("aria-expanded", "true"); var di = st.el.querySelector("#ohCmdDate"); if (di) { di.focus(); try { if (di.showPicker) di.showPicker(); } catch (e2) {} } } return; }
+    if (b.id === "ohCmdDateGo") { var dv = (st.el.querySelector("#ohCmdDate") || {}).value || ""; if (!/^\d{4}-\d{2}-\d{2}$/.test(dv) || !st.when) { var di2 = st.el.querySelector("#ohCmdDate"); if (di2) di2.focus(); return; } run(C().whenDateCmd(st.when.date.base, dv)); return; }
+    if (b.id === "ohCmdCancel") { st.plan = null; st.when = null; out(""); return; }
     if (b.id === "ohCmdConfirm") { await confirmPlan(); return; }
     if (b.id === "ohCmdUndoBtn") { await undoLast(); return; }
   }
@@ -168,6 +180,18 @@
           label = "הוספה: " + docLabel(item);
         }
         if (res && res.saved) logged = await log("commandBar." + (target ? "update" : "add"), label + (item.rule ? " | " + T().describeRule(item.rule, item.time) : ""), { collection: "prayerTimes", itemId: target ? target.id : res.id, command: text });
+        /* v2 "כל השבוע": the same time also on שישי and on שבת; one "בטל" takes all of it back; a failed extra rolls the whole change back */
+        if (res && res.saved && p.extra && p.extra.length) {
+          var subs = [undo];
+          for (var xi = 0; xi < p.extra.length; xi++) {
+            var xr = await f.savePrayerTime(Object.assign({}, p.extra[xi]));
+            if (!xr || !xr.saved) { for (var ri = subs.length - 1; ri >= 0; ri--) { try { await undoOne(subs[ri]); } catch (e3) {} } res = xr || { saved: false }; break; }
+            subs.push({ kind: "pt-delete", id: xr.id });
+            await log("commandBar.add", "הוספה: " + docLabel(p.extra[xi]) + " | " + T().describeRule(p.extra[xi].rule, p.extra[xi].time), { collection: "prayerTimes", itemId: xr.id, command: text });
+            label += " + " + docLabel(p.extra[xi]) + " (" + T().describeRule(p.extra[xi].rule, p.extra[xi].time) + ")";
+          }
+          if (res && res.saved) undo = { kind: "pt-multi", id: subs[0].id, subs: subs };
+        }
       } else if (p.action === "delete") {
         var tg = p.target, bf = { nameHe: tg.nameHe, nameEn: tg.nameEn, time: tg.time, order: tg.order, rule: tg.rule || null };
         res = await f.deletePrayerTime(tg.id);
@@ -199,13 +223,20 @@
     loadDocs();
     try { window.dispatchEvent(new CustomEvent("oh-prayertimes-changed")); } catch (e) {}
   }
+  async function undoOne(u) {
+    var f = fb();
+    if (u.kind === "pt-delete") return f.deletePrayerTime(u.id);
+    if (u.kind === "pt-update") return f.updatePrayerTime(u.id, Object.assign({}, u.before, { rule: u.before.rule || null }));
+    return { saved: false };
+  }
   async function undoLast() {
     var u = null;
     for (var i = st.undo.length - 1; i >= 0; i--) { if (!st.undo[i].uid || st.undo[i].uid === st.uid) { u = st.undo[i]; st.undo.splice(i, 1); break; } }
     if (!u) { out(msg("info", esc(L("cmdNoUndo")))); return; }
     var f = fb(), r = null;
     try {
-      if (u.kind === "pt-delete") r = await f.deletePrayerTime(u.id);
+      if (u.kind === "pt-multi") { for (var ui = u.subs.length - 1; ui >= 0; ui--) { r = await undoOne(u.subs[ui]); if (!r || !r.saved) break; } }
+      else if (u.kind === "pt-delete") r = await f.deletePrayerTime(u.id);
       else if (u.kind === "pt-update") r = await f.updatePrayerTime(u.id, Object.assign({}, u.before, { rule: u.before.rule || null }));
       else if (u.kind === "pt-restore") r = await f.restorePrayerTime(u.id, u.before);
       else if (u.kind === "sc-archive") r = await window.OH_SCREEN_CONTENT.setStatus(Object.assign({}, u.item, { id: u.id, col: u.col }), "archived");
