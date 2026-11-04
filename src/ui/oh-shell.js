@@ -173,7 +173,8 @@
   function signOut() {
     var fb = window.OH_FIREBASE;
     if (!fb || !fb.signOut) return;
-    Promise.resolve(fb.signOut()).then(function () { location.href = HOME; }, function () { location.href = HOME; });
+    /* 2040 phase 2 (Hanoch 9:21 AM): signing out goes straight to the landing page */
+    Promise.resolve(fb.signOut()).then(function () { location.href = ROOT; }, function () { location.href = ROOT; });
   }
   function signIn() {
     var fb = window.OH_FIREBASE;
@@ -189,6 +190,8 @@
     var role = null;
     if (user) { try { role = await fb.resolveRole(); } catch (e) { role = null; } }
     var key = user ? (user.uid + "|" + (role ? roleLabel(role) + "|" + role.authorized : "?")) : (fb && fb.ready ? "out" : "wait");
+    /* 2040 phase 2 (Hanoch 9:42 AM): explanation texts (.oh-help) for the super admin only */
+    document.documentElement.classList.toggle("oh-sa", !!(user && role && role.isSuperAdmin));
     if (key === last) return;
     last = key;
     var signedIn = !!user;
