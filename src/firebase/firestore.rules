@@ -182,6 +182,23 @@ service cloud.firestore {
         && request.resource.data.name is string && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 80
         && request.resource.data.phone is string && request.resource.data.phone.size() >= 7 && request.resource.data.phone.size() <= 30
         && request.resource.data.createdAt is string && request.resource.data.createdAt.size() <= 40;
+      /* Stage D2 (Hanoch 2026-11-04 5:19 PM): a person whose request was
+      declined may send it again. Only their own document join_<uid>, only
+      from "declined" back to "pending", only name + phone + email + status +
+      createdAt change (same shape and caps as the first request). The old
+      declinedBy/declinedAt stay as they are. No role or approval field, no
+      edit of a pending request, nothing on an active or inactive record. */
+      allow update: if isSignedIn()
+        && request.auth.token.email_verified == true
+        && id == 'join_' + request.auth.uid
+        && resource.data.status == 'declined'
+        && request.resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone', 'email', 'status', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['name', 'phone', 'email', 'status', 'createdAt', 'declinedBy', 'declinedAt'])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.name is string && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 80
+        && request.resource.data.phone is string && request.resource.data.phone.size() >= 7 && request.resource.data.phone.size() <= 30
+        && request.resource.data.createdAt is string && request.resource.data.createdAt.size() <= 40;
       allow delete: if false;
     }
 
