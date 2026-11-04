@@ -4,6 +4,7 @@
 <!-- Gabbai home (stage A, 2026-11-03): one page after sign-in, tiles only for what this person may do. Words: src/ui/labels.js -->
 <link rel="preload" href="../src/assets/fonts/assistant-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="../src/ui/oh-design.css">
+<link rel="stylesheet" href="../src/ui/oh-2040.css">
 <script src="../src/ui/labels.js"></script>
 <script src="../src/firebase/firebase-config.js"></script>
 <script src="../src/firebase/firebase-app.js"></script>
@@ -15,5 +16,11 @@
 <main class="wrap" id="ohHome"></main>
 <script src="../src/ui/oh-shell.js"></script>
 <script src="../src/ui/oh-home.js"></script>
+<!-- 2040 phase 1: command bar, alerts strip (they mount into #ohCmdMount / #ohAlerts that oh-home.js draws) -->
+<script src="../src/calendar/or-calendar.min.js"></script>
+<script src="../src/ui/oh-times.js"></script>
+<script src="../src/ui/oh-command.js"></script>
+<script src="../src/ui/oh-cmdbar.js"></script>
+<script src="../src/ui/oh-alerts.js"></script>
 </body>
 </html>
