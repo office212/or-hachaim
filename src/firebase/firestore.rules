@@ -104,6 +104,16 @@ service cloud.firestore {
     function hasScreen() {
       return isSuperAdmin() || claimScreen() || (userDocExists() && (userDoc().permissions == 'screen' || userDoc().permissions == 'both'));
     }
+    /* Stage D: the fields only the super admin writes on a congregant. */
+    function stageDKeys() {
+      return ['status', 'approvedBy', 'approvedAt', 'declinedBy', 'declinedAt', 'inactiveBy', 'inactiveAt', 'activeBy', 'activeAt'];
+    }
+    /* Stage D: finance adds members as before; a new record is active
+    (no status, or status "active") and carries no stage D audit field. */
+    function financeCreateOk() {
+      return !request.resource.data.keys().hasAny(['approvedBy', 'approvedAt', 'declinedBy', 'declinedAt', 'inactiveBy', 'inactiveAt', 'activeBy', 'activeAt'])
+        && (!('status' in request.resource.data) || request.resource.data.status == 'active');
+    }
 
     /* Users and roles: super admin only writes. Nobody else can
     grant themselves finance or screen access. */
@@ -147,7 +157,31 @@ service cloud.firestore {
     signed-in Google email. No congregant can list all records. */
     match /congregants/{id} {
       allow read: if hasFinance() || (isSignedIn() && resource.data.email == request.auth.token.email);
-      allow create, update: if hasFinance();
+      /* Stage D (Hanoch 2026-11-04 4:12-4:14 PM): members and join requests.
+      status: "pending" (a join request), "active" (or no status at all, as
+      every record written before stage D), "declined", "inactive".
+      Only the super admin approves, declines, makes inactive or active again
+      (any write that touches status or the stage D audit fields). Finance
+      keeps every write it had, except those fields. Nobody deletes. */
+      allow create, update: if isSuperAdmin();
+      allow create: if hasFinance() && financeCreateOk();
+      allow update: if hasFinance() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(stageDKeys());
+      /* A signed-in person who is not a member yet sends ONE join request:
+      document id "join_" + their own uid, their own verified sign-in email,
+      only name + phone + email + status "pending" + createdAt, size caps.
+      They cannot change it afterwards, cannot set a role (roles live in
+      users/{uid} and custom claims, super admin only) and cannot read anyone
+      else (the read rule above is unchanged). */
+      allow create: if isSignedIn()
+        && request.auth.token.email_verified == true
+        && id == 'join_' + request.auth.uid
+        && request.resource.data.keys().hasOnly(['name', 'phone', 'email', 'status', 'createdAt'])
+        && request.resource.data.keys().hasAll(['name', 'phone', 'email', 'status', 'createdAt'])
+        && request.resource.data.status == 'pending'
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.name is string && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 80
+        && request.resource.data.phone is string && request.resource.data.phone.size() >= 7 && request.resource.data.phone.size() <= 30
+        && request.resource.data.createdAt is string && request.resource.data.createdAt.size() <= 40;
       allow delete: if false;
     }
 
