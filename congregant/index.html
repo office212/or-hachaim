@@ -21,6 +21,8 @@
 </style>
 <script src="../src/firebase/firebase-config.js"></script>
 <script src="../src/firebase/firebase-app.js"></script>
+<link rel="stylesheet" href="../src/ui/oh-members.css">
+<script src="../src/ui/oh-members.js"></script>
 <script src="../src/ui/oh-ui.js"></script>
 <script src="../src/engines/display-engine.js"></script>
 <script src="../src/firebase/screen-content.js"></script></head>
@@ -62,6 +64,15 @@ async function refreshCong(){
     var fb = window.OH_FIREBASE;
     if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastCongUser !== null){ _lastCongUser = null; document.getElementById('congSource').textContent = 'כניסה נדרשת / Sign-in required'; document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>'; } return; }
     var role = await fb.resolveRole();
+    /* Stage D: a signed-in person who is not a member yet sees only the join
+       screen (or "sent" / "not approved"), nothing else. */
+    if(role && !role.authorized && window.OH_MEMBERS && (role.canRequestJoin || role.joinStatus)){
+      var jkey = fb.user.uid + '|' + (role.joinStatus || 'form');
+      document.body.classList.remove('gated'); document.body.classList.add('joining'); document.getElementById('gateMsg').textContent = '';
+      if(_lastCongUser !== 'join:' + jkey){ _lastCongUser = 'join:' + jkey; OH_MEMBERS.renderJoin(document.getElementById('card'), role.joinStatus === 'pending' ? 'pending' : role.joinStatus === 'declined' ? 'declined' : 'form'); }
+      return;
+    }
+    document.body.classList.remove('joining');
     if(!role || !fb.canAccess('congregant')){ document.body.classList.add('gated'); if(role){ if(role.authorized){ location.replace('../gabbai/'); return; } document.getElementById('gateMsg').textContent = (window.OH_LABELS && window.OH_LABELS.notAuthorized) || 'החשבון הזה אינו מורשה למערכת הגבאים.'; } /* 2040 phase 1: no access prompts; a gabbai on a page that is not theirs goes home */ _lastCongUser = null; document.getElementById('congSource').textContent = 'כניסה נדרשת / Sign-in required'; document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>'; return; }
     var email = fb.user.email || '';
     if(email === _lastCongUser) return;
@@ -97,7 +108,7 @@ refreshCong();
     }).join("") + '</div>';
   }
   setInterval(function(){
-    var fb = window.OH_FIREBASE, signed = fb && fb.ready && fb.user && !document.body.classList.contains("gated");
+    var fb = window.OH_FIREBASE, signed = fb && fb.ready && fb.user && !document.body.classList.contains("gated") && !document.body.classList.contains("joining");
     if(signed && !unsub && window.OH_SCREEN_CONTENT){ unsub = window.OH_SCREEN_CONTENT.subscribe("public", function(items){ paint(items); }); }
     if(!signed && unsub){ unsub(); unsub = null; paint([]); }
   }, 1500);
