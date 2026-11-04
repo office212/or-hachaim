@@ -5,6 +5,7 @@
 <link rel="stylesheet" href="content-editor.css">
 <link rel="stylesheet" href="../src/ui/oh-design.css">
 <link rel="stylesheet" href="prayer-times.css">
+<link rel="stylesheet" href="../src/ui/oh-2040.css">
 <script src="../src/ui/labels.js"></script>
 <script src="../src/ui/oh-shell.js" defer></script>
 <script src="../src/firebase/firebase-config.js"></script>
@@ -37,7 +38,11 @@
 </div>
 </div>
 <div id="finOnlyNote" class="note" hidden><strong>פיננסים בלבד / Finance only:</strong> לחשבון זה אין הרשאת תוכן וזמנים, ולכן זמני התפילה ותוכן המסך לא מוצגים ולא נשמרים כאן.<br><span dir="ltr">This account has no Content and Times permission, so prayer times and screen content are not shown or saved here.</span><br><a href="../finance/">מעבר לפיננסים / Go to Finance</a></div>
+<!-- 2040 phase 1: the command bar (content gabbaim and the super admin), src/ui/oh-cmdbar.js -->
+<div id="ohCmdMount" hidden></div>
 <section id="ptSection" class="ohpt" hidden aria-labelledby="ptHeading"></section>
+<!-- 2040 phase 1: every word on the TV, editable (admin/tv-texts-editor.js, reads src/tv/tv-texts.js) -->
+<section id="ttSection" hidden aria-labelledby="ttHeading"></section>
 <section id="screenContent" class="sc" hidden aria-labelledby="scHeading">
 <div class="sc-head">
 <div><h2 id="scHeading">תוכן המסך / Screen content</h2>
@@ -134,11 +139,12 @@ async function refreshPT(){
     var fb = window.OH_FIREBASE;
     if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastPTUser !== null){ _lastPTUser = null; if(window.OH_PT) OH_PT.hide(); } return; }
     var role = await fb.resolveRole();
-    if(!role || !fb.canAccess('admin')){ document.body.classList.add('gated'); if(role) document.getElementById('gateMsg').textContent = 'חשבון זה אינו מורשה למערכת / This account is not authorized for the system. פנה לגבאי או למנהל העל כדי לקבל הרשאה. / Contact a gabbai or the super admin for authorization.'; _lastPTUser = null; if(window.OH_PT) OH_PT.hide(); return; }
+    if(!role || !fb.canAccess('admin')){ document.body.classList.add('gated'); if(role){ if(role.authorized){ location.replace('../gabbai/'); return; } document.getElementById('gateMsg').textContent = (window.OH_LABELS && window.OH_LABELS.notAuthorized) || 'החשבון הזה אינו מורשה למערכת הגבאים.'; } /* 2040 phase 1: no access prompts; a gabbai on a page that is not theirs goes home */ _lastPTUser = null; if(window.OH_PT) OH_PT.hide(); return; }
     document.body.classList.remove('gated'); document.getElementById('gateMsg').textContent = '';
     /* Stage 2: prayer times are content and times; a finance-only account sees a note instead. */
     var canContent = !!(window.OH_SCREEN_CONTENT && window.OH_SCREEN_CONTENT.canEdit(role));
-    document.getElementById('finOnlyNote').hidden = canContent;
+    /* 2040 phase 1 (Hanoch 5:46 AM): no "finance only" note; this page has nothing for a finance-only gabbai, so home */
+    if(!canContent && !role.isSuperAdmin){ location.replace('../gabbai/'); return; }
     if(!canContent){ _lastPTUser = null; if(window.OH_PT) OH_PT.hide(); else document.getElementById('ptSection').hidden = true; return; }
     var email = fb.user.email || '';
     if(email === _lastPTUser) return;
@@ -204,6 +210,12 @@ async function checkUmVisibility(){
 setInterval(checkUmVisibility, 1000);
 checkUmVisibility();
 </script>
+<script src="../src/calendar/or-calendar.min.js"></script>
+<script src="../src/ui/oh-times.js"></script>
+<script src="../src/ui/oh-command.js"></script>
 <script src="prayer-times.js"></script>
+<script src="../src/ui/oh-cmdbar.js"></script>
+<script src="../src/tv/tv-texts.js"></script>
+<script src="tv-texts-editor.js"></script>
 <script src="content-editor.js"></script>
 </div></body></html>
