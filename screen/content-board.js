@@ -22,6 +22,19 @@
   var IS_TV = /\/tv\/?/.test(location.pathname) || document.documentElement.getAttribute("data-screen-mode") === "public";
   var state = { items: null, live: false, unsub: null, preview: null, error: null, sig: "" };
   var WD_HE = ["יום א׳", "יום ב׳", "יום ג׳", "יום ד׳", "יום ה׳", "יום ו׳", "שבת"];
+  /* 2040: section names, tags and day names are keys in src/tv/tv-texts.js, so a
+     gabbai can change them (Hebrew and the small English line). Without that
+     file: exactly the words below, as before. */
+  var TYPE_KEY = { announcement: "bAnnouncements", dedication: "bDedications", flyer: "bFlyer", yahrzeit: "bYahrzeit", sponsor: "bSponsors",
+    parnas: "bParnas", mazaltov: "bMazalTov", hazkara: "bHazkarot", rabbi: "bRabbi", campaign: "bCampaign", donation: "bDonation" };
+  var SUB_KEY = { sponsor: { kiddush: "bSubKiddush", seudah3: "bSubSeudah3" }, parnas: { parnas: "bSubParnas", nerLamaor: "bSubNer" },
+    hazkara: { hazkara: "bSubHazkara", tanchumim: "bSubTanchumim" }, rabbi: { message: "bSubRabbiMsg", brachaShabbat: "bSubBracha" },
+    dedication: { leiluyNishmat: "bSubLeiluy", general: "bSubGeneral" } };
+  function X() { return window.OH_TV_TEXTS || null; }
+  function typeName(t) { var d = E.TYPES[t] || { he: "", en: "" }, x = X(); return x && TYPE_KEY[t] ? { he: x.t(TYPE_KEY[t]), en: x.t(TYPE_KEY[t], null, "en") } : d; }
+  function subName(t, sub) { var d = E.SUBTYPES[t] && E.SUBTYPES[t][sub], x = X(); if (!d) return ""; return x && SUB_KEY[t] && SUB_KEY[t][sub] ? x.t(SUB_KEY[t][sub]) : d; }
+  function wdName(n) { var x = X(); return x ? x.t("wdShort" + n) : WD_HE[n]; }
+  function word(key, fb) { var x = X(); return x ? x.t(key) : fb; }
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function para(s) { return esc(s).replace(/\r?\n/g, "<br>"); }
@@ -63,7 +76,7 @@
   }
   function yahrzeitLine(it, today) {
     var y = it.yahrzeit || {}, hit = E.yahrzeitActive(y, today);
-    var when = hit ? (hit.hebLabel + " | " + WD_HE[hit.weekday] + (hit.check ? " (לבדיקה)" : "")) : "";
+    var when = hit ? (hit.hebLabel + " | " + wdName(hit.weekday) + (hit.check ? word("ybCheck", " (לבדיקה)") : "")) : "";
     return '<li class="cb-line"><span class="ln-title">' + esc(y.nameHe || "") + "</span>" + (y.nameEn ? '<span class="ln-en" dir="ltr">' + esc(y.nameEn) + "</span>" : "") +
       (it.bodyHe ? '<span class="ln-body">' + para(it.bodyHe) + "</span>" : "") + (when ? '<span class="ln-when">' + esc(when) + "</span>" : "") + "</li>";
   }
@@ -77,8 +90,8 @@
       if (GROUPED[it.type]) { (groups[it.type] = groups[it.type] || []).push(it); return; }
       if (it.type === "flyer") {
         var src = it.image ? safeUrl(it.image.url) : "";
-        out.boards.push(board("flyer:" + it.id, it.titleHe || T.flyer.he, it.titleEn || "", src
-          ? '<div class="cb-flyer"><img src="' + esc(src) + '" alt="' + esc(it.titleHe || "פלייר") + '"></div>' + (it.bodyHe ? '<p class="board-body">' + para(it.bodyHe) + "</p>" : "")
+        out.boards.push(board("flyer:" + it.id, it.titleHe || typeName("flyer").he, it.titleEn || "", src
+          ? '<div class="cb-flyer"><img src="' + esc(src) + '" alt="' + esc(it.titleHe || typeName("flyer").he) + '"></div>' + (it.bodyHe ? '<p class="board-body">' + para(it.bodyHe) + "</p>" : "")
           : '<p class="board-body">' + para(it.bodyHe || "") + "</p>", src ? "is-flyer" : ""));
         return;
       }
@@ -89,12 +102,12 @@
           var pct = Math.max(0, Math.min(100, Math.round((Number(g.raised) || 0) / Number(g.goal) * 100)));
           bar = '<div class="cb-progress" role="img" aria-label="' + pct + '%"><span style="width:' + pct + '%"></span></div><p class="cb-progress-nums" dir="ltr">' + esc(money(g.raised || 0)) + " / " + esc(money(g.goal)) + "</p>";
         }
-        out.boards.push(board("campaign:" + it.id, it.titleHe || T.campaign.he, it.titleEn || T.campaign.en, '<p class="board-body">' + para(it.bodyHe || "") + "</p>" + (it.bodyEn ? '<p class="board-body en-body" dir="ltr">' + para(it.bodyEn) + "</p>" : "") + bar));
+        out.boards.push(board("campaign:" + it.id, it.titleHe || typeName("campaign").he, it.titleEn || typeName("campaign").en, '<p class="board-body">' + para(it.bodyHe || "") + "</p>" + (it.bodyEn ? '<p class="board-body en-body" dir="ltr">' + para(it.bodyEn) + "</p>" : "") + bar));
         return;
       }
       /* announcement and rabbi: one board each */
-      var he = it.type === "rabbi" ? ((S.rabbi[it.subtype] || T.rabbi.he)) : (it.titleHe || T.announcement.he);
-      var en = it.type === "rabbi" ? (it.titleEn || T.rabbi.en) : (it.titleEn || "");
+      var he = it.type === "rabbi" ? ((S.rabbi[it.subtype] ? subName("rabbi", it.subtype) : typeName("rabbi").he)) : (it.titleHe || typeName("announcement").he);
+      var en = it.type === "rabbi" ? (it.titleEn || typeName("rabbi").en) : (it.titleEn || "");
       var sub = it.type === "rabbi" && it.titleHe ? '<p class="cb-sub">' + esc(it.titleHe) + "</p>" : "";
       out.boards.push(board(it.type + ":" + it.id, he, en, sub + '<p class="board-body">' + para(it.bodyHe || "") + "</p>" + (it.bodyEn ? '<p class="board-body en-body" dir="ltr">' + para(it.bodyEn) + "</p>" : "")));
     });
@@ -102,10 +115,10 @@
       var list = groups[t]; if (!list || !list.length) return;
       var lis = list.map(function (it) {
         if (t === "yahrzeit") return yahrzeitLine(it, today);
-        var tag = S[t] && S[t][it.subtype] ? S[t][it.subtype] : "";
+        var tag = S[t] && S[t][it.subtype] ? subName(t, it.subtype) : "";
         return line(it, tag);
       }).join("");
-      out.boards.push(board(t, T[t].he, T[t].en, '<ul class="cb-list">' + lis + "</ul>"));
+      out.boards.push(board(t, typeName(t).he, typeName(t).en, '<ul class="cb-list">' + lis + "</ul>"));
     });
     return out;
   }
@@ -166,7 +179,7 @@
   function donationBoards(list) {
     return list.map(function (it) {
       var src = it.image ? safeUrl(it.image.url) : "";
-      return board("donation:" + it.id, it.titleHe || "תרומה", it.titleEn || "Donation",
+      return board("donation:" + it.id, it.titleHe || typeName("donation").he, it.titleEn || typeName("donation").en,
         '<div class="cb-donation">' + (src ? '<img class="cb-qr" src="' + esc(src) + '" alt="QR">' : "") +
         '<p class="board-body">' + para(it.bodyHe || "") + (it.bodyEn ? '<br><span dir="ltr">' + para(it.bodyEn) + "</span>" : "") + "</p></div>", "is-donation");
     });
@@ -175,7 +188,7 @@
   function paintStatic(force) {
     var rest = typeof window.isShabbatDay === "function" ? window.isShabbatDay() : false;
     var b = current(rest);
-    var sig = JSON.stringify([rest, b.ticker.map(function (x) { return x.id + ":" + x.version; }), b.donation.map(function (x) { return x.id + ":" + x.version; }), state.preview ? JSON.stringify(state.preview) : "", state.live]);
+    var sig = JSON.stringify([X() ? X().sig : "", rest, b.ticker.map(function (x) { return x.id + ":" + x.version; }), b.donation.map(function (x) { return x.id + ":" + x.version; }), state.preview ? JSON.stringify(state.preview) : "", state.live]);
     if (!force && sig === state.sig) return;
     state.sig = sig;
     paintTicker(b.ticker);
