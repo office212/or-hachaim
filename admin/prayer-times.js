@@ -39,7 +39,19 @@
     ptSavedLater: "נשמר ✓ יופיע על המסך {when}", ptWhenShabbat: "בשבת", ptWhenFri: "ביום שישי", ptWhenDate: "ב{date}",
     ptTodayAt: "היום: {time}",
     ptQuickNamesShabbat: [{ he: "קבלת שבת", en: "Kabbalat Shabbat" }, { he: "שחרית שבת", en: "Shacharit Shabbat" }, { he: "מוסף", en: "Musaf" }, { he: "מנחה גדולה", en: "Mincha Gedola" },
-      { he: "מנחה שבת", en: "Mincha Shabbat" }, { he: "ערבית מוצאי שבת", en: "Arvit Motzei Shabbat" }, { he: "שיעור", en: "Shiur" }]
+      { he: "מנחה שבת", en: "Mincha Shabbat" }, { he: "ערבית מוצאי שבת", en: "Arvit Motzei Shabbat" }, { he: "שיעור", en: "Shiur" }],
+    /* 2040 phase 2 (Hanoch 2026-11-04 9:09 to 9:10 AM): two clear parts. A weekday time is
+       Sunday to Thursday only: Friday Mincha is Erev Shabbat Mincha with Kabbalat Shabbat and
+       Friday Arvit is Arvit of Leil Shabbat, so Friday lives with Shabbat. */
+    ptSecWeekday: "ימי חול (א׳-ה׳)", ptSecWeekdaySub: "ראשון עד חמישי. לא ביום שישי.",
+    ptSecShabbat: "שישי ושבת", ptSecShabbatSub: "ערב שבת, שבת ומוצאי שבת",
+    ptAddWeekday: "הוספת זמן לחול", ptAddShabbat: "הוספת זמן לשישי ושבת",
+    ptFormAddWeekday: "זמן חדש לימי חול (א׳-ה׳)", ptFormAddShabbat: "זמן חדש לשישי ושבת",
+    ptSecEmpty: "עוד אין זמנים כאן.",
+    ptDayFriErev: "שישי (ערב שבת)", ptSubFri: "שישי (ערב שבת)", ptSubShabbat: "שבת",
+    ptSortTitle: "לסדר", ptSortSub: "הזמנים האלה מופיעים עכשיו כל יום. לחיצה אחת שמה כל זמן במקום שלו.",
+    ptSortTo: "לשים ב:", ptSortWeekday: "חול", ptSortFri: "שישי", ptSortShabbat: "שבת",
+    ptSortDone: "סודר ✓ {name} עכשיו ב{where}"
   };
   function L(k) { var o = window.OH_LABELS || {}; return (o[k] !== undefined && o[k] !== null && o[k] !== "") ? o[k] : DEF[k]; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
@@ -53,12 +65,29 @@
   function itemMinutes(p) { var m = minutesOf12(p.time); return m >= 0 ? m : (typeof p.order === "number" ? p.order : 0); }
   function shortTime(t) { return String(t || "").replace(/\s*[AaPp][Mm]\s*$/, ""); }
 
-  var S = { role: null, items: [], editId: null, confirmId: null, justId: null, frame: null, busy: false, built: false, msgTimer: null, tab: "all", days: "all", kind: "fixed", sign: -1 };
-  var GROUPS = [["weekday", "ptGrpWeekday"], ["fri", "ptGrpFri"], ["shabbat", "ptGrpShabbat"], ["all", "ptGrpAll"]];
-  /* Hanoch 5:47 AM: simple. Four big day buttons; "חול" is Sunday to Thursday. */
-  var DAYOPTS = [["sun-thu", "ptDayWeekday"], ["fri", "ptDayFri"], ["shabbat", "ptDayShabbat"], ["all", "ptDayAll"]];
+  var S = { role: null, items: [], editId: null, confirmId: null, justId: null, frame: null, busy: false, built: false, msgTimer: null, sec: "wk", days: "sun-thu", kind: "fixed", sign: -1 };
+  /* 2040 phase 2: two parts. In "שישי ושבת" the gabbai picks שישי (ערב שבת) or שבת;
+     in "ימי חול" the days are always Sunday to Thursday (rule.days "sun-thu").
+     The "כל יום" choice is gone from the form; old documents are still read. */
+  var DAYOPTS = [["fri", "ptDayFriErev"], ["shabbat", "ptDayShabbat"]];
   function T() { return window.OH_TIMES; }
-  function groupOf(p) { var d = p.rule && p.rule.days; return d === "sun-thu" || d === "weekday" ? "weekday" : d === "fri" ? "fri" : d === "shabbat" ? "shabbat" : "all"; }
+  function dowOf(iso) { var m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/); return m ? new Date(Date.UTC(+m[1], +m[2] - 1, +m[3])).getUTCDay() : -1; }
+  /* "wk" | "fri" | "shabbat" | "sort". "sort" = shown every day today (no rule, "כל יום",
+     or Sunday to Friday): the gabbai puts it in its place with one tap. A one-off from the
+     command bar (every day, from = until, or a few days) goes where its dates are. */
+  function groupOf(p) {
+    var r = p.rule, d = r && r.days;
+    if (d === "sun-thu") return "wk";
+    if (d === "fri") return "fri";
+    if (d === "shabbat") return "shabbat";
+    if (r && (d === "all" || !d) && r.from && r.until && T() && T().diffDays && T().diffDays(r.from, r.until) >= 0 && T().diffDays(r.from, r.until) <= 6) {
+      var ws = []; for (var i = 0, x = r.from; i <= 6 && x <= r.until; i++, x = T().addDays(x, 1)) ws.push(dowOf(x));
+      if (ws.length && ws.every(function (w) { return w >= 0 && w <= 4; })) return "wk";
+      if (ws.length && ws.every(function (w) { return w === 5; })) return "fri";
+      if (ws.length && ws.every(function (w) { return w === 6; })) return "shabbat";
+    }
+    return "sort";
+  }
   function todayIso() { return T() ? T().nyIso(new Date()) : new Date().toISOString().slice(0, 10); }
 
   function build() {
@@ -66,16 +95,15 @@
     var sec = $("ptSection");
     var quick = (L("ptQuickNames") || []).map(function (q, i) { return '<button type="button" class="ohpt-chip" data-q="' + i + '" aria-pressed="false">' + esc(q.he) + '</button>'; }).join("");
     sec.innerHTML =
-      '<div class="ohpt-head"><div><h2 id="ptHeading">' + esc(L("ptTitle")) + '<small dir="ltr">' + esc(L("ptTitleEn")) + '</small></h2><p class="ohpt-lead">' + esc(L("ptLead")) + '</p></div>' +
-      '<button type="button" class="ohpt-btn primary" id="ptAddBtn"><span class="plus" aria-hidden="true">+</span>' + esc(L("ptAdd")) + '</button></div>' +
+      '<div class="ohpt-head"><div><h2 id="ptHeading">' + esc(L("ptTitle")) + '<small dir="ltr">' + esc(L("ptTitleEn")) + '</small></h2><p class="ohpt-lead oh-help">' + esc(L("ptLead")) + '</p></div></div>' +
       '<div class="ohpt-grid"><div class="ohpt-card ohpt-main">' +
       '<form id="ptForm" class="ohpt-form" hidden novalidate><h3 id="ptFormTitle"></h3>' +
+      '<fieldset class="ohpt-fs" id="ptDaysFs"><legend>' + esc(L("ptDays")) + '</legend><div class="ohpt-seg ohpt-days" id="ptDays" role="radiogroup" aria-label="' + esc(L("ptDays")) + '">' +
+        DAYOPTS.map(function (d) { return '<button type="button" role="radio" class="ohpt-sbtn" data-days="' + d[0] + '" aria-checked="false">' + esc(L(d[1])) + "</button>"; }).join("") + "</div></fieldset>" +
       '<label for="ptNameHe">' + esc(L("ptNameHe")) + '</label><input type="text" id="ptNameHe" autocomplete="off" placeholder="' + esc(L("ptNameHePlaceholder")) + '">' +
       '<div class="ohpt-chips" id="ptChips" role="group" aria-label="' + esc(L("ptQuick")) + '"></div>' +
       '<div id="ptFixedBox"><label for="ptTimeIn">' + esc(L("ptTime")) + '</label><input type="time" id="ptTimeIn" dir="ltr" step="60"></div>' +
       '<p class="ohpt-hint" id="ptSunsetToday"></p>' +
-      '<fieldset class="ohpt-fs"><legend>' + esc(L("ptDays")) + '</legend><div class="ohpt-seg ohpt-days" id="ptDays" role="radiogroup" aria-label="' + esc(L("ptDays")) + '">' +
-        DAYOPTS.map(function (d) { return '<button type="button" role="radio" class="ohpt-sbtn" data-days="' + d[0] + '" aria-checked="false">' + esc(L(d[1])) + "</button>"; }).join("") + "</div></fieldset>" +
       '<details class="ohpt-more" id="ptMoreBox"><summary>' + esc(L("ptMore")) + "</summary>" +
         '<label for="ptNameEn">' + esc(L("ptNameEn")) + '</label><input type="text" id="ptNameEn" dir="ltr" autocomplete="off" placeholder="' + esc(L("ptNameEnPlaceholder")) + '">' +
         '<fieldset class="ohpt-fs"><legend>' + esc(L("ptKind")) + '</legend><div class="ohpt-seg" id="ptKind" role="radiogroup" aria-label="' + esc(L("ptKind")) + '">' +
@@ -88,11 +116,17 @@
       '<p class="err" id="ptFormErr" role="alert"></p>' +
       '<div class="row"><button type="submit" class="ohpt-btn primary" id="ptSaveBtn"></button><button type="button" class="ohpt-btn quiet" id="ptCancelBtn">' + esc(L("ptCancel")) + '</button></div></form>' +
       '<p id="ptMsg" class="ohpt-msg" role="status" aria-live="polite"></p>' +
-      '<ul id="ptList" class="ohpt-list" aria-labelledby="ptHeading"></ul></div>' +
+      '<div id="ptList">' +
+        '<section class="ohpt-sort" id="ptSort" hidden aria-labelledby="ptSortH"><h3 id="ptSortH">' + esc(L("ptSortTitle")) + '</h3><p class="oh-help">' + esc(L("ptSortSub")) + '</p><ul class="ohpt-list" id="ptListSort"></ul></section>' +
+        '<section class="ohpt-sec" id="ptSecWk" data-sec="wk" aria-labelledby="ptSecWkH"><div class="ohpt-sec-head"><div><h3 id="ptSecWkH">' + esc(L("ptSecWeekday")) + '</h3><p class="oh-help">' + esc(L("ptSecWeekdaySub")) + '</p></div>' +
+          '<button type="button" class="ohpt-btn primary ohpt-add" id="ptAddWk" data-add="wk"><span class="plus" aria-hidden="true">+</span>' + esc(L("ptAddWeekday")) + '</button></div><ul class="ohpt-list" id="ptListWk"></ul></section>' +
+        '<section class="ohpt-sec" id="ptSecSh" data-sec="sh" aria-labelledby="ptSecShH"><div class="ohpt-sec-head"><div><h3 id="ptSecShH">' + esc(L("ptSecShabbat")) + '</h3><p class="oh-help">' + esc(L("ptSecShabbatSub")) + '</p></div>' +
+          '<button type="button" class="ohpt-btn primary ohpt-add" id="ptAddSh" data-add="sh"><span class="plus" aria-hidden="true">+</span>' + esc(L("ptAddShabbat")) + '</button></div><ul class="ohpt-list" id="ptListSh"></ul></section>' +
+      '</div></div>' +
       '<aside class="ohpt-card ohpt-pv" aria-label="' + esc(L("ptPreviewTitle")) + '"><h3><i aria-hidden="true"></i>' + esc(L("ptPreviewTitle")) + '</h3>' +
-      '<div class="ohpt-tv" id="ptTv"></div><p>' + esc(L("ptPreviewNote")) + '</p>' +
+      '<div class="ohpt-tv" id="ptTv"></div><p class="oh-help">' + esc(L("ptPreviewNote")) + '</p>' +
       '<a class="ohpt-btn outline" href="../tv/" target="_blank" rel="noopener">' + esc(L("ptPreviewOpen")) + '</a></aside></div>';
-    $("ptAddBtn").addEventListener("click", function () { openForm(null); });
+    $("ptList").addEventListener("click", function (e) { var b = e.target.closest("[data-add]"); if (b && !S.busy) openForm(null, b.getAttribute("data-add")); });
     $("ptCancelBtn").addEventListener("click", closeForm);
     $("ptForm").addEventListener("submit", function (e) { e.preventDefault(); save(); });
     $("ptNameHe").addEventListener("input", syncChips);
@@ -101,7 +135,7 @@
       var q = quickList()[+b.getAttribute("data-q")]; if (!q) return;
       $("ptNameHe").value = q.he; $("ptNameEn").value = q.en || ""; syncChips(); (S.kind === "sunset" ? $("ptOffMin") : $("ptTimeIn")).focus();
     });
-    $("ptDays").addEventListener("click", function (e) { var b = e.target.closest("[data-days]"); if (!b) return; var v = b.getAttribute("data-days"); if (!(v === "sun-thu" && S.days === "weekday")) S.days = v; syncForm(); });
+    $("ptDays").addEventListener("click", function (e) { var b = e.target.closest("[data-days]"); if (!b) return; S.days = b.getAttribute("data-days"); syncForm(); });
     $("ptKind").addEventListener("click", function (e) { var b = e.target.closest("[data-kind]"); if (b) { S.kind = b.getAttribute("data-kind"); syncForm(); } });
     $("ptSign").addEventListener("click", function (e) { var b = e.target.closest("[data-sign]"); if (b) { S.sign = +b.getAttribute("data-sign"); syncForm(); } });
     ["ptOffMin", "ptFrom", "ptUntil"].forEach(function (id) { $(id).addEventListener("input", sunsetHint); });
@@ -109,6 +143,7 @@
       var b = e.target.closest("button[data-act]"); if (!b || S.busy) return;
       var id = b.getAttribute("data-id"), act = b.getAttribute("data-act");
       if (act === "edit") openForm(id);
+      else if (act === "sort") sortTo(id, b.getAttribute("data-to"));
       else if (act === "del") { S.confirmId = id; render(); var y = $("ptList").querySelector('button[data-act="yes"]'); if (y) y.focus(); }
       else if (act === "no") { S.confirmId = null; render(); }
       else if (act === "yes") remove(id);
@@ -116,7 +151,8 @@
   }
   function quickList() {
     var base = L("ptQuickNames") || [], sh = L("ptQuickNamesShabbat") || [];
-    return S.days === "shabbat" || S.days === "fri" ? sh.concat(base.filter(function (q) { return !sh.some(function (x) { return x.he === q.he; }); })) : base;
+    /* 2040 phase 2: Kabbalat Shabbat belongs to Friday, so the weekday part does not offer it */
+    return S.sec === "sh" ? sh.concat(base.filter(function (q) { return !sh.some(function (x) { return x.he === q.he; }); })) : base.filter(function (q) { return !sh.some(function (x) { return x.he === q.he; }); });
   }
   function syncChips() {
     var v = $("ptNameHe").value.trim(), box = $("ptChips"), list = quickList();
@@ -125,13 +161,13 @@
   }
   function seg(id, attr, val) { document.querySelectorAll("#" + id + " [" + attr + "]").forEach(function (b) { b.setAttribute("aria-checked", String(b.getAttribute(attr) === String(val))); }); }
   function syncForm() {
-    seg("ptDays", "data-days", S.days === "weekday" ? "sun-thu" : S.days); /* a Sunday-to-Friday time (from the command bar) shows under חול and keeps its days */ seg("ptKind", "data-kind", S.kind); seg("ptSign", "data-sign", S.sign);
+    seg("ptDays", "data-days", S.days); seg("ptKind", "data-kind", S.kind); seg("ptSign", "data-sign", S.sign);
+    $("ptDaysFs").hidden = S.sec !== "sh"; /* in "ימי חול" there is nothing to choose: Sunday to Thursday */
     $("ptFixedBox").hidden = S.kind !== "fixed"; $("ptSunsetBox").hidden = S.kind !== "sunset";
     syncChips(); sunsetHint();
   }
   function formRule() {
     var from = $("ptFrom").value || "", until = $("ptUntil").value || "";
-    if (S.kind === "fixed" && S.days === "all" && !from && !until) return null;
     var off = S.kind === "sunset" ? S.sign * Math.abs(Math.round(+$("ptOffMin").value || 0)) : 0;
     var r = { kind: S.kind, offsetMin: off, days: S.days };
     if (from) r.from = from; if (until) r.until = until;
@@ -228,18 +264,28 @@
       '<span class="acts"><button type="button" class="ohpt-btn outline" data-act="edit" data-id="' + id + '" aria-label="' + esc(L("ptEdit") + " " + name) + '">' + esc(L("ptEdit")) + '</button>' +
       '<button type="button" class="ohpt-btn outline" data-act="del" data-id="' + id + '" aria-label="' + esc(L("ptDelete") + " " + name) + '">' + esc(L("ptDelete")) + '</button></span></li>';
   }
-  /* ONE list, grouped by day with simple headers (Hanoch 5:47 AM) */
+  /* 2040 phase 2: a time waiting to be put in its place: three big buttons, one tap each */
+  function sortRowHtml(p) {
+    var id = esc(p.id), name = (window.OH_LANG === "en" && p.nameEn) ? p.nameEn : (p.nameHe || p.nameEn || "");
+    var b = function (to, k) { return '<button type="button" class="ohpt-btn outline" data-act="sort" data-to="' + to + '" data-id="' + id + '" aria-label="' + esc(L("ptSortTo") + " " + L(k) + ": " + name) + '">' + esc(L(k)) + "</button>"; };
+    return '<li class="ohpt-row sort" data-id="' + id + '" data-group="sort"><span class="t" dir="ltr">' + esc(shownTime(p)) + '</span>' +
+      '<span class="n"><b>' + esc(name) + '</b>' + (p.rule ? '<span class="rl">' + esc(ruleLine(p)) + '</span>' : '') + '</span>' +
+      '<span class="acts"><span class="to">' + esc(L("ptSortTo")) + "</span>" + b("sun-thu", "ptSortWeekday") + b("fri", "ptSortFri") + b("shabbat", "ptSortShabbat") + "</span></li>";
+  }
+  /* Two clear parts (Hanoch 9:09 AM): ימי חול (א׳-ה׳) | שישי ושבת (שישי, then שבת) */
   function render() {
-    var list = $("ptList"); if (!list) return;
+    var lw = $("ptListWk"), ls = $("ptListSh"), lo = $("ptListSort"), box = $("ptSort"); if (!lw || !ls) return;
     var items = S.items.slice().sort(function (a, b) { return itemMinutes(a) - itemMinutes(b); });
-    if (!items.length) { list.innerHTML = '<li class="ohpt-empty" id="ptEmpty">' + esc(L("ptEmpty")) + '</li>'; return; }
+    var by = { wk: [], fri: [], shabbat: [], sort: [] };
+    items.forEach(function (p) { by[groupOf(p)].push(p); });
+    var empty = '<li class="ohpt-empty small">' + esc(L("ptSecEmpty")) + "</li>";
+    lw.innerHTML = by.wk.length ? by.wk.map(rowHtml).join("") : empty;
     var h = "";
-    GROUPS.forEach(function (g) {
-      var rows = items.filter(function (p) { return groupOf(p) === g[0]; });
-      if (!rows.length) return;
-      h += '<li class="ohpt-grp" data-grp="' + g[0] + '" role="presentation"><h3>' + esc(L(g[1])) + "</h3></li>" + rows.map(rowHtml).join("");
-    });
-    list.innerHTML = h;
+    if (by.fri.length) h += '<li class="ohpt-grp" data-grp="fri" role="presentation"><h4>' + esc(L("ptSubFri")) + "</h4></li>" + by.fri.map(rowHtml).join("");
+    if (by.shabbat.length) h += '<li class="ohpt-grp" data-grp="shabbat" role="presentation"><h4>' + esc(L("ptSubShabbat")) + "</h4></li>" + by.shabbat.map(rowHtml).join("");
+    ls.innerHTML = h || empty;
+    box.hidden = !by.sort.length;
+    lo.innerHTML = by.sort.map(function (p) { return S.confirmId === p.id ? rowHtml(p) : sortRowHtml(p); }).join("");
   }
   function msg(kind, text) {
     var m = $("ptMsg"); if (!m) return;
@@ -259,14 +305,16 @@
     S.items = r.items; render(); return true;
   }
 
-  function openForm(id, days) {
+  function openForm(id, sec) {
     var p = id ? S.items.filter(function (x) { return x.id === id; })[0] : null;
     S.editId = p ? p.id : null; S.confirmId = null; render();
-    var r = p && p.rule;
-    S.days = r ? (r.days || "all") : (days || "all");
+    var r = p && p.rule, g = p ? groupOf(p) : null;
+    S.sec = p ? (g === "fri" || g === "shabbat" ? "sh" : "wk") : (sec === "sh" ? "sh" : "wk");
+    /* new: חול = Sunday to Thursday; שישי ושבת starts on שבת. An edit keeps its own days. */
+    S.days = r ? (r.days || "all") : (S.sec === "sh" ? "shabbat" : "sun-thu");
     S.kind = r && r.kind === "sunset" ? "sunset" : "fixed";
     S.sign = r && r.kind === "sunset" && r.offsetMin > 0 ? 1 : -1;
-    $("ptFormTitle").textContent = p ? L("ptFormEditTitle") : L("ptFormAddTitle");
+    $("ptFormTitle").textContent = p ? L("ptFormEditTitle") : L(S.sec === "sh" ? "ptFormAddShabbat" : "ptFormAddWeekday");
     $("ptSaveBtn").textContent = p ? L("ptSaveEdit") : L("ptSave");
     $("ptNameHe").value = p ? (p.nameHe || "") : "";
     $("ptNameEn").value = p ? (p.nameEn || "") : "";
@@ -304,7 +352,6 @@
     }
     var item = { nameHe: he, nameEn: en, time: to12(min), order: min, rule: rule };
     var fb = window.OH_FIREBASE, editing = S.editId;
-    if (!editing && !rule) delete item.rule; /* a plain every-day time is written exactly as before */
     S.busy = true; $("ptSaveBtn").disabled = true; msg("busy", L("ptSaving"));
     var r = editing ? await fb.updatePrayerTime(editing, item) : await fb.savePrayerTime(item);
     S.busy = false; $("ptSaveBtn").disabled = false;
@@ -332,6 +379,24 @@
       return tvShowsList(txt) && (same || !tvHasRow(txt, p));
     });
     msg("ok", seen ? L("ptDeleted") : L("ptSavedSlow"));
+  }
+
+  /* 2040 phase 2: one tap puts a time in its place. Writes only the rule (its days),
+     keeping the time, the order, the names and any sunset offset or dates. */
+  async function sortTo(id, to) {
+    if (S.busy || ["sun-thu", "fri", "shabbat"].indexOf(to) < 0) return;
+    var p = S.items.filter(function (x) { return x.id === id; })[0]; if (!p) return;
+    var rule = Object.assign({ kind: "fixed", offsetMin: 0 }, p.rule || {}, { days: to });
+    var fb = window.OH_FIREBASE;
+    S.busy = true; msg("busy", L("ptSaving"));
+    var r = await fb.setPrayerTimeRule(id, rule);
+    S.busy = false;
+    if (!r || !r.saved) { msg("err", errText(r, "ptErrSave")); return; }
+    S.justId = id;
+    await load();
+    var name = (window.OH_LANG === "en" && p.nameEn) ? p.nameEn : (p.nameHe || p.nameEn || "");
+    msg("ok", L("ptSortDone").replace("{name}", name).replace("{where}", L(to === "sun-thu" ? "ptSecWeekday" : to === "fri" ? "ptSubFri" : "ptSubShabbat")));
+    reloadPreview(function (txt) { return tvShowsList(txt); });
   }
 
   /* 2040 phase 1: the command bar changed a prayer time: show it here too */
