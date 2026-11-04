@@ -1,0 +1,221 @@
+/* Or Hachaim | 2040 phase 1 | command bar, Shabbat package card, alerts strip.
+   Direction A tokens (same values as src/ui/oh-design.css), scoped to ".ohx"
+   so the same parts look the same on /gabbai/ (stage A page) and inside
+   admin/ (older page shell). No red or burgundy: warnings are warm gold. */
+.ohx{--bg:#f3ece0;--ink:#26231e;--ink2:#4a4338;--muted:#7a6f61;--navy:#0e2c4c;--navy2:#173b62;--on-navy:#f6ecd6;--gold:#b48e56;--gold-text:#7a5c32;--gold-soft:#e6cb92;
+ --hair:rgba(180,142,86,.42);--hair-soft:rgba(180,142,86,.22);--surface:rgba(255,253,249,.82);--surface2:rgba(255,255,255,.94);--chip:#f4ead8;--ok:#2f7a5a;--ok-soft:#e3f1ea;--warn-bg:#fbf1dc;--warn-ink:#6b4f22;
+ --shadow:0 1px 2px rgba(60,45,25,.05),0 18px 40px -24px rgba(60,45,25,.35);
+ font-family:"Assistant","Segoe UI",Arial,sans-serif;font-size:17px;line-height:1.5;color:var(--ink);direction:rtl;text-align:right}
+.ohx,.ohx *{box-sizing:border-box}
+.ohx [hidden]{display:none!important}
+.ohx .ic{width:22px;height:22px;flex:none}
+.ohx .x-card{background:var(--surface);border:1px solid var(--hair);border-radius:22px;box-shadow:var(--shadow);padding:20px 22px;position:relative}
+.ohx .x-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 20px;border-radius:14px;font:inherit;font-weight:700;font-size:17px;cursor:pointer;border:1px solid var(--hair);background:var(--surface2);color:var(--ink);text-decoration:none;white-space:nowrap}
+.ohx .x-btn.primary{background:linear-gradient(180deg,#173b62,#0e2c4c);color:#f6ecd6;border-color:transparent;box-shadow:0 0 0 1px rgba(180,142,86,.55),0 12px 28px -12px rgba(14,44,76,.7)}
+.ohx .x-btn.ghost{background:transparent;border-color:transparent;color:var(--gold-text)}
+.ohx .x-btn.gold{background:#fff7e8;border-color:var(--gold);color:var(--warn-ink)}
+.ohx .x-btn:disabled{opacity:.55;cursor:default}
+.ohx .x-btn:focus-visible,.ohx .cb-input:focus-visible,.ohx .x-chip:focus-visible{outline:3px solid rgba(180,142,86,.6);outline-offset:2px}
+/* ---------- command bar ---------- */
+.ohx.cb{margin:0 0 22px}
+.ohx .cb-row{display:flex;align-items:center;gap:12px;background:#fffefb;border:1.5px solid var(--gold);border-radius:18px;padding:6px 8px 6px 14px;box-shadow:0 0 0 4px rgba(230,203,146,.28)}
+.ohx .cb-row .ic{color:var(--gold-text);margin-inline-start:6px}
+.ohx .cb-input{flex:1;min-width:0;min-height:52px;border:0;background:transparent;font:inherit;font-size:20px;font-weight:600;color:var(--ink);outline:none;padding:0 4px}
+.ohx .cb-input::placeholder{color:#a3978a;font-weight:500}
+.ohx .cb-kbd{font:600 13px/1 "Assistant",sans-serif;color:var(--muted);border:1px solid var(--hair);border-bottom-width:2px;border-radius:8px;padding:6px 8px;background:#fbf6ee;direction:ltr;white-space:nowrap}
+.ohx .cb-head{display:flex;align-items:baseline;gap:12px;margin:0 0 10px;flex-wrap:wrap}
+.ohx .cb-head h2{margin:0;font-size:22px;font-weight:800}
+.ohx .cb-head span{color:var(--muted);font-size:15px}
+.ohx .cb-ex{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.ohx .x-chip{display:inline-flex;align-items:center;min-height:48px;padding:0 16px;border-radius:999px;border:1px solid var(--hair-soft);background:var(--chip);font:inherit;font-size:16px;font-weight:600;color:var(--ink2);cursor:pointer;text-align:right}
+.ohx .x-chip.sel{background:#0e2c4c;color:#f6ecd6;border-color:#0e2c4c}
+.ohx .cb-out{margin-top:14px}
+.ohx .cb-msg{display:flex;gap:10px;align-items:flex-start;padding:14px 16px;border-radius:16px;background:var(--surface2);border:1px solid var(--hair-soft);font-size:17px}
+.ohx .cb-msg b{font-weight:700}
+.ohx .cb-msg.ok{background:var(--ok-soft);border-color:rgba(47,122,90,.35);color:#1d5a40}
+.ohx .cb-msg.warn{background:var(--warn-bg);border-color:var(--gold);color:var(--warn-ink)}
+.ohx .cb-msg .ic{margin-top:2px}
+.ohx .cb-msg .grow{flex:1;min-width:0}
+.ohx .cb-sug{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ohx .pv{border:1px solid var(--hair);border-radius:20px;background:#fffdf9;overflow:hidden}
+.ohx .pv-top{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;background:linear-gradient(180deg,#fbf5ea,#f4ead8);border-bottom:1px solid var(--hair-soft)}
+.ohx .pv-top b{font-size:19px}
+.ohx .pv-top span{font-size:14px;color:var(--muted)}
+.ohx .pv-rows{padding:8px 18px}
+.ohx .pv-row{display:grid;grid-template-columns:120px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid var(--hair-soft)}
+.ohx .pv-row:last-child{border-bottom:0}
+.ohx .pv-row .k{color:var(--muted);font-weight:600}
+.ohx .pv-row .v{font-weight:700;overflow-wrap:anywhere}
+.ohx .pv-row .v[dir=ltr]{text-align:right}
+.ohx .pv-warn{margin:4px 18px 12px;padding:12px 14px;border-radius:14px;background:var(--warn-bg);border:1px solid var(--gold);color:var(--warn-ink);font-weight:600}
+.ohx .pv-warn .alt{margin-top:10px}
+.ohx .pv-choice{padding:4px 18px 10px}
+.ohx .pv-choice p{margin:6px 0 8px;color:var(--muted);font-size:15px;font-weight:600}
+.ohx .pv-choice .row{display:flex;flex-wrap:wrap;gap:8px}
+.ohx .pv-field{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:4px 18px 10px}
+.ohx .pv-field label{font-weight:600;color:var(--muted)}
+.ohx .pv-field input{min-height:48px;border:1px solid var(--hair);border-radius:12px;padding:0 12px;font:inherit;background:#fffefb}
+.ohx .pv-acts{display:flex;flex-wrap:wrap;gap:10px;padding:14px 18px;border-top:1px solid var(--hair-soft);background:rgba(244,234,216,.35)}
+/* ---------- alerts strip ---------- */
+.ohx.al{margin:0 0 26px}
+.ohx .al-head{display:flex;align-items:baseline;gap:12px;margin:0 0 12px;flex-wrap:wrap}
+.ohx .al-head h2{margin:0;font-size:22px;font-weight:800}
+.ohx .al-head span{color:var(--muted);font-size:15px}
+.ohx .al-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.ohx .al-item{display:flex;flex-direction:column;gap:10px;padding:16px 18px;border-radius:18px;background:var(--surface);border:1px solid var(--hair-soft);box-shadow:var(--shadow)}
+.ohx .al-item.hi{border-color:var(--gold);background:#fffaf0}
+.ohx .al-top{display:flex;gap:12px;align-items:flex-start}
+.ohx .al-ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:none;background:linear-gradient(160deg,#fbf5ea,#efe3cc);color:#0e2c4c}
+.ohx .al-item.hi .al-ic{color:var(--warn-ink)}
+.ohx .al-t{font-weight:800;font-size:18px;line-height:1.3}
+.ohx .al-d{color:var(--ink2);font-size:15.5px;margin-top:2px;overflow-wrap:anywhere}
+.ohx .al-item .x-btn{align-self:flex-start;margin-top:auto}
+.ohx .al-empty{padding:14px 18px;border-radius:16px;background:var(--ok-soft);color:#1d5a40;font-weight:600;border:1px solid rgba(47,122,90,.3)}
+/* ---------- Shabbat package card (gabbai home) ---------- */
+.ohx .sp-card{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.ohx .sp-card .grow{flex:1;min-width:200px}
+.ohx .sp-card b{font-size:19px}
+.ohx .sp-card p{margin:2px 0 0;color:var(--ink2)}
+@media (max-width:720px){
+ .ohx .x-card{padding:16px 14px;border-radius:18px}
+ .ohx .cb-input{font-size:18px}
+ .ohx .cb-kbd{display:none}
+ .ohx .pv-row{grid-template-columns:92px 1fr;gap:8px}
+ .ohx .pv-acts .x-btn{flex:1 1 auto}
+ .ohx .al-list{grid-template-columns:1fr}
+ .ohx .x-chip{font-size:15px}
+}
+
+/* ---------- Shabbat package page and printable bulletin ---------- */
+.ohx .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px}
+.ohx .page-head h1{font-size:40px;line-height:1.1;margin:0;font-weight:800}
+.ohx .page-head .lead{margin:6px 0 0;color:var(--ink2);font-size:18px}
+.ohx .sh-nav{display:flex;gap:10px;flex-wrap:wrap}
+.ohx .sh-ctl{margin-bottom:22px}
+.ohx .sh-ctl-row{display:flex;gap:10px;flex-wrap:wrap}
+.ohx .sh-tv{margin-top:14px;padding:14px 16px;border-radius:16px;background:#0e2c4c;color:#f6ecd6;box-shadow:inset 0 0 0 1px rgba(180,142,86,.6)}
+.ohx .sh-tv-l{display:block;font-size:13px;color:#e6cb92;font-weight:600;margin-bottom:4px}
+.ohx .sh-tv b{font-size:20px}
+.ohx .sh-tv p{margin:4px 0 0;font-size:16px;opacity:.95}
+.ohx .sh-sheet{background:#fffdf8;border:1px solid var(--hair);border-radius:6px;box-shadow:var(--shadow);max-width:794px;margin:0 auto;padding:34px 38px 26px;color:#26231e;-webkit-print-color-adjust:exact;print-color-adjust:exact;
+ background-image:linear-gradient(rgba(255,253,248,.93),rgba(255,253,248,.93)),url("../assets/textures/jerusalem-stone.webp");background-size:auto,520px}
+.ohx .sh-head{display:flex;align-items:center;gap:22px;padding-bottom:14px;border-bottom:1.5px solid var(--gold)}
+.ohx .sh-head img{height:82px;width:auto}
+.ohx .sh-ht{display:flex;flex-direction:column;gap:2px}
+.ohx .sh-kicker{font-size:14px;font-weight:700;letter-spacing:.04em;color:var(--gold-text)}
+.ohx .sh-head h1{font-size:38px;margin:0;line-height:1.1;font-weight:800;color:#0e2c4c}
+.ohx .sh-date{font-size:16px;color:var(--ink2);font-weight:600}
+.ohx .sh-special{font-size:16px;font-weight:700;color:#0e2c4c;background:#f4ead8;border:1px solid var(--hair-soft);border-radius:999px;padding:2px 12px;align-self:flex-start;margin-top:4px}
+.ohx .sh-band{display:flex;gap:12px;margin:16px 0}
+.ohx .sh-band>div{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 8px;border-radius:14px;background:#0e2c4c;color:#f6ecd6;box-shadow:inset 0 0 0 1px rgba(180,142,86,.65)}
+.ohx .sh-band span{font-size:15px;color:#e6cb92;font-weight:700}
+.ohx .sh-band b{font-size:34px;line-height:1.15;font-weight:800}
+.ohx .sh-band small{font-size:13px;opacity:.9}
+.ohx .sh-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.ohx .sh-box{border:1px solid var(--hair-soft);border-radius:14px;padding:10px 14px;background:rgba(255,255,255,.7);break-inside:avoid}
+.ohx .sh-box.sh-wide{margin-bottom:12px}
+.ohx .sh-box h2{font-size:17px;margin:0 0 6px;color:#0e2c4c;font-weight:800;border-bottom:1px solid var(--hair-soft);padding-bottom:4px}
+.ohx .sh-box h3{font-size:14px;margin:6px 0 2px;color:var(--gold-text);font-weight:700}
+.ohx .sh-box p{margin:3px 0;font-size:15px}
+.ohx .sh-r{display:flex;justify-content:space-between;gap:10px;font-size:15px;padding:2px 0;border-bottom:1px dotted rgba(180,142,86,.3)}
+.ohx .sh-r:last-child{border-bottom:0}
+.ohx .sh-r b{font-weight:800;white-space:nowrap}
+.ohx .sh-r small{color:var(--muted)}
+.ohx .sh-empty{color:var(--muted)}
+.ohx .sh-foot{margin-top:10px;padding-top:8px;border-top:1px solid var(--hair);text-align:center;font-size:13px;color:var(--muted);direction:ltr}
+@media (max-width:720px){
+ .ohx .page-head h1{font-size:32px}
+ .ohx .sh-sheet{padding:18px 14px}
+ .ohx .sh-head{gap:12px}.ohx .sh-head img{height:56px}.ohx .sh-head h1{font-size:28px}
+ .ohx .sh-band{flex-direction:column}.ohx .sh-band b{font-size:28px}
+ .ohx .sh-cols{grid-template-columns:1fr}
+}
+@media print{
+ @page{size:auto;margin:9mm}
+ body.oha{background:#fff!important}
+ .oha-topbar,.oha-bnav,.no-print,.ohx .no-print{display:none!important}
+ .oha .wrap.ohx{padding:0!important;max-width:none!important}
+ .ohx .sh-sheet{box-shadow:none;border:0;max-width:none;width:100%;padding:0 2mm;border-radius:0}
+ .ohx .sh-head img{height:70px}
+ .ohx .sh-head h1{font-size:34px}
+ .ohx .sh-band b{font-size:30px}
+ .ohx .sh-cols{grid-template-columns:1fr 1fr!important}
+ .ohx .sh-band{flex-direction:row!important}
+}
+
+/* ---------- "טקסטים במסך" editor (admin) ---------- */
+.ohx.tt{margin:22px 0}
+.ohx .tt-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px;align-items:start}
+.ohx .tt-search{width:100%;min-height:52px;border:1.5px solid var(--gold);border-radius:14px;padding:0 14px;font:inherit;font-size:18px;background:#fffefb;margin-bottom:12px}
+.ohx .tt-list{display:flex;flex-direction:column;gap:14px;max-height:900px;overflow:auto;padding-inline-end:4px}
+.ohx .tt-group h3{margin:6px 0 8px;font-size:18px;color:#0e2c4c}
+.ohx .tt-group h3 small{color:var(--muted);font-weight:600}
+.ohx .tt-row{border:1px solid var(--hair-soft);border-radius:16px;padding:12px 14px;background:#fffdf9;margin-bottom:10px}
+.ohx .tt-row.changed{border-color:var(--gold);background:#fffaf0}
+.ohx .tt-desc{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:6px}
+.ohx .tt-desc b{font-size:17px}
+.ohx .tt-badge{font-size:13px;font-weight:700;color:#6b4f22;background:#fbf1dc;border:1px solid var(--gold);border-radius:999px;padding:0 8px}
+.ohx .tt-key{font-size:12px;color:var(--muted);margin-inline-start:auto}
+.ohx .tt-in{width:100%;min-height:52px;border:1px solid var(--hair);border-radius:12px;padding:0 12px;font:inherit;font-size:19px;font-weight:600;background:#fff}
+.ohx .tt-def{font-size:14px;color:var(--muted);margin-top:4px}
+.ohx .tt-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.ohx .tt-row .cb-msg{margin-top:8px;padding:10px 12px}
+.ohx .tt-none{color:var(--muted);font-weight:600}
+.ohx .tt-side{position:sticky;top:90px}
+.ohx .tt-pv-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.ohx .tt-pv-head a{color:var(--gold-text);font-weight:600;min-height:48px;display:inline-flex;align-items:center}
+.ohx .tt-pv{position:relative;overflow:hidden;border-radius:14px;border:1px solid var(--hair);background:#0e2c4c}
+.ohx .tt-pv iframe{position:absolute;top:0;right:0;width:1920px;height:1080px;border:0;transform-origin:top right}
+.ohx .x-btn.small{min-height:48px;font-size:16px;padding:0 16px}
+@media (max-width:900px){.ohx .tt-grid{grid-template-columns:1fr}.ohx .tt-side{position:static}.ohx .tt-list{max-height:none}}
+
+.ohx .tt-lang{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
+.ohx .tt-lang .cb-msg{flex-basis:100%;margin:0}
+.ohx .tt-lang-t{font-size:17px}
+.ohx .tt-seg{display:inline-flex;flex-wrap:wrap;gap:6px}
+.ohx .tt-layout{border:1px solid var(--hair-soft);border-radius:16px;padding:10px 14px;margin-bottom:14px;background:#fffdf9}
+.ohx .tt-layout summary{cursor:pointer;min-height:48px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:17px}
+.ohx .tt-layout summary span{color:var(--muted);font-size:15px}
+.ohx .tt-blocks{list-style:none;margin:8px 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ohx .tt-block{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--hair-soft);border-radius:14px;padding:8px 10px;background:#fff}
+.ohx .tt-block.off{opacity:.62}
+.ohx .tt-bn{width:28px;height:28px;border-radius:50%;background:#0e2c4c;color:#f6ecd6;display:inline-flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.ohx .tt-bname{font-size:17px;flex:1;min-width:110px}
+.ohx .tt-bacts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ohx .tt-bacts .x-btn{min-width:48px}
+.ohx .tt-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ohx .tt-f{display:flex;flex-direction:column;gap:4px;min-width:0}
+.ohx .tt-fl{font-size:13px;font-weight:700;color:var(--muted)}
+.ohx .tt-fl .tt-badge{font-style:normal}
+@media (max-width:620px){.ohx .tt-fields{grid-template-columns:1fr}}
+
+/* English (left to right) */
+html.oh-en .ohx{direction:ltr;text-align:left}
+html.oh-en .ohx .sh-sheet{text-align:right}
+html.oh-en .ohx .cb-input{text-align:right}
+html.oh-en .ohx .tt-pv iframe{right:auto;left:0;transform-origin:top left}
+.ohx .tt-lang .oh-seg-b{font-size:15px;padding:0 14px}
+@media (max-width:520px){.ohx .tt-lang .oh-seg{display:flex;width:100%}.ohx .tt-lang .oh-seg-b{flex:1;padding:0 6px;gap:4px;font-size:14px;white-space:normal;line-height:1.1}.ohx .tt-lang .oh-seg-b .flag{width:18px;height:13px}}
+
+.ohx .tt-row{padding:0;overflow:hidden}
+.ohx .tt-row.open{padding-bottom:12px}
+.ohx .tt-row.open .tt-fields,.ohx .tt-row.open .tt-acts,.ohx .tt-row .cb-msg{margin-inline:14px}
+.ohx .tt-tap{display:flex;flex-direction:column;align-items:stretch;gap:2px;width:100%;min-height:56px;padding:12px 14px;border:0;background:transparent;font:inherit;color:inherit;text-align:start;cursor:pointer}
+.ohx .tt-tap:focus-visible{outline:2px solid var(--gold);outline-offset:-2px}
+.ohx .tt-tap .tt-desc{margin:0;font-size:14px;color:var(--muted)}
+.ohx .tt-tap .tt-desc b{font-size:14px;font-weight:600}
+.ohx .tt-cur{font-size:19px;font-weight:700;color:var(--ink)}
+.ohx .tt-cur.en{font-size:15px;font-weight:600;color:var(--ink2);text-align:end}
+html.oh-en .ohx .tt-cur.en{text-align:start}
+.ohx .tt-row.open .tt-tap{border-bottom:1px solid var(--hair-soft);margin-bottom:10px}
+
+/* ---------- Settings (gabbai/settings/) ---------- */
+.ohx .set-grid{display:grid;grid-template-columns:1fr;gap:14px;max-width:900px}
+.ohx .set-card{display:flex;align-items:center;gap:18px;flex-wrap:wrap;padding:20px 22px}
+.ohx .set-ic{width:56px;height:56px;border-radius:16px;background:#0e2c4c;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.ohx .set-ic .ic{width:28px;height:28px;color:#e6cb92}
+.ohx .set-tx{flex:1 1 220px;min-width:0}
+.ohx .set-tx h2{margin:0;font-size:22px;font-weight:800}
+.ohx .set-tx p{margin:2px 0 0;color:var(--ink2);font-size:16px}
+.ohx .set-act{flex:0 0 auto}
+@media (max-width:640px){.ohx .set-act{flex-basis:100%}.ohx .set-act .x-btn{width:100%;justify-content:center}}
