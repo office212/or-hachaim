@@ -172,7 +172,8 @@
     try { f.contentWindow.postMessage({ type: "oh-tv-settings-preview", settings: { texts: t, textsEn: te, layout: S.layout || {} } }, location.origin); } catch (e) {}
   }
   function failText(r) { return /permission|denied/i.test(String(r && (r.code || r.reason))) ? L("ttDenied") : L("ttFailed"); }
-  function log(action, detail) { try { var fb = window.OH_FIREBASE; if (fb.logActivity) fb.logActivity(action, detail, { collection: "settings", itemId: "screenTexts" }); } catch (e) {} }
+  /* Activity log (Nov 5): a Hebrew sentence, area "texts" */
+  function log(action, detail) { try { var fb = window.OH_FIREBASE; if (fb.logActivity) fb.logActivity({ "screenTexts.update": "עודכן טקסט במסך", "screenTexts.reset": "טקסט במסך חזר לברירת המחדל", "screenTexts.layout": "שונה סידור החלקים במסך" }[action] || action, detail, { area: "texts", code: action, collection: "settings", itemId: "screenTexts" }); } catch (e) {} }
   async function onClick(e) {
     var b = e.target.closest("button"); if (!b || S.busy || b.disabled) return;
     var ok = b.getAttribute("data-tt-open");
