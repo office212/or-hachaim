@@ -105,7 +105,9 @@
   }
   function groupsOf(list) {
     var g = {}, order = [];
-    list.forEach(function (k) { var gr = (info()[k] && ((window.OH_LANG === "en" && info()[k].groupEn) || info()[k].group)) || L("ttOther"); if (!g[gr]) { g[gr] = []; order.push(gr); } g[gr].push(k); });
+    /* text cleanup (Nov 5): English group names in English */
+    var GEN = { "כותרות": "Titles", "כללי": "General", "שבת וחג": "Shabbat and Yom Tov", "תפילות": "Davening", "לוח": "Calendar", "זמני היום": "Zmanim" };
+    list.forEach(function (k) { var gr = (info()[k] && ((window.OH_LANG === "en" && (info()[k].groupEn || GEN[info()[k].group])) || info()[k].group)) || L("ttOther"); if (!g[gr]) { g[gr] = []; order.push(gr); } g[gr].push(k); });
     return order.map(function (n) { return { name: n, keys: g[n] }; });
   }
   function field(k, lang) {
