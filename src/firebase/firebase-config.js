@@ -1,7 +1,7 @@
 /* Firebase web client config for project or-hachaim.
    Config is complete from the Firebase console web app or-hachaim-site.
    Security is enforced by Firestore rules, not by keeping the web config secret.
-   Storage is not used in this build: storageBucket stays null and Storage stays on deny-all.
+   Storage is used for screen images (bucket below, guarded by storage.rules).
    Known project fields:
    - projectId: or-hachaim
    - authDomain: or-hachaim.firebaseapp.com
