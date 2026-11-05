@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ממשק גבאי / Gabbai Admin</title>
+<title>ממשק גבאי</title>
 <link rel="stylesheet" href="../src/theme.css">
 <link rel="stylesheet" href="content-editor.css">
 <link rel="stylesheet" href="../src/ui/oh-design.css">
@@ -15,29 +15,28 @@
 <script src="../src/firebase/screen-content.js"></script></head>
 <body class="gated" data-oha-page="admin">
 <div class="page">
-<div class="gate-card" id="signInGate"><h2>כניסה נדרשת / Sign-in required</h2><p class="oh-help">ממשק הגבאי מוצג רק לאחר כניסה. / The gabbai interface is shown only after sign-in.</p><button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>Sign in with Google / התחברות עם Google</span></button><p class="hint" id="gateMsg"></p></div>
-<p class="oh-help">זמני התפילה ותוכן המסך להלן נשמרים ב-Firestore ומוצגים במסך תוך שניות. / Prayer times and screen content below are saved to Firestore and reach the screen within seconds.</p>
-<div class="note oh-help"><strong>מודל הרשאות / Permissions model:</strong> מנהל העל בוחר לכל גבאי: פיננסים בלבד, תוכן וזמנים בלבד, או שניהם, ובנפרד העלאת תמונות. גבאי עם הרשאת תוכן וזמנים עורך את זמני התפילה ואת תוכן המסך בעמוד זה. גבאי עם פיננסים בלבד לא רואה ולא שומר תוכן. המסך הציבורי /tv/ פתוח לכולם בלי כניסה ומציג רק זמנים ותוכן שפורסם.<br><span dir="ltr">The super admin chooses per gabbai: finance only, content and times only, or both, and separately image upload. A gabbai with Content and Times permission edits the prayer times and the screen content on this page. A finance-only gabbai cannot see or save content. The public /tv/ page needs no sign-in and shows only times and published content.</span></div>
+<div class="gate-card" id="signInGate"><h2>כניסה נדרשת</h2><button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>התחברות עם Google</span></button><p class="hint" id="gateMsg"></p></div>
+<p class="oh-help">כל שינוי כאן מופיע במסך תוך שניות.</p>
 <div id="userMgmtSection" style="display:none">
-<h2>ניהול משתמשים, מנהל על בלבד / User management, super admin only</h2>
+<h2>ניהול משתמשים</h2>
 <div class="gold-frame" style="padding:1rem">
-<p class="oh-help">הוספת מייל כאן שומרת אותו אוטומטית ב-Firestore, בלי עריכה ידנית בקונסול. / Adding an email here saves it automatically in Firestore, with no manual console edit. מתפללים אינם נוספים כאן, הם נוספים בנפרד. / Congregants are not added here, they are added separately.</p>
-<p class="oh-help"><small>הערה: שמירה כאן מעניקה הרשאה באמצעות custom claims, כאשר הפונקציה setUserClaims פרוסה. אם המייל עדיין לא נכנס פעם אחת עם גוגל, השמירה נשמרת כממתינה בלבד, והמשתמש חייב להיכנס פעם אחת ואז לקבל את ההרשאה שוב. אחרי הענקה, המשתמש חייב להתנתק ולהיכנס שוב כדי שהטוקן החדש יכלול את ההרשאה. / Note: saving here grants via custom claims once setUserClaims is deployed. If the email has never signed in with Google, the save is pending only, the user must sign in once first, then be granted again. After a grant, the user must sign out and sign in again for the new token to carry the claims.</small></p>
-<label>מייל / Email</label><input id="umEmail" type="email" placeholder="למשל name@example.com / e.g. name@example.com">
-<label>הרשאה / Permission</label>
+<p class="oh-help">הרשאה לגבאי לפי מייל. מתפללים מוסיפים בדף הכספים.</p>
+<p class="oh-help"><small>אחרי שמירה, הגבאי מתנתק ונכנס שוב.</small></p>
+<label>מייל</label><input id="umEmail" type="email" placeholder="name@example.com">
+<label>הרשאה</label>
 <select id="umPerm">
-<option value="finance">פיננסים / Finance</option>
-<option value="screen">תוכן וזמנים / Content and Times</option>
-<option value="both">שניהם / Both</option>
+<option value="finance">פיננסים</option>
+<option value="screen">תוכן וזמנים</option>
+<option value="both">שניהם</option>
 </select>
-<label><input type="checkbox" id="umImage"> העלאת תמונות / Image upload (רק יחד עם תוכן וזמנים / only together with Content and Times)</label>
-<button class="btn" onclick="saveUm()">שמור משתמש / Save user</button>
-<button class="btn" onclick="refreshUmList()">רענן רשימה / Refresh list</button>
+<label><input type="checkbox" id="umImage"> העלאת תמונות (רק עם תוכן וזמנים)</label>
+<button class="btn" onclick="saveUm()">שמור משתמש</button>
+<button class="btn" onclick="refreshUmList()">רענן רשימה</button>
 <p id="umMsg"></p>
 <div id="umList"></div>
 </div>
 </div>
-<div id="finOnlyNote" class="note" hidden><strong>פיננסים בלבד / Finance only:</strong> לחשבון זה אין הרשאת תוכן וזמנים, ולכן זמני התפילה ותוכן המסך לא מוצגים ולא נשמרים כאן.<br><span dir="ltr">This account has no Content and Times permission, so prayer times and screen content are not shown or saved here.</span><br><a href="../finance/">מעבר לפיננסים / Go to Finance</a></div>
+<div id="finOnlyNote" class="note" hidden><strong>פיננסים בלבד:</strong> אין לך הרשאת תוכן וזמנים.<br><a href="../finance/">מעבר לפיננסים</a></div>
 <!-- 2040 phase 1: the command bar (content gabbaim and the super admin), src/ui/oh-cmdbar.js -->
 <div id="ohCmdMount" hidden></div>
 <section id="ptSection" class="ohpt" hidden aria-labelledby="ptHeading"></section>
@@ -46,8 +45,8 @@
 <section id="htSection" hidden aria-labelledby="htHeading"></section>
 <section id="screenContent" class="sc" hidden aria-labelledby="scHeading">
 <div class="sc-head">
-<div><h2 id="scHeading">תוכן המסך / Screen content</h2>
-<p class="sc-lead oh-help">הכרזות, הקדשות, פליירים, יארצייט, חסויות, פרנס היום, מזל טוב, הזכרות, דבר הרב, מגבית ותרומה. כל פריט מוצג רק בין תאריך ההתחלה לתאריך הסיום. תוכן של יום חול, תשלום, Zelle ו-QR מוסתר אוטומטית בשבת וביום טוב.</p></div>
+<div><h2 id="scHeading">תוכן המסך</h2>
+<p class="sc-lead oh-help">כל פריט מוצג רק בין התאריכים שלו. בשבת מוסתרים חול, תשלום ו-QR.</p></div>
 <div class="sc-head-actions"><a class="btn secondary sc-tv-link" href="../tv/" target="_blank" rel="noopener">זמני תפילה וזמני היום /tv/</a><button type="button" class="btn sc-new" id="scNew">+ פריט חדש</button></div>
 </div>
 <div class="sc-toolbar">
@@ -64,30 +63,30 @@
 <div id="scSubWrap" hidden><label for="scSub">סוג משנה</label><select id="scSub"></select></div>
 <div id="scYzWrap" hidden>
 <label for="scYzName">שם הנפטר/ת בעברית</label><input id="scYzName" placeholder="שם מלא כפי שיוצג במסך">
-<label for="scYzNameEn">שם באנגלית (רשות)</label><input id="scYzNameEn" dir="ltr" placeholder="Optional">
+<label for="scYzNameEn">שם באנגלית (רשות)</label><input id="scYzNameEn" dir="ltr" placeholder="רשות">
 <div class="sc-row2"><div><label for="scYzDay">יום</label><select id="scYzDay"></select></div><div><label for="scYzMonth">חודש עברי</label><select id="scYzMonth"></select></div><div><label for="scYzYear">שנת פטירה (רשות)</label><input id="scYzYear" inputmode="numeric" dir="ltr" placeholder="5770"></div></div>
 <details class="sc-calc"><summary>יש רק תאריך לועזי? חישוב התאריך העברי</summary>
 <label for="scYzGreg">תאריך פטירה לועזי</label><input type="date" id="scYzGreg">
 <label class="sc-check"><input type="checkbox" id="scYzAfter"> נפטר/ה אחרי השקיעה</label>
 <button type="button" class="btn secondary sc-sm" id="scYzCalc">חשב תאריך עברי</button> <span id="scYzCalcMsg" class="sc-meta"></span>
 </details>
-<p class="sc-help oh-help">מזינים פעם אחת. כל שנה היארצייט יופיע אוטומטית במסך בשבוע שלו (ראשון עד שבת).</p>
+<p class="sc-help oh-help">מזינים פעם אחת, וכל שנה זה מופיע לבד בשבוע שלו.</p>
 </div>
 <div id="scTitleWrap">
 <label for="scTitleHe">כותרת בעברית</label><input id="scTitleHe" placeholder="כותרת קצרה" maxlength="200">
-<label for="scTitleEn">כותרת באנגלית (רשות)</label><input id="scTitleEn" dir="ltr" placeholder="Optional" maxlength="200">
+<label for="scTitleEn">כותרת באנגלית (רשות)</label><input id="scTitleEn" dir="ltr" placeholder="רשות" maxlength="200">
 </div>
 <label for="scBodyHe" id="scBodyLabel">טקסט בעברית</label><textarea id="scBodyHe" rows="4" maxlength="2000" placeholder="הטקסט כפי שיוצג במסך"></textarea>
-<label for="scBodyEn">טקסט באנגלית (רשות)</label><textarea id="scBodyEn" rows="2" dir="ltr" maxlength="2000" placeholder="Optional"></textarea>
+<label for="scBodyEn">טקסט באנגלית (רשות)</label><textarea id="scBodyEn" rows="2" dir="ltr" maxlength="2000" placeholder="רשות"></textarea>
 <div id="scCampWrap" hidden><div class="sc-row2"><div><label for="scGoal">יעד ($, רשות)</label><input id="scGoal" type="number" min="0" step="1" dir="ltr"></div><div><label for="scRaised">נאסף עד כה ($)</label><input id="scRaised" type="number" min="0" step="1" dir="ltr"></div></div></div>
 <div id="scImgWrap" hidden>
 <label for="scImg" id="scImgLabel">תמונה</label><input type="file" id="scImg" accept="image/jpeg,image/png,image/webp">
-<p class="sc-help oh-help">JPG, PNG או WebP. מוקטן אוטומטית ל-1920 פיקסלים לכל היותר. <span id="scImgWrapNote" hidden>לחשבון זה אין הרשאת העלאת תמונות.</span></p>
+<p class="sc-help oh-help">JPG, PNG או WebP. מוקטן לבד. <span id="scImgWrapNote" hidden>לחשבון זה אין הרשאת העלאת תמונות.</span></p>
 <p id="scImgMsg" class="sc-meta"></p><div id="scImgPrev" class="sc-img-prev"></div>
 </div>
 <div id="scWhenWrap">
 <div class="sc-row2"><div><label for="scStart">מתאריך</label><input type="date" id="scStart"></div><div><label for="scEnd">עד תאריך (כולל)</label><input type="date" id="scEnd"></div></div>
-<div id="scPermWrap" hidden><label class="sc-check"><input type="checkbox" id="scPerm"> הקדשה קבועה (למשל לעילוי נשמת), בלי תאריך סיום. מוצגת ברצועה התחתונה.</label></div>
+<div id="scPermWrap" hidden><label class="sc-check"><input type="checkbox" id="scPerm"> הקדשה קבועה, בלי תאריך סיום (ברצועה התחתונה)</label></div>
 </div>
 <div id="scShowWrap"><fieldset class="sc-fs"><legend>מתי להציג</legend>
 <label class="sc-check"><input type="radio" name="scShowOn" value="all" checked> כל הימים</label>
@@ -106,8 +105,8 @@
 <div class="sc-pv-bar"><div class="sc-pv-tabs" role="group" aria-label="מצב תצוגה"><button type="button" data-rest="0" aria-pressed="true">תצוגת חול</button><button type="button" data-rest="1" aria-pressed="false">תצוגת שבת וחג</button></div><button type="button" class="btn secondary sc-sm" id="scPvBig" aria-pressed="false">הגדלה</button></div>
 <div class="sc-pv-box" id="scPvBox"><iframe id="scPv" src="../tv/?embed=preview" title="תצוגה מקדימה של המסך, 16:9, 1920x1080" tabindex="-1" loading="lazy"></iframe></div>
 <p id="scPvNote" class="sc-pv-note"></p>
-<p class="sc-help oh-help">התצוגה היא דף המסך האמיתי, בגודל מסך טלוויזיה מלא, מוקטן. שום דבר לא נשמר עד שלוחצים שמירה או פרסום.</p>
-<a class="btn secondary sc-sm sc-pv-open" id="scPvOpen" href="../tv/" target="_blank" rel="noopener">פתיחת המסך הציבורי /tv/ בחלון חדש / Open /tv/ in a new window</a>
+<p class="sc-help oh-help">זה המסך האמיתי, מוקטן. נשמר רק בשמירה או בפרסום.</p>
+<a class="btn secondary sc-sm sc-pv-open" id="scPvOpen" href="../tv/" target="_blank" rel="noopener">פתיחת המסך בחלון חדש</a>
 </aside>
 </div>
 <div class="sc-actions">
@@ -123,9 +122,9 @@
 <div id="scList" class="sc-list"></div>
 
 </section>
-<h2 class="oh-help">כללי שבת לכל עמוד / Shabbat rules per page</h2>
-<div class="gold-frame oh-help" style="padding:1rem"><p>בטיחות שבת נאכפת על ידי המערכת, לא על ידי זיכרון הגבאי. / Shabbat safety is system-enforced, not gabbai memory. Weekday-only items, payment text, and donation QR are hidden automatically on Shabbat and Yom Tov, even if a gabbai forgot to flag them. Each page also marks its own weekday-only items. On the screen, weekday-only items are hidden from Shabbat entry to Shabbat exit. Use the Shabbat preview toggle on the screen to test this.</p></div>
 <script>
+/* text cleanup (Nov 5): only the active language is shown */
+function L(he, en){ return window.OH_LANG === "en" ? en : he; }
 /* Stage B1: the prayer times manager lives in prayer-times.js (window.OH_PT). */
 var _lastPTUser = null;
 function signInFromGate(){
@@ -158,46 +157,46 @@ refreshPT();
 var _umShown = false;
 async function refreshUmList(){
   var fb = window.OH_FIREBASE, listEl = document.getElementById("umList"), msgEl = document.getElementById("umMsg");
-  if(!fb || !fb.listUsers){ if(listEl) listEl.innerHTML = "<p>ניהול משתמשים אינו זמין כרגע / User management is not available right now.</p>"; return; }
+  if(!fb || !fb.listUsers){ if(listEl) listEl.innerHTML = "<p>" + L("ניהול משתמשים לא זמין כרגע.", "User management is not available right now.") + "</p>"; return; }
   var r = await fb.listUsers();
-  if(!r || !r.ok){ if(listEl) listEl.innerHTML = "<p>טעינת רשימה נכשלה / List load failed: " + (r && r.reason ? r.reason : "unknown") + "</p>"; return; }
-  if(!r.users.length){ listEl.innerHTML = "<p>אין משתמשים עדיין / No users yet.</p>"; return; }
+  if(!r || !r.ok){ if(listEl) listEl.innerHTML = "<p>" + L("הרשימה לא נטענה: ", "The list did not load: ") + (r && r.reason ? r.reason : "?") + "</p>"; return; }
+  if(!r.users.length){ listEl.innerHTML = "<p>" + L("אין משתמשים עדיין", "No users yet") + "</p>"; return; }
   listEl.innerHTML = r.users.map(function(u){
     var esc = OH_UI.esc, arg = OH_UI.jsArg; /* arg: safe inside onclick, also for an apostrophe in an email */
-    return "<p>" + esc(u.email) + " / " + esc(({ finance: "פיננסים / Finance", screen: "תוכן וזמנים / Content and Times", both: "שניהם / Both" })[u.permissions] || u.permissions) + (u.imageUpload ? " / העלאת תמונות" : "") +
-      ' <button class="btn secondary" style="width:auto;min-height:44px;padding:8px 14px" onclick="editUm(' + arg(u.id) + ', ' + arg(u.email) + ', ' + arg(u.permissions) + ', ' + (u.imageUpload ? "true" : "false") + ')">ערוך / Edit</button>' +
-      ' <button class="btn secondary" style="width:auto;min-height:44px;padding:8px 14px" onclick="deleteUm(' + arg(u.id) + ')">מחק / Delete</button></p>';
+    return "<p>" + esc(u.email) + " | " + esc(({ finance: L("פיננסים", "Finance"), screen: L("תוכן וזמנים", "Content and Times"), both: L("שניהם", "Both") })[u.permissions] || u.permissions) + (u.imageUpload ? " | " + L("העלאת תמונות", "Image upload") : "") +
+      ' <button class="btn secondary" style="width:auto;min-height:44px;padding:8px 14px" onclick="editUm(' + arg(u.id) + ', ' + arg(u.email) + ', ' + arg(u.permissions) + ', ' + (u.imageUpload ? "true" : "false") + ')">' + L("ערוך", "Edit") + '</button>' +
+      ' <button class="btn secondary" style="width:auto;min-height:44px;padding:8px 14px" onclick="deleteUm(' + arg(u.id) + ')">' + L("מחק", "Delete") + '</button></p>';
   }).join("");
 }
 async function saveUm(){
   var fb = window.OH_FIREBASE, msgEl = document.getElementById("umMsg");
-  if(!fb || !fb.saveUserPermission){ msgEl.textContent = "ניהול משתמשים אינו זמין כרגע / User management is not available right now."; return; }
+  if(!fb || !fb.saveUserPermission){ msgEl.textContent = L("ניהול משתמשים לא זמין כרגע.", "User management is not available right now."); return; }
   var r;
   if(fb.grantUserClaimsAndSave){ r = await fb.grantUserClaimsAndSave(document.getElementById("umEmail").value, document.getElementById("umPerm").value, document.getElementById("umImage").checked); }
   else { r = await fb.saveUserPermission(document.getElementById("umEmail").value, document.getElementById("umPerm").value, document.getElementById("umImage").checked); }
-  if(r && r.saved && r.viaClaims){ msgEl.textContent = "הוענק באמצעות custom claims / Granted via custom claims. המשתמש חייב להתנתק ולהיכנס שוב / The user must sign out and sign in again."; refreshUmList(); }
-  else if(r && r.saved && r.pending){ msgEl.textContent = "נשמר כממתין בלבד / Saved as pending only. המייל עדיין לא נכנס פעם אחת עם גוגל, בקש ממנו להיכנס פעם אחת ואז הענק שוב / The email has not signed in with Google yet, ask the user to sign in once first, then grant again."; refreshUmList(); }
-  else if(r && r.saved){ msgEl.textContent = "נשמר ב-Firestore / Saved to Firestore." + (r.updated ? " (עודכן קיים / existing updated)" : " (חדש / new)"); refreshUmList(); }
-  else { msgEl.textContent = "שמירה נכשלה, לא נשמר בשקט / Save failed, not silently saved: " + (r && r.reason ? r.reason : "unknown"); }
+  if(r && r.saved && r.viaClaims){ msgEl.textContent = L("ההרשאה ניתנה. שיתנתק ויתחבר שוב.", "Access given. They sign out and in again."); refreshUmList(); }
+  else if(r && r.saved && r.pending){ msgEl.textContent = L("נשמר כממתין. שייכנס פעם אחת, ואז שמור שוב.", "Saved as pending. They sign in once, then save again."); refreshUmList(); }
+  else if(r && r.saved){ msgEl.textContent = L("נשמר.", "Saved.") + (r.updated ? L(" (עודכן)", " (updated)") : L(" (חדש)", " (new)")); refreshUmList(); }
+  else { msgEl.textContent = L("לא נשמר: ", "Not saved: ") + (r && r.reason ? r.reason : "?"); }
 }
 function editUm(id, email, perm, image){
   document.getElementById("umEmail").value = email;
   document.getElementById("umPerm").value = perm || "finance";
   document.getElementById("umImage").checked = !!image;
-  document.getElementById("umMsg").textContent = "עריכה של " + email + ", לחץ שמור כדי לעדכן את אותו המייל / Editing " + email + ", press Save to update that same email.";
+  document.getElementById("umMsg").textContent = L("עריכה של " + email + ". לחץ שמור משתמש.", "Editing " + email + ". Tap Save user.");
   document.getElementById("umEmail").focus();
 }
 async function deleteUm(id){
   var fb = window.OH_FIREBASE, msgEl = document.getElementById("umMsg");
-  if(!confirm("למחוק משתמש זה? / Delete this user?")) return;
+  if(!confirm(L("למחוק את המשתמש?", "Delete this user?"))) return;
   try {
     var listR = await fb.listUsers();
     var target = listR && listR.users ? listR.users.find(function(u){ return u.id === id; }) : null;
     if(target && target.email && fb.revokeUserClaims){ await fb.revokeUserClaims(target.email); }
   } catch(e) {}
   var r = await fb.deleteUserPermission(id);
-  if(r && r.saved){ msgEl.textContent = "נמחק / Deleted."; refreshUmList(); }
-  else { msgEl.textContent = "מחיקה נכשלה / Delete failed: " + (r && r.reason ? r.reason : "unknown"); }
+  if(r && r.saved){ msgEl.textContent = L("נמחק.", "Deleted."); refreshUmList(); }
+  else { msgEl.textContent = L("לא נמחק: ", "Not deleted: ") + (r && r.reason ? r.reason : "?"); }
 }
 async function checkUmVisibility(){
   try {
