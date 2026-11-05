@@ -437,3 +437,6 @@ html.oh-en .oha-topbar .oh-seg{direction:rtl}
    admin only. Every such text carries class "oh-help"; oh-shell.js adds "oh-sa" to <html>
    once the signed-in account is the super admin. Hidden until then (no flash). */
 html:not(.oh-sa) .oh-help{display:none !important}
+
+/* text cleanup (Nov 5): only the active language is shown; the small second-language lines are hidden */
+.oha .h1-en,.oha .sec-title span,.oha .tile .en,#ptSection .ohpt-head h2 small{display:none}
