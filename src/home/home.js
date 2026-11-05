@@ -204,6 +204,12 @@
   /* ---------- the sign-in button ---------- */
   var btn = document.getElementById("authBtn"), lab = document.getElementById("authLabel"), msg = document.getElementById("authMsg");
   var authState = "out", busy = false, msgTimer = null;
+  /* fix 5 (Nov 5): a tap by someone already signed in (or before Firebase knows)
+     is remembered and goes to the right page once the role is known: no second
+     Google popup, no swallowed tap, one navigation only. */
+  var tapGo = false, navigated = false;
+  function go(href) { if (navigated) return; navigated = true; location.href = href; }
+  function takeTap() { var v = tapGo; tapGo = false; return v; }
   function say(k) {
     if (!msg) return;
     msg.textContent = w(k); msg.hidden = !w(k);
@@ -213,7 +219,7 @@
     authState = st;
     if (!btn) return;
     btn.setAttribute("data-state", st);
-    var k = { out: "signin", busy: "signinBusy", gabbai: "signinGabbai", account: "signinAccount", unauth: "signinOut" }[st] || "signin";
+    var k = { out: "signin", busy: "signinBusy", gabbai: "signinGabbai", account: "signinAccount", unauth: "signinOut", retry: "signinRetry" }[st] || "signin";
     if (lab) lab.textContent = w(k);
     btn.setAttribute("href", st === "account" ? "congregant/" : "gabbai/");
     btn.setAttribute("role", st === "gabbai" || st === "account" ? "link" : "button");
@@ -249,40 +255,53 @@
         fail(e);
       });
     }
-    if (fb && fb.ready && fb.signIn) return popup();
+    if (fb && fb.ready && fb.authKnown !== false && fb.signIn) return popup();
     /* Firebase still loading: wait a little, then go by redirect (a popup needs the tap itself) */
     var n = 0, iv = setInterval(function () {
       var f = window.OH_FIREBASE; n++;
-      if (f && f.ready) { clearInterval(iv); redirectSignIn().catch(function () { popup(); }); }
+      if (f && f.ready && f.authKnown !== false) {
+        clearInterval(iv);
+        if (f.user) { busy = false; goGabbaiFlag(false); tapGo = true; syncAuth(); return; } /* fix 5: already signed in, no Google again */
+        redirectSignIn().catch(function () { popup(); });
+      }
       else if (n > 40) { clearInterval(iv); fail({ code: "not-ready" }); }
     }, 250);
   }
   if (btn) btn.addEventListener("click", function (e) {
     if (authState === "gabbai" || authState === "account") return; /* a plain link */
     e.preventDefault();
-    if (authState === "busy") return;
-    if (authState === "unauth") { var fb = window.OH_FIREBASE; if (fb && fb.signOut) fb.signOut(); setAuth("out"); return; }
+    var f0 = window.OH_FIREBASE;
+    if (authState === "busy") { if (!busy) tapGo = true; return; } /* fix 5: busy = the role is loading; go there once it is known */
+    if (authState === "unauth") { if (f0 && f0.signOut) f0.signOut(); setAuth("out"); return; }
+    if (authState === "retry") { tapGo = true; setAuth("busy"); if (f0 && f0.retryRole) Promise.resolve(f0.retryRole()).then(syncAuth, function () {}); return; } /* 6a */
+    if (f0 && f0.ready && f0.user) { tapGo = true; setAuth("busy"); syncAuth(); return; } /* fix 5 */
     signIn();
   });
   var shownUnauth = false;
   function syncAuth() {
     var fb = window.OH_FIREBASE, user = fb && fb.ready ? fb.user : null;
-    if (!user) { shownUnauth = false; if (!busy) setAuth("out"); return; }
+    if (!user) { shownUnauth = false; if (fb && fb.ready && fb.authKnown !== false) tapGo = false; if (!busy && !tapGo) setAuth("out"); return; }
     var role = fb.role;
     if (!role) { setAuth("busy"); if (fb.resolveRole) Promise.resolve(fb.resolveRole()).then(syncAuth, function () {}); return; }
     busy = false;
     var isGabbai = role.isSuperAdmin || role.canFinance || role.canAdmin || role.canScreen;
     if (isGabbai) {
       setAuth("gabbai");
-      if (goGabbaiFlag(false) && window.top === window) { location.href = "gabbai/"; }
-    } else if (role.canCongregant) { setAuth("account"); goGabbaiFlag(false); }
+      if ((goGabbaiFlag(false) || takeTap()) && window.top === window) { go("gabbai/"); }
+    } else if (role.canCongregant) { setAuth("account"); goGabbaiFlag(false); if (takeTap() && window.top === window) go("congregant/"); }
     else if (role.canRequestJoin || role.joinStatus) {
       /* Stage D: not a member yet; "החשבון שלי" opens the join request screen,
          and right after signing in it opens by itself. */
       setAuth("account");
-      if (goGabbaiFlag(false) && window.top === window) { location.href = "congregant/"; }
+      if ((goGabbaiFlag(false) || takeTap()) && window.top === window) { go("congregant/"); }
     }
-    else { setAuth("unauth"); goGabbaiFlag(false); if (!shownUnauth) { shownUnauth = true; say("signinUnauth"); } }
+    else if (role.loadFailed) {
+      /* 6a (Nov 5): the lookup failed: not "not authorized", not the join form.
+         One line and the button says "נסה שוב"; the sign-in flag waits for the retry. */
+      if (authState !== "retry") say("signinLoadErr");
+      setAuth("retry"); tapGo = false;
+    }
+    else { setAuth("unauth"); goGabbaiFlag(false); tapGo = false; if (!shownUnauth) { shownUnauth = true; say("signinUnauth"); } }
   }
 
   /* ---------- the super admin's saved words ---------- */
@@ -338,5 +357,6 @@
   loadSaved();
   syncAuth();
   setInterval(syncAuth, 800);
+  setInterval(dateLine, 60000); /* datefix (Nov 5): an open page turns at shkiah too */
   window.OH_HOME = { render: render, setLang: setLang, word: w, get lang() { return lang; }, get authState() { return authState; } };
 })();
