@@ -333,6 +333,8 @@
   }
   function closeForm() { $("ptForm").hidden = true; S.editId = null; $("ptFormErr").textContent = ""; }
 
+  /* Activity log (Nov 5): one Hebrew line after a saved change (super admin reads it on gabbai/activity/) */
+  function ptLog(sentence, code, target, id) { try { var f = window.OH_FIREBASE; if (f && f.logActivity) f.logActivity(sentence, "", { area: "times", code: code, target: target, targetId: id, collection: "prayerTimes", itemId: id }); } catch (e) {} }
   async function save() {
     if (S.busy) return;
     var he = $("ptNameHe").value.trim(), en = $("ptNameEn").value.trim(), err = $("ptFormErr");
@@ -358,6 +360,7 @@
     var r = editing ? await fb.updatePrayerTime(editing, item) : await fb.savePrayerTime(item);
     S.busy = false; $("ptSaveBtn").disabled = false;
     if (!r || !r.saved) { msg("err", errText(r, "ptErrSave")); return; }
+    ptLog((editing ? "עודכן זמן: " : "נוסף זמן: ") + he + " " + item.time, editing ? "times.update" : "times.add", he, r.id || editing);
     closeForm(); S.justId = r.id || editing || null;
     await load();
     var later = whenText(rule);
@@ -373,6 +376,7 @@
     var r = await fb.deletePrayerTime(id);
     S.busy = false; S.confirmId = null;
     if (!r || !r.saved) { render(); msg("err", errText(r, "ptErrDelete")); return; }
+    ptLog("נמחק זמן: " + (p.nameHe || p.nameEn || "") + " " + (p.time || ""), "times.delete", p.nameHe || p.nameEn || "", id);
     if (S.editId === id) closeForm();
     S.justId = null;
     await load();
@@ -394,6 +398,7 @@
     var r = await fb.setPrayerTimeRule(id, rule);
     S.busy = false;
     if (!r || !r.saved) { msg("err", errText(r, "ptErrSave")); return; }
+    ptLog("הועבר זמן ל" + ({ "sun-thu": "חול", fri: "שישי", shabbat: "שבת" }[to]) + ": " + (p.nameHe || p.nameEn || "") + " " + (p.time || ""), "times.days", p.nameHe || p.nameEn || "", id);
     S.justId = id;
     await load();
     var name = (window.OH_LANG === "en" && p.nameEn) ? p.nameEn : (p.nameHe || p.nameEn || "");
