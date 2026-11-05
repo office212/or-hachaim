@@ -22,8 +22,8 @@
     preview: "תצוגה", exportTitle: "ייצוא", fPdf: "PDF", fJpg: "תמונה", lHe: "עברית", lEn: "English", lBoth: "שתיהן",
     lookBg: "עם רקע", lookClean: "נקי להדפסה", dlPdf: "הורד PDF", dlJpg: "הורד תמונה", share: "שיתוף", download: "הורדה",
     making: "מכין קובץ...", done: "הקובץ מוכן ✓", ptLink: "קבוע לכל שבוע: זמני תפילה",
-    help1: "הדגשה: שורה אחת בכל פעם. שורה מוסתרת לא מופיעה בדף. בשבוע הבא הכל חוזר לרגיל, חוץ משורות \"קבוע כל שבוע\". שעה באפור = הצעה לפי השקיעה, אפשר לכתוב עליה. ↑ ↓ משנים את הסדר. הטקסט מתאים את עצמו לדף, ו\"גודל טקסט\" משנה אותו לשבת הזאת.",
-    help2: "הזמנים האוטומטיים באים מהמערכת, כמו במסך. תפילות באות מזמני תפילה (שישי / שבת), ואם אין שם, מהזמן הרגיל של הדף (ברירת מחדל). שתיהן = PDF אחד עם 2 עמודים, או 2 תמונות.",
+    help1: "↑ ↓ משנים סדר. שעה באפור היא הצעה. בשבוע הבא הכל חוזר לרגיל.",
+    help2: "הזמנים באים מהמערכת, כמו במסך. שתיהן = PDF אחד עם 2 עמודים.",
     emptyHelp: "אין זמן בזמני תפילה לשורה הזאת. מזינים כאן לשבת הזאת, או קובעים בזמני תפילה"
   };
   var EN = {
@@ -37,8 +37,8 @@
     preview: "Preview", exportTitle: "Export", fPdf: "PDF", fJpg: "Image", lHe: "עברית", lEn: "English", lBoth: "Both",
     lookBg: "With background", lookClean: "Clean for printing", dlPdf: "Download PDF", dlJpg: "Download image", share: "Share", download: "Download",
     making: "Making the file...", done: "File ready ✓", ptLink: "Every week: Davening Times",
-    help1: "Highlight: one row at a time. A hidden row is not on the sheet. Next week everything is back to regular, except \"Every week\" rows. A grey time is a suggestion from Shkiah; type over it. ↑ ↓ change the order. The text fits the page; \"Text size\" changes it for this Shabbat.",
-    help2: "Automatic times come from the system, as on the TV. Davening comes from Davening Times (Friday / Shabbat), or else from the sheet's regular time (Default). Both = one PDF with 2 pages, or 2 images.",
+    help1: "↑ ↓ change the order. A grey time is a suggestion. Next week resets.",
+    help2: "Times come from the system, as on the screen. Both = one 2-page PDF.",
     emptyHelp: "No time in Davening Times for this row. Enter it here for this Shabbat, or set it in Davening Times"
   };
   function isEn() { return window.OH_LANG === "en"; }
