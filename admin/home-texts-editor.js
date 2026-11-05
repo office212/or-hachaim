@@ -180,7 +180,8 @@
   }
   function reloadPreview() { var f = $("htFrame"); if (f) f.src = "../?ohpv=" + Date.now(); }
   function failText(r) { return /permission|denied/i.test(String(r && (r.code || r.reason))) ? L("htDenied") : L("htFailed"); }
-  function log(action, detail) { try { var fb = window.OH_FIREBASE; if (fb.logActivity) fb.logActivity(action, detail, { collection: "settings", itemId: "homeTexts", area: "site" }); } catch (e) {} }
+  /* Activity log (Nov 5): a Hebrew sentence, area "texts" */
+  function log(action, detail) { try { var fb = window.OH_FIREBASE; if (fb.logActivity) fb.logActivity({ "homeTexts.update": "עודכן טקסט בדף הבית", "homeTexts.reset": "טקסט בדף הבית חזר לברירת המחדל" }[action] || action, detail, { area: "texts", code: action, collection: "settings", itemId: "homeTexts" }); } catch (e) {} }
   async function onClick(e) {
     var b = e.target.closest("button"); if (!b || S.busy || b.disabled) return;
     var ok = b.getAttribute("data-ht-open");
