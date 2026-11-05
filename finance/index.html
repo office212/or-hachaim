@@ -39,18 +39,16 @@
 <div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">לכל נדר: שם, סכום ועלייה.</p>
 <label>מתפלל</label><select id="nederCong"></select><label>שם</label><input id="nederName"><label>סכום</label><input id="nederAmt" type="number" step="0.01"><label>עלייה</label><input id="nederAliyah" placeholder="למשל כהן, לוי, ישראל">
 <button class="btn btn-gold" onclick="addNeder()">הוסף נדר</button><p id="nederMsg"></p><div id="nederList"></div></div>
-<h2 id="reports">חיובים קבועים</h2>
-<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">דמי חבר נרשמים לבד, כל חודש או כל שנה.</p>
+<h2 hidden>חיובים קבועים</h2><!-- hidden (Hanoch Nov 5 7:57 AM: no recurring charges planned for now) -->
+<div class="gold-frame no-print" style="padding:1rem" hidden><p class="oh-help">דמי חבר נרשמים לבד, כל חודש או כל שנה.</p>
 <div id="recList"></div><button class="btn" onclick="applyRecurring()">חייב עכשיו את מה שהגיע זמנו</button><p id="recMsg"></p></div>
 <h2>קבלות מס שנתיות</h2>
 <div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מכתב 501c3 לכל מתפלל. הגבאי מאשר את הסכום המוכר.</p>
 <label>שנה</label><input id="taxYear" value="2026"><button class="btn btn-gold" onclick="taxLetters()">צור מכתבים לכל המתפללים</button><div id="taxArea"></div></div>
 <h2>התחייבויות</h2>
 <div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">התחייבות נכנסת ליתרה רק אחרי שהופכים אותה לחיוב.</p><div id="pledgeList"></div></div>
-<h2>דוח שנתי</h2>
+<h2 id="reports">דוח שנתי</h2>
 <div class="gold-frame no-print" style="padding:1rem"><label>שנה</label><input id="annualYear" value="2026"><button class="btn btn-gold" onclick="annualReport()">צור דוח שנתי</button><div id="annualArea"></div></div>
-<h2 id="activity">יומן פעולות</h2>
-<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מי שינה מה, ומתי.</p><div id="activityList"></div></div>
 <h2>גיבוי</h2>
 <div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מוריד קובץ עם כל נתוני הכספים.</p>
 <button class="btn btn-gold" onclick="backupExport()">ייצוא גיבוי מלא</button><p id="backupMsg"></p></div>
@@ -153,7 +151,7 @@ async function addEntry(id){
   if (r.saved || r.reason === "duplicate-operationId" || r.reason === "test-only") {
     if (r.reason !== "duplicate-operationId") c.ledger.push({ date: entry.date, operationId: opId, type: type, amount: entry.amount, description: desc, enteredBy: who(), method: method });
     delete pendingOp[id]; /* the next entry gets a new id */
-    logActivity(who(), "Added " + type + " entry, " + money(entry.amount) + ", for " + c.name, "ledger");
+    if (r.saved) logLine("finance", "נרשם " + TYPE_HE[type] + " של " + money(entry.amount) + (method ? " (" + MW[method][0] + ")" : "") + " ל" + c.name, { code: "ledger." + type, target: c.name, targetId: id, amount: entry.amount });
     showCard(id); renderList();
     document.getElementById("eMsg").textContent = r.saved ? L("נשמר.", "Saved.") : (r.reason === "test-only" ? L("תצוגה מקומית בלבד, לא נשמר.", "Local preview only, not saved.") : L("כבר נשמר.", "Already saved."));
   } else {
@@ -171,6 +169,7 @@ function exportCSV(id){
   var c = cons.find(function(x){ return x.id === id; }); if(!c) return;
   var csv = "\uFEFFdate,type,amount,description,enteredBy\n" + c.ledger.map(function(e){ return [e.date, e.type, e.amount, e.description, e.enteredBy].map(csvCell).join(","); }).join("\n");
   var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], {type: "text/csv;charset=utf-8"})); a.download = String(c.id).replace(/[^\w-]/g, "_") + "-statement-" + today() + ".csv"; a.click();
+  logLine("backup", "יוצא קובץ CSV של " + c.name, { code: "export.csv", target: c.name, targetId: c.id });
 }
 /* Add a mitpalel: saved to Firestore through saveCongregant (the
    existing congregants collection and rules). One pending document id
@@ -202,7 +201,7 @@ async function addCong(){
     if(!cons.some(function(c){ return c.id === id; })) cons.push({ id: id, name: n, phone: phone, email: email, ledger: [] });
     pendingCongId = null; /* the next add gets a new id */
     ["newName", "newPhone", "newEmail"].forEach(function(f){ document.getElementById(f).value = ""; });
-    logActivity(who(), (r.saved ? "הוסיף מתפלל / Added mitpalel: " : "תצוגה מקומית / Local preview: ") + n, "מתפללים / Mitpalelim");
+    if(r.saved && !r.already) logLine("members", "נוסף מתפלל: " + n + (email ? " (עם מייל)" : ""), { code: "member.add", target: n, targetId: id });
     if(r.saved) addMsg("נשמר.", "Saved."); else addMsg("תצוגה מקומית בלבד, לא נשמר.", "Local preview only, not saved.");
     renderList(); renderNederCong();
   } else if(r.reason === "duplicate-email"){
@@ -212,16 +211,14 @@ async function addCong(){
     addMsg("לא נשמר (" + why[0] + "). לחץ שוב.", "Not saved (" + why[1] + "). Tap again.");
   }
 }
-var activity = [];
-function logActivity(by, action, area){
-  activity.unshift({ when: today(), who: by, action: action, area: area });
-  renderActivity();
+/* Activity log (Nov 5): one line in the shared log (OH_FIREBASE.logActivity,
+   read only by the super admin on gabbai/activity/), written only after the
+   real save succeeded. Hebrew sentence; a failure never blocks the action. */
+function logLine(area, sentence, extra){
+  var fb = window.OH_FIREBASE;
+  if(fb && fb.logActivity && fb.user) fb.logActivity(sentence, "", Object.assign({ area: area }, extra || {}));
 }
-function renderActivity(){
-  document.getElementById("activityList").innerHTML = activity.map(function(a){
-    return "<p>" + esc(a.when) + " | " + esc(a.who) + " | " + esc(a.area) + " | " + esc(a.action) + "</p>";
-  }).join("");
-}
+var TYPE_HE = { charge: "חיוב", payment: "תשלום", correction: "תיקון" };
 var pledges = [];
 function renderNederCong(){
   /* Stage D: only active members are offered for a new neder */
@@ -256,7 +253,7 @@ async function addNeder(){
   if (r.reason !== "duplicate-operationId") {
     pledges.push({ id: "pledge-local-" + Date.now(), congregantId: id, name: name, amount: entry.amount, aliyah: aliyah, date: entry.date, status: "converted" });
     c.ledger.push({ date: entry.date, operationId: opId, type: "charge", amount: entry.amount, description: entry.description, enteredBy: who() });
-    logActivity(who(), "Added neder, " + money(entry.amount) + ", " + name + ", Aliyah: " + aliyah + ", for " + c.name, "ledger");
+    if (r.saved) logLine("finance", "נרשם נדר של " + money(entry.amount) + " ל" + c.name + " (" + name + (aliyah ? ", עלייה: " + aliyah : "") + ")", { code: "ledger.neder", target: c.name, targetId: id, amount: entry.amount });
   }
   nederOp = null;
   document.getElementById("nederName").value = ""; document.getElementById("nederAmt").value = ""; document.getElementById("nederAliyah").value = "";
@@ -274,7 +271,7 @@ function renderRec(){
 function toggleRec(id){
   var r = recs.find(function(x){ return x.id === id; }); if(!r) return;
   r.status = (r.status === "active") ? "cancelled" : "active";
-  logActivity(who(), (r.status === "active" ? "Reactivated" : "Paused or cancelled") + " recurring schedule: " + r.name + ". Past ledger entries were NOT deleted.", "recurring");
+  /* nothing is saved here (the schedules are on this page only), so no log line */
   document.getElementById("recMsg").textContent = L("עודכן. החיובים הקודמים נשארו.", "Updated. Past charges are kept.");
   renderRec();
 }
@@ -295,7 +292,7 @@ async function applyRecurring(){
     if (res.saved || res.reason === "test-only") {
       c.ledger.push({ date: entry.date, operationId: opId, type: "charge", amount: r.amount, description: entry.description, enteredBy: who() });
       applied++;
-      logActivity(who(), "Recorded recurring charge, " + money(r.amount) + ", " + r.name + ", for " + c.name, "ledger");
+      if (res.saved) logLine("finance", "נרשם חיוב קבוע של " + money(r.amount) + " ל" + c.name + " (" + r.name + ")", { code: "ledger.recurring", target: c.name, targetId: c.id, amount: r.amount });
     } else if (res.reason !== "duplicate-operationId") { failed++; continue; }
     r.nextDue = OH_UI.addMonths(r.nextDue, r.period === "annual" ? 12 : 1);
   }
@@ -322,7 +319,7 @@ function annualReport(){
     '<p>' + L("תשלומים לפי אמצעי: ", "Payments by method: ") + methods + '</p>' +
     '<p>' + L("התחייבויות שלא שולמו: ", "Unpaid pledges: ") + amt$(r.unpaidCommitments) + '</p>' +
     '<p><small>' + L("התחייבות שלא שולמה אינה הכנסה.", "An unpaid pledge is not income.") + '</small></p></div>';
-  logActivity(who(), "Generated annual financial report for " + year, "finance");
+  logLine("finance", "הופק דוח שנתי לשנת " + year, { code: "report.annual" });
 }
 function taxLetters(){
   var year = String(document.getElementById("taxYear").value || today().slice(0, 4)).trim();
@@ -335,7 +332,7 @@ function taxLetters(){
     '<p>Dear ' + esc(c.name) + ', thank you for your support of Or Hachaim Congregation in ' + esc(year) + '.</p></div>';
   }).join("");
   document.getElementById("taxArea").innerHTML = html + (html ? '<button class="btn btn-gold" style="width:auto" onclick="printTaxLetters()">' + L("הדפס את כל המכתבים", "Print all letters") + '</button>' : "");
-  logActivity(who(), "Generated annual tax letters for " + cons.length + " congregant(s) for " + year + " (print-ready)", "tax");
+  logLine("finance", "הופקו מכתבי מס לשנת " + year + " (" + cons.length + " מתפללים)", { code: "report.tax" });
 }
 /* The print rule shows only #printArea. Letters are copied there (one
    per page) before printing; before this, printing showed the open
@@ -346,12 +343,12 @@ function printTaxLetters(){
   window.print();
 }
 function backupExport(){
-  var data = { exportedAt: new Date().toISOString(), exportedBy: who(), congregants: cons, pledges: pledges, recurringSchedules: recs, activityLog: activity, note: "Restore imports only missing entries and never deletes or overwrites existing entries. Automatic daily backup with a copy outside Firebase and a tested full restore is the standard." };
+  var data = { exportedAt: new Date().toISOString(), exportedBy: who(), congregants: cons, pledges: pledges, recurringSchedules: recs, note: "Restore imports only missing entries and never deletes or overwrites existing entries. Automatic daily backup with a copy outside Firebase and a tested full restore is the standard." };
   var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"})); a.download = "or-hachaim-finance-backup-" + today() + ".json"; a.click();
   document.getElementById("backupMsg").textContent = L("הגיבוי ירד למכשיר.", "Backup downloaded.");
-  logActivity(who(), "Exported full finance backup", "backup");
+  logLine("backup", "הורד גיבוי כספים מלא", { code: "backup.finance" });
 }
-renderList(); renderActivity(); renderNederCong(); renderRec(); renderPledges();
+renderList(); renderNederCong(); renderRec(); renderPledges();
 var _lastUserEmail = null;
 function signInFromGate(){
   var fb = window.OH_FIREBASE;
