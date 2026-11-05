@@ -10,27 +10,32 @@
    converts it does it become a charge. Only a payment entry
    records money received. */
 (function (global) {
+  /* Hardening (2026-11-05): every sum is done in whole cents, the same
+     cents() as src/ui/oh-ui.js, so 0.1 + 0.2 is exactly 0.30. Amounts stay
+     dollars with 2 decimals in the data and in what these functions return. */
+  function cents(n) { var x = Number(n); return isFinite(x) ? Math.round(x * 100) : 0; }
   function totals(congregant, pledges) {
     var charges = 0, payments = 0, corrections = 0;
     var byMethod = {};
     (congregant.ledger || []).forEach(function (e) {
-      if (e.type === "charge") charges += e.amount;
+      if (e.type === "charge") charges += cents(e.amount);
       if (e.type === "payment") {
-        payments += e.amount;
+        payments += cents(e.amount);
         var m = e.method || "unspecified";
-        byMethod[m] = (byMethod[m] || 0) + e.amount;
+        byMethod[m] = (byMethod[m] || 0) + cents(e.amount);
       }
-      if (e.type === "correction") corrections += e.amount;
+      if (e.type === "correction") corrections += cents(e.amount);
     });
+    Object.keys(byMethod).forEach(function (k) { byMethod[k] = byMethod[k] / 100; });
     var unpaid = (pledges || []).filter(function (p) {
       return p.congregantId === congregant.id && p.status === "unpaid";
     });
-    var unpaidTotal = unpaid.reduce(function (s, p) { return s + p.amount; }, 0);
+    var unpaidTotal = unpaid.reduce(function (s, p) { return s + cents(p.amount); }, 0) / 100;
     return {
-      charges: charges,
-      payments: payments,
-      corrections: corrections,
-      openBalance: charges - payments + corrections,
+      charges: charges / 100,
+      payments: payments / 100,
+      corrections: corrections / 100,
+      openBalance: (charges - payments + corrections) / 100,
       unpaidPledges: unpaid,
       unpaidPledgesTotal: unpaidTotal,
       paymentsByMethod: byMethod
@@ -40,25 +45,26 @@
     var income = 0, charges = 0, byMethod = {}, open = 0, unpaid = 0;
     congregants.forEach(function (c) {
       var t = totals(c, pledges);
-      open += t.openBalance;
-      unpaid += t.unpaidPledgesTotal;
+      open += cents(t.openBalance);
+      unpaid += cents(t.unpaidPledgesTotal);
       (c.ledger || []).forEach(function (e) {
         if (String(e.date).indexOf(String(year)) !== 0) return;
         if (e.type === "payment") {
-          income += e.amount;
+          income += cents(e.amount);
           var m = e.method || "unspecified";
-          byMethod[m] = (byMethod[m] || 0) + e.amount;
+          byMethod[m] = (byMethod[m] || 0) + cents(e.amount);
         }
-        if (e.type === "charge") charges += e.amount;
+        if (e.type === "charge") charges += cents(e.amount);
       });
     });
+    Object.keys(byMethod).forEach(function (k) { byMethod[k] = byMethod[k] / 100; });
     return {
       year: year,
-      totalIncome: income,
-      totalCharges: charges,
-      openBalances: open,
+      totalIncome: income / 100,
+      totalCharges: charges / 100,
+      openBalances: open / 100,
       paymentsByMethod: byMethod,
-      unpaidCommitments: unpaid
+      unpaidCommitments: unpaid / 100
     };
   }
   var api = { totals: totals, annualReport: annualReport };
