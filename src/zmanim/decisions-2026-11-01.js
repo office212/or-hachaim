@@ -3,11 +3,10 @@
    and 4. Do not change these values back to Roy defaults without a
    new decision from Hanoch, recorded in the plan.
    Final source rule, Hanoch 2026-11-02: Zemaneh Yosef for all
-   times, except Shabbat ends (see source-rule.js). OPEN QUESTION:
-   Hanoch has not confirmed whether that final rule overrides
-   these two deviations. Until he confirms, these values stay
-   as decided here, configurable in one place in source-rule.js,
-   and the equal-minutes validation is kept, not deleted.
+   times, except Shabbat ends (see source-rule.js). DECIDED (owner,
+   binding, README "Binding decisions"): these two deviations stay
+   in force over that rule. They are configurable in one place in
+   source-rule.js, and the equal-minutes validation is kept.
 
    1. Candle lighting = 18 minutes before sunset, everywhere.
       NOT Roy default 20 minutes.
