@@ -1,3 +1,10 @@
+/* ACTIVITY LOG (2026-11-05, Hanoch 7:28 AM: "separate the log completely, record every action
+with date, time and who, and only the super admin has access"), see RULES_DELTA.md.
+1. activityLog read: the super admin only (was: super admin, finance and screen gabbaim).
+   Create is unchanged (super admin, finance, screen; who / whoUid / when checked); update/delete never.
+2. announcements, dedications, sponsors, flyers, yahrzeits: create/update also need versionsOk()
+   (an optional versions list of at most 10 earlier versions, kept in the item itself).
+Every other line is unchanged. */
 /* HARDENING (2026-11-05, owner approved Nov 4 9:41 PM): additive checks only, see RULES_DELTA.md.
 1. ledgerEntries create: shape checked (validLedgerCreate) or the super admin restore path (isRestore).
 2. activityLog create: who / whoUid / when are the signed-in person and the server time (or the restore path).
@@ -167,6 +174,13 @@ service cloud.firestore {
         && existsAfter(/databases/$(database)/documents/operationIds/$(id));
     }
 
+    /* Activity log (Nov 5): a screen item keeps its last 10 earlier versions
+    inside its own document (versions: a list), not in the activity log. */
+    function versionsOk() {
+      return !('versions' in request.resource.data)
+        || (request.resource.data.versions is list && request.resource.data.versions.size() <= 10);
+    }
+
     /* Users and roles: super admin only writes. Nobody else can
     grant themselves finance or screen access. */
     match /users/{uid} {
@@ -278,10 +292,10 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    /* Activity log: internal audit. Finance, screen and super
-    admin read and create; nobody updates or deletes. */
+    /* Activity log: internal audit. Only the super admin reads (Nov 5);
+    finance, screen and super admin create; nobody updates or deletes. */
     match /activityLog/{id} {
-      allow read: if isSuperAdmin() || hasFinance() || hasScreen();
+      allow read: if isSuperAdmin();
       allow create: if (isSuperAdmin() || hasFinance() || hasScreen())
         && (isRestore() || (request.resource.data.get('who', null) == request.auth.token.email
           && request.resource.data.get('whoUid', null) == request.auth.uid
@@ -305,27 +319,27 @@ service cloud.firestore {
     Writes and deletes are unchanged. */
     match /announcements/{docId} {
       allow read: if resource.data.get('status', '') == 'published' || hasScreen();
-      allow create, update: if hasScreen();
+      allow create, update: if hasScreen() && versionsOk();
       allow delete: if isSuperAdmin();
     }
     match /dedications/{docId} {
       allow read: if resource.data.get('status', '') == 'published' || hasScreen();
-      allow create, update: if hasScreen();
+      allow create, update: if hasScreen() && versionsOk();
       allow delete: if isSuperAdmin();
     }
     match /sponsors/{docId} {
       allow read: if resource.data.get('status', '') == 'published' || hasScreen();
-      allow create, update: if hasScreen();
+      allow create, update: if hasScreen() && versionsOk();
       allow delete: if isSuperAdmin();
     }
     match /flyers/{docId} {
       allow read: if resource.data.get('status', '') == 'published' || hasScreen();
-      allow create, update: if hasScreen();
+      allow create, update: if hasScreen() && versionsOk();
       allow delete: if isSuperAdmin();
     }
     match /yahrzeits/{docId} {
       allow read: if resource.data.get('status', '') == 'published' || hasScreen();
-      allow create, update: if hasScreen();
+      allow create, update: if hasScreen() && versionsOk();
       allow delete: if isSuperAdmin();
     }
 
