@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Restore Import / שחזור</title>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>שחזור נתונים</title>
 <link rel="stylesheet" href="../src/theme.css">
 <link rel="stylesheet" href="../src/ui/oh-design.css">
 <script src="../src/ui/labels.js"></script>
@@ -8,13 +8,15 @@
 <script src="../src/firebase/firebase-config.js"></script>
 <script src="../src/firebase/firebase-app.js"></script></head>
 <body data-oha-page="restore">
+<script>function L(he, en){ return window.OH_LANG === "en" ? en : he; } /* text cleanup (Nov 5): only the active language */</script>
+
 <div class="page">
 <div class="gold-frame tool-card">
-<h2><span lang="he" dir="rtl">שחזור נתונים</span> | Restore import</h2>
-<p>Restore imports MISSING documents only, from a backup JSON file exported by the backup page. It never overwrites an existing document, never deletes anything, and never changes an existing ledger entry. Step 1 is always a dry run, with no writes. Step 2 imports only the documents the dry run listed as missing.</p>
+<h2>שחזור נתונים</h2>
+<p class="oh-help">מחזיר מקובץ גיבוי רק מה שחסר. לא מוחק ולא דורס דבר.</p>
 <input type="file" id="backupFile" accept="application/json">
-<button class="btn" onclick="dryRun()">Step 1: Dry run (no writes)</button>
-<button class="btn" onclick="doImport()" id="importBtn" disabled>Step 2: Import missing only</button>
+<button class="btn" onclick="dryRun()">שלב 1: בדיקה (בלי שינוי)</button>
+<button class="btn" onclick="doImport()" id="importBtn" disabled>שלב 2: החזרת מה שחסר</button>
 <p id="restoreMsg"></p>
 <pre id="restoreOut" style="white-space:pre-wrap"></pre>
 </div>
@@ -23,7 +25,7 @@ var _backup = null; var _missing = [];
 function readFile(){
   return new Promise(function(resolve, reject){
     var f = document.getElementById('backupFile').files[0];
-    if(!f){ reject(new Error('Choose a backup JSON file first.')); return; }
+    if(!f){ reject(new Error(L('קודם בוחרים קובץ גיבוי.', 'Choose a backup file first.'))); return; }
     var r = new FileReader();
     r.onload = function(){ try { resolve(JSON.parse(r.result)); } catch(e){ reject(e); } };
     r.onerror = reject; r.readAsText(f);
@@ -31,8 +33,8 @@ function readFile(){
 }
 async function dryRun(){
   var fb = window.OH_FIREBASE;
-  if(!fb || !fb.ready || !fb.user){ document.getElementById('restoreMsg').textContent = 'Sign in first.'; return; }
-  try { _backup = await readFile(); } catch(e){ document.getElementById('restoreMsg').textContent = 'File error: ' + e.message; return; }
+  if(!fb || !fb.ready || !fb.user){ document.getElementById('restoreMsg').textContent = L('קודם צריך להתחבר.', 'Sign in first.'); return; }
+  try { _backup = await readFile(); } catch(e){ document.getElementById('restoreMsg').textContent = L('בעיה בקובץ: ', 'File problem: ') + e.message; return; }
   _missing = []; var lines = [];
   var cols = ['congregants','ledgerEntries','operationIds','pledges','recurringSchedules','activityLog','prayerTimes','announcements','dedications','sponsors','flyers','yahrzeits','backups','users']; /* same list as the backup page */
   for(var i=0;i<cols.length;i++){
@@ -46,14 +48,14 @@ async function dryRun(){
       } catch(e){ lines.push('ERROR checking ' + col + '/' + id + ': ' + (e.code || e.message)); }
     }
   }
-  document.getElementById('restoreMsg').textContent = 'Dry run done. Missing: ' + _missing.length + '. Import button enabled only for missing docs.';
+  document.getElementById('restoreMsg').textContent = L('הבדיקה הסתיימה. חסרים: ', 'Check done. Missing: ') + _missing.length + '.';
   document.getElementById('restoreOut').textContent = lines.join('\n');
   document.getElementById('importBtn').disabled = false;
 }
 async function doImport(){
   var fb = window.OH_FIREBASE;
-  if(!fb || !fb.ready || !fb.user){ document.getElementById('restoreMsg').textContent = 'Sign in first.'; return; }
-  if(!_missing.length){ document.getElementById('restoreMsg').textContent = 'Nothing missing to import. Run a dry run first.'; return; }
+  if(!fb || !fb.ready || !fb.user){ document.getElementById('restoreMsg').textContent = L('קודם צריך להתחבר.', 'Sign in first.'); return; }
+  if(!_missing.length){ document.getElementById('restoreMsg').textContent = L('אין מה להחזיר. קודם שלב 1.', 'Nothing to restore. Do step 1 first.'); return; }
   var created = 0, failed = []; var lines = [];
   for(var i=0;i<_missing.length;i++){
     var m = _missing[i]; var doc = {}; Object.keys(m.doc).forEach(function(k){ if(k !== '_id') doc[k] = m.doc[k]; });
@@ -66,7 +68,7 @@ async function doImport(){
     catch(e){ failed.push(m.col + '/' + m.id + ' (' + (e.code || e.message) + ')'); lines.push('FAILED: ' + m.col + '/' + m.id + ' ' + (e.code || e.message)); }
   }
   document.getElementById('importBtn').disabled = true; /* run a new dry run before importing again */
-  document.getElementById('restoreMsg').textContent = 'Import done. Created: ' + created + ', Failed: ' + failed.length + (failed.length ? ' ' + failed.join(', ') : '');
+  document.getElementById('restoreMsg').textContent = L('הוחזרו: ', 'Restored: ') + created + L(', נכשלו: ', ', failed: ') + failed.length + (failed.length ? ' ' + failed.join(', ') : '');
   document.getElementById('restoreOut').textContent = lines.join('\n');
 }
 </script>
