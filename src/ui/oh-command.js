@@ -52,8 +52,8 @@
   var NAV = [
     { k: ["כספים", "הכספים", "פיננסים", "הנהלת חשבונות", "חשבונות", "מתפללים", "רשימת מתפללים", "finance", "finances", "money"], href: "finance/", he: "כספים", can: "finance" },
     { k: ["נדרים", "הנדרים"], href: "finance/#nedarim", he: "נדרים", can: "finance" },
-    { k: ["דוחות", "דוח", "חיובים קבועים"], href: "finance/#reports", he: "דוחות וחיובים קבועים", can: "finance" },
-    { k: ["יומן", "יומן פעולות", "פעולות אחרונות"], href: "finance/#activity", he: "יומן פעולות", can: "finance" },
+    { k: ["דוחות", "דוח"], href: "finance/#reports", he: "דוחות", can: "finance" },
+    { k: ["יומן", "יומן פעולות", "פעולות אחרונות"], href: "gabbai/activity/", he: "יומן פעולות", can: "super" },
     { k: ["גיבוי", "גיבויים", "הגיבוי", "backup", "backups"], href: "backup/", he: "גיבוי", can: "super" },
     { k: ["שחזור", "שחזר"], href: "restore/", he: "שחזור", can: "super" },
     { k: ["הרשאות", "משתמשים", "ניהול משתמשים", "גבאים"], href: "admin/#userMgmtSection", he: "הרשאות", can: "super" },
