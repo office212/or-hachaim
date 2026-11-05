@@ -4,8 +4,12 @@ Decision 5, Hanoch, 2026-11-01 23:06, strengthened by the critical
 review 2026-11-01 23:11: finance backup starts on day one, not at
 go-live (not deferred to phase 7). Append-only alone is NOT a
 backup. A CSV export occasionally is NOT enough. This design is
-part of the finance scaffold from the start. No backup has run
-yet, because no Firebase project and no real data exist yet.
+part of the finance scaffold from the start.
+
+Status (2026-11-05): the automatic daily backup runs. The Cloud Function
+`dailybackup` runs every day at 03:00 America/New_York and writes a dated
+JSON file to the private bucket `or-hachaim-backups` (see README, "Backup
+and restore").
 
 ## What is backed up
 
@@ -29,9 +33,10 @@ without the full ledger cannot restore a correct balance.
 - Automatic daily backup, in the Firebase phase, scheduled by a
   server-side function, not by a person remembering to click.
 - A copy outside Firebase, in a private destination, never public
-  and never readable by the public /tv/ page or a content-only gabbai. The destination
-  is chosen in the Firebase phase; until then, the requirement is
-  recorded here and the manual export below is the fallback only.
+  and never readable by the public /tv/ page or a content-only gabbai. Today the
+  daily file lands in the private bucket `or-hachaim-backups`, inside the
+  same Google project; the copy outside Google is a monthly download of
+  the newest file by the super admin (see "What is still open").
 - Manual export, one click, from the finance page: download the
   full export as JSON and as CSV statement files. This is already
   scaffolded as a mock in finance/index.html (local data only).
@@ -71,9 +76,11 @@ That rule protects the append-only ledger even during recovery.
 
 ## What is still open
 
-- The exact off-Firebase destination and the scheduled function
-  mechanism are not chosen yet. They need Hanoch's choice in the
-  Firebase phase, or the manual export plus a weekly reminder is
-  the fallback only, not the standard.
+- The scheduled function runs (dailybackup, 03:00). Its source code
+  is not in this repository yet: it is to be exported from the
+  Google Cloud console into functions/ (no secrets).
+- A copy outside Google: today a monthly manual download of the
+  newest backup file by the super admin. An automatic outside copy
+  is not built.
 - Export files contain financial data and must never be public
   and never be readable by the public /tv/ page or a content-only gabbai.
