@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>החשבון שלי / My Account</title>
+<title>החשבון שלי</title>
 <link rel="stylesheet" href="../src/theme.css">
 <link rel="stylesheet" href="../src/ui/oh-design.css">
 <script src="../src/ui/labels.js"></script>
@@ -28,10 +28,8 @@
 <script src="../src/firebase/screen-content.js"></script></head>
 <body class="gated" data-oha-page="congregant">
 <div class="page">
-<div class="gate-card" id="signInGate"><h2>כניסה נדרשת / Sign-in required</h2><p class="oh-help">החשבון האישי מוצג רק לאחר כניסה. / Your account is shown only after sign-in.</p><button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>Sign in with Google / התחברות עם Google</span></button><p class="hint" id="gateMsg"></p></div>
-<p class="oh-help">דף זה מציג רק את היתרה וההיסטוריה של המתפלל המחובר, לעולם לא נתונים של מתפלל אחר. / This page shows only the signed-in congregant's own balance and history, never another congregant's data.</p>
-<div class="note oh-help"><strong>כלל גישה / Access rule:</strong> a congregant signs in with Google using the email the super admin added to their existing record, and sees only their own record. No other congregant's data is ever shown here.</div>
-<p id="congSource" class="oh-help">כניסה נדרשת / Sign-in required</p>
+<div class="gate-card" id="signInGate"><h2>כניסה נדרשת</h2><button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>התחברות עם Google</span></button><p class="hint" id="gateMsg"></p></div>
+<p id="congSource" class="oh-help">כניסה נדרשת</p>
 <div id="card"></div>
 <script>
 /* Own account view. ledgerTotals now comes from src/ui/oh-ui.js (it used
@@ -39,30 +37,31 @@
    real congregant saw an empty card). Values are escaped, amounts shown
    as $1,234.50, newest entries first, and the balance is the hero. */
 function renderCong(c, sourceLabel){
-  var esc = OH_UI.esc, money = OH_UI.money;
+  var esc = OH_UI.esc, money = OH_UI.money, L = function (he, en) { return window.OH_LANG === "en" ? en : he; };
   var t = OH_UI.ledgerTotals(c);
   var rows = (c.ledger || []).slice().sort(function(a, b){ return String(b.date).localeCompare(String(a.date)); });
-  var typeHe = { charge: "חיוב / Charge", payment: "תשלום / Payment", correction: "תיקון / Correction" };
+  var typeHe = { charge: L("חיוב", "Charge"), payment: L("תשלום", "Payment"), correction: L("תיקון", "Correction") };
   document.getElementById("card").innerHTML = '<div class="gold-frame"><h2>' + esc(c.name) + '</h2>' +
-  '<div class="balance-hero"><span class="bh-label">יתרה לתשלום / Balance owed</span><span class="bh-amount" dir="ltr">' + money(t.balance) + '</span></div>' +
-  '<p class="ledger-summary"><span>סך חיובים / Charges total: <span dir="ltr">' + money(t.charges) + '</span></span><span>סך תשלומים / Payments total: <span dir="ltr">' + money(t.payments) + '</span></span></p>' +
-  '<table><tr><th>תאריך / Date</th><th>סוג / Type</th><th>סכום / Amount</th><th>תיאור / Description</th></tr>' +
+  '<div class="balance-hero"><span class="bh-label">' + L("יתרה לתשלום", "Balance owed") + '</span><span class="bh-amount" dir="ltr">' + money(t.balance) + '</span></div>' +
+  '<p class="ledger-summary"><span>' + L("סך חיובים: ", "Total charges: ") + '<span dir="ltr">' + money(t.charges) + '</span></span><span>' + L("סך תשלומים: ", "Total payments: ") + '<span dir="ltr">' + money(t.payments) + '</span></span></p>' +
+  '<table><tr><th>' + L("תאריך", "Date") + '</th><th>' + L("סוג", "Type") + '</th><th>' + L("סכום", "Amount") + '</th><th>' + L("תיאור", "Description") + '</th></tr>' +
   rows.map(function(e){ return "<tr><td>" + esc(e.date) + "</td><td>" + esc(typeHe[e.type] || e.type) + '</td><td dir="ltr">' + money(e.amount) + "</td><td>" + esc(e.description) + "</td></tr>"; }).join("") +
-  '</table><p class="oh-help"><small>' + esc(sourceLabel) + '</small></p></div>';
+  '</table>' + (sourceLabel ? '<p class="oh-help"><small>' + esc(sourceLabel) + '</small></p>' : '') + '</div>';
 }
-document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>';
+document.getElementById('card').innerHTML = '<p>' + CL_("כניסה נדרשת", "Sign-in required") + '</p>';
 var _lastCongUser = null;
+function CL_(he, en){ return window.OH_LANG === "en" ? en : he; }
 function signInFromGate(){
   var fb = window.OH_FIREBASE;
-  if(!fb || !fb.signIn){ document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.'; return; }
+  if(!fb || !fb.signIn){ document.getElementById('gateMsg').textContent = CL_('הכניסה עוד לא מוכנה. נסה שוב בעוד רגע.', 'Sign-in is not ready yet. Try again in a moment.'); return; }
   if(fb.user){ fb.signOut(); return; }
   var r = fb.signIn();
-  if(r && r.catch) r.catch(function(e){ document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e); });
+  if(r && r.catch) r.catch(function(e){ document.getElementById('gateMsg').textContent = CL_('הכניסה לא הצליחה: ', 'Sign-in failed: ') + (e && e.message ? e.message : e); });
 }
 async function refreshCong(){
   try {
     var fb = window.OH_FIREBASE;
-    if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastCongUser !== null){ _lastCongUser = null; document.getElementById('congSource').textContent = 'כניסה נדרשת / Sign-in required'; document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>'; } return; }
+    if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastCongUser !== null){ _lastCongUser = null; document.getElementById('congSource').textContent = CL_('כניסה נדרשת', 'Sign-in required'); document.getElementById('card').innerHTML = '<p>' + CL_("כניסה נדרשת", "Sign-in required") + '</p>'; } return; }
     var role = await fb.resolveRole();
     /* Stage D: a signed-in person who is not a member yet sees only the join
        screen (or "sent" / "not approved"), nothing else. */
@@ -73,14 +72,14 @@ async function refreshCong(){
       return;
     }
     document.body.classList.remove('joining');
-    if(!role || !fb.canAccess('congregant')){ document.body.classList.add('gated'); if(role){ if(role.authorized){ location.replace('../gabbai/'); return; } document.getElementById('gateMsg').textContent = (window.OH_LABELS && window.OH_LABELS.notAuthorized) || 'החשבון הזה אינו מורשה למערכת הגבאים.'; } /* 2040 phase 1: no access prompts; a gabbai on a page that is not theirs goes home */ _lastCongUser = null; document.getElementById('congSource').textContent = 'כניסה נדרשת / Sign-in required'; document.getElementById('card').innerHTML = '<p>כניסה נדרשת / Sign-in required.</p>'; return; }
+    if(!role || !fb.canAccess('congregant')){ document.body.classList.add('gated'); if(role){ if(role.authorized){ location.replace('../gabbai/'); return; } document.getElementById('gateMsg').textContent = (window.OH_LABELS && window.OH_LABELS.notAuthorized) || 'החשבון הזה אינו מורשה למערכת הגבאים.'; } /* 2040 phase 1: no access prompts; a gabbai on a page that is not theirs goes home */ _lastCongUser = null; document.getElementById('congSource').textContent = CL_('כניסה נדרשת', 'Sign-in required'); document.getElementById('card').innerHTML = '<p>' + CL_("כניסה נדרשת", "Sign-in required") + '</p>'; return; }
     var email = fb.user.email || '';
     if(email === _lastCongUser) return;
     document.body.classList.remove('gated'); document.getElementById('gateMsg').textContent = '';
     _lastCongUser = email;
     var own = await fb.loadOwnCongregant();
-    if(own){ document.getElementById('congSource').textContent = 'Signed in as ' + email; renderCong(own, 'Signed-in congregant only.'); }
-    else { document.getElementById('congSource').textContent = 'Signed in as ' + email + ', no own congregant record found for this email'; document.getElementById('card').innerHTML = '<div class="gold-frame" style="padding:1rem"><p>No congregant record found for ' + OH_UI.esc(email) + '. This page never shows another congregant\'s data.</p></div>'; }
+    if(own){ document.getElementById('congSource').textContent = CL_('מחובר: ', 'Signed in: ') + email; renderCong(own, ''); }
+    else { document.getElementById('congSource').textContent = CL_('מחובר: ', 'Signed in: ') + email; document.getElementById('card').innerHTML = '<div class="gold-frame" style="padding:1rem"><p>' + CL_('לא נמצא כרטיס מתפלל למייל ', 'No member card for ') + OH_UI.esc(email) + '.</p></div>'; }
   } catch(e) {}
 }
 setInterval(refreshCong, 1000);
@@ -102,9 +101,12 @@ refreshCong();
     if(!list.length){ box.hidden = true; box.innerHTML = ""; return; }
     var esc = OH_UI.esc;
     box.hidden = false;
-    box.innerHTML = '<div class="gold-frame"><h2>הודעות הקהילה / Community announcements</h2>' + list.map(function(it){
-      var head = it.type === "rabbi" ? ((E.SUBTYPES.rabbi[it.subtype] || "דבר הרב") + (it.titleHe ? ": " + it.titleHe : "")) : (it.titleHe || "");
-      return '<article class="cn-item">' + (head ? '<h3>' + esc(head) + '</h3>' : '') + (it.bodyHe ? '<p>' + esc(it.bodyHe).replace(/\n/g, "<br>") + '</p>' : '') + (it.bodyEn ? '<p dir="ltr" class="cn-en">' + esc(it.bodyEn).replace(/\n/g, "<br>") + '</p>' : '') + '</article>';
+    box.innerHTML = '<div class="gold-frame"><h2>' + (window.OH_LANG === "en" ? "Announcements" : "הודעות הקהילה") + '</h2>' + list.map(function(it){
+      /* text cleanup (Nov 5): only the active language; the other one only when it is the only text */
+      var en = window.OH_LANG === "en", title = en ? (it.titleEn || it.titleHe) : (it.titleHe || it.titleEn);
+      var head = it.type === "rabbi" ? ((E.SUBTYPES.rabbi[it.subtype] || "דבר הרב") + (title ? ": " + title : "")) : (title || "");
+      var body = en ? (it.bodyEn || it.bodyHe) : (it.bodyHe || it.bodyEn), ltr = body && body === it.bodyEn;
+      return '<article class="cn-item">' + (head ? '<h3>' + esc(head) + '</h3>' : '') + (body ? '<p' + (ltr ? ' dir="ltr" class="cn-en"' : '') + '>' + esc(body).replace(/\n/g, "<br>") + '</p>' : '') + '</article>';
     }).join("") + '</div>';
   }
   setInterval(function(){
