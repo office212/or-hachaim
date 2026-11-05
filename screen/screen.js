@@ -613,7 +613,14 @@ function tick() {
   if (dl) dl.textContent = new Date().toLocaleDateString("en-US", { timeZone: "America/New_York", weekday: "long", year: "numeric", month: "long", day: "numeric" });
   var hd = document.getElementById("hebrewDateLine");
   if (hd) {
-    try { hd.textContent = hebrewDateText(new Date(), true); }
+    /* datefix (Nov 5, Hanoch): the Hebrew date turns at shkiah, the same rule
+       and the same shkiah (daily file) as the landing page; after shkiah it is
+       tomorrow's Hebrew date, without the weekday. */
+    try {
+      var zd = ROY_JSON && ROY_JSON.days && ROY_JSON.days[todayKey()];
+      var afterShkiah = !!(zd && zd.shkiah && nowMinsNY() >= mins(zd.shkiah));
+      hd.textContent = afterShkiah ? hebrewDateText(new Date(dateKeyOffset(1) + "T16:00:00Z"), false) : hebrewDateText(new Date(), true);
+    }
     catch (e) { hd.textContent = ""; }
   }
   ensureToday();
