@@ -10,6 +10,7 @@
    presses "אשר". */
 (function () {
   "use strict";
+  var SHOW_RECURRING = false; /* recurring charges are hidden for now (Nov 5) */
   var DEF = {
     alTitle: "המערכת שמה לב לפניך", alTitleEn: "מה כדאי לבדוק השבוע",
     alAllGood: "הכל מסודר ✓ אין כרגע משהו שדורש תשומת לב",
@@ -104,7 +105,8 @@
           go: L("alExpireGo"), cmd: "שנה " + doc.nameHe + " " + (r.kind === "sunset" ? t.offsetHe(r.offsetMin).replace(" דק׳ ", " דקות ") : doc.time) + " עד ", cmdGo: false, href: "admin/#ptSection" });
       });
     }
-    if (finance && d.rec) {
+    /* Hanoch Nov 5 7:57 AM: no recurring charges for now, so no alert that links to them */
+    if (SHOW_RECURRING && finance && d.rec) {
       var due = d.rec.filter(function (r) { return r.status === "active" && r.nextDue && r.nextDue <= weekEnd; });
       if (due.length) {
         var late = due.filter(function (r) { return r.nextDue < today; }).length, sum = due.reduce(function (a, r) { return a + (+r.amount || 0); }, 0);
