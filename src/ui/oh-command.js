@@ -74,7 +74,6 @@
       .replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim()
       .replace(/[.!?,;]+$/, "").trim();
   }
-  function esc(s) { return String(s == null ? "" : s); }
   var B = "(?:^|\\s)", E = "(?=\\s|$)";
   function cut(str, m) { return (str.slice(0, m.index) + " " + str.slice(m.index + m[0].length)).replace(/\s+/g, " ").trim(); }
 
