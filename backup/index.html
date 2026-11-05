@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Backup Export / גיבוי</title>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>גיבוי נתונים</title>
 <link rel="stylesheet" href="../src/theme.css">
 <link rel="stylesheet" href="../src/ui/oh-design.css">
 <script src="../src/ui/labels.js"></script>
@@ -8,20 +8,22 @@
 <script src="../src/firebase/firebase-config.js"></script>
 <script src="../src/firebase/firebase-app.js"></script></head>
 <body data-oha-page="backup">
+<script>function L(he, en){ return window.OH_LANG === "en" ? en : he; } /* text cleanup (Nov 5): only the active language */</script>
+
 <div class="page">
 <div class="gold-frame tool-card">
-<h2><span lang="he" dir="rtl">גיבוי נתונים</span> | Backup export</h2>
-<p>This page exports Firestore docs as a JSON file, for off-Firebase backup. It never deletes anything, and it never imports anything. Super admin only in practice, because finance cannot read prayerTimes.</p>
-<button class="btn" onclick="runBackup()">Export backup JSON</button>
+<h2>גיבוי נתונים</h2>
+<p class="oh-help">מוריד קובץ גיבוי של כל הנתונים. לא מוחק ולא משנה דבר.</p>
+<button class="btn" onclick="runBackup()">הורדת קובץ גיבוי</button>
 <p id="backupMsg"></p>
 <pre id="backupOut" style="white-space:pre-wrap"></pre>
 </div>
 <script>
 async function runBackup(){
   var fb = window.OH_FIREBASE;
-  if(!fb || !fb.ready || !fb.user){ document.getElementById('backupMsg').textContent = 'Sign in first.'; return; }
-  if(typeof fb._db !== 'function'){ document.getElementById('backupMsg').textContent = 'Backup code outdated: _db missing, hard-reload the page and try again. Do not trust a denied list from an old cached script.'; return; }
-  document.getElementById('backupMsg').textContent = 'Exporting...';
+  if(!fb || !fb.ready || !fb.user){ document.getElementById('backupMsg').textContent = L('קודם צריך להתחבר.', 'Sign in first.'); return; }
+  if(typeof fb._db !== 'function'){ document.getElementById('backupMsg').textContent = L('הדף לא עדכני. רענן את הדף ונסה שוב.', 'The page is out of date. Reload it and try again.'); return; }
+  document.getElementById('backupMsg').textContent = L('מוריד...', 'Downloading...');
   var out = { exportedAt: new Date().toISOString(), exportedBy: fb.user.email, collections: {}, denied: [] };
   /* Every collection the rules define, not only five: pledges, recurring
      schedules, the activity log and the screen content were missing. */
@@ -36,7 +38,7 @@ async function runBackup(){
     } catch(e) { out.denied.push(col + ' (' + (e && e.code ? e.code : (e && e.message ? e.message : e)) + ')'); out.collections[col] = []; }
   }
   var counts = cols.map(function(c){ return c + ': ' + out.collections[c].length; }).join(', ');
-  document.getElementById('backupMsg').textContent = 'Exported. ' + counts + (out.denied.length ? ' Denied: ' + out.denied.join(', ') : '');
+  document.getElementById('backupMsg').textContent = L('הגיבוי ירד. ', 'Backup downloaded. ') + counts + (out.denied.length ? L(' לא נקרא: ', ' Not read: ') + out.denied.join(', ') : '');
   document.getElementById('backupOut').textContent = JSON.stringify(out, null, 2).slice(0, 4000);
   var a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], {type: 'application/json'}));
