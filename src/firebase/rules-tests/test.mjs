@@ -8,7 +8,7 @@
    this package does not touch. */
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
 import { readFileSync } from "fs";
-import { doc, getDoc, setDoc, updateDoc, writeBatch, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, writeBatch, serverTimestamp, collection, query, where, getDocs, orderBy, limit } from "firebase/firestore";
 const env = await initializeTestEnvironment({ projectId: "demo-oh", firestore: { rules: readFileSync(process.env.RULES || "../firestore.rules", "utf8"), host: "127.0.0.1", port: +(process.env.OH_FS_PORT || 8085) } });
 let pass = 0, fail = 0;
 async function t(name, p, expectOk) {
@@ -113,10 +113,45 @@ await t("client 'when' rejected", setDoc(doc(fin, "activityLog/n2c"), log("fin@x
 await t("missing who rejected", setDoc(doc(fin, "activityLog/n2d"), { area: "ledger", action: "x", whoUid: "ufin", when: serverTimestamp() }), false);
 await t("signed-in user without a role cannot log", setDoc(doc(plain, "activityLog/n2e"), log("plain@x.com", "uplain")), false);
 await t("log update denied", updateDoc(doc(fin, "activityLog/a1"), { action: "z" }), false);
-await t("finance reads the log (unchanged)", getDoc(doc(fin, "activityLog/a1")), true);
-await t("screen gabbai reads the log (unchanged)", getDoc(doc(scr, "activityLog/a2")), true);
-await t("screen gabbai: history of one item (unchanged)", getDocs(query(collection(scr, "activityLog"), where("itemId", "==", "b1"))), true);
+/* Activity log (Nov 5): read by the super admin only */
+await t("finance can NOT read the log (Nov 5)", getDoc(doc(fin, "activityLog/a1")), false);
+await t("screen gabbai can NOT read the log (Nov 5)", getDoc(doc(scr, "activityLog/a2")), false);
+await t("screen gabbai: history of one item from the log is refused (Nov 5)", getDocs(query(collection(scr, "activityLog"), where("itemId", "==", "b1"))), false);
 await t("signed-in user without a role cannot read the log", getDoc(doc(plain, "activityLog/a2")), false);
+console.log("--- 3b. activity log separated (Nov 5): super admin only reads; versions kept in the item ---");
+const docScr = env.authenticatedContext("udocscr", { email: "docscr@x.com", email_verified: true }).firestore();
+await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), "users/udocscr"), { email: "docscr@x.com", permissions: "screen" }); });
+await t("super admin reads one log line", getDoc(doc(sa, "activityLog/a1")), true);
+await t("super admin reads the log newest first (page query)", getDocs(query(collection(sa, "activityLog"), orderBy("when", "desc"), limit(50))), true);
+await t("super admin with an unverified email cannot read the log", getDoc(doc(saUnverified, "activityLog/a1")), false);
+await t("finance (users document) cannot read the log", getDoc(doc(docFin, "activityLog/a1")), false);
+await t("screen (users document) cannot read the log", getDoc(doc(docScr, "activityLog/a1")), false);
+await t("finance cannot list the log", getDocs(query(collection(fin, "activityLog"), limit(5))), false);
+await t("screen cannot list the log", getDocs(query(collection(scr, "activityLog"), limit(5))), false);
+await t("member cannot read the log", getDoc(doc(cong, "activityLog/a1")), false);
+await t("signed out cannot read the log", getDoc(doc(anon, "activityLog/a1")), false);
+await t("finance (users document) logs a valid line", setDoc(doc(docFin, "activityLog/v1"), log("doc@x.com", "udoc", { area: "finance", amount: 18, target: "A", targetId: "c1", code: "ledger.payment" })), true);
+await t("screen (users document) logs a valid line", setDoc(doc(docScr, "activityLog/v2"), log("docscr@x.com", "udocscr", { area: "screen" })), true);
+await t("screen logs a valid line (claims)", setDoc(doc(scr, "activityLog/v3"), log("scr@x.com", "uscr", { area: "times" })), true);
+await t("finance logs a valid line (claims)", setDoc(doc(fin, "activityLog/v4"), log("fin@x.com", "ufin", { area: "members" })), true);
+await t("super admin logs a valid line", setDoc(doc(sa, "activityLog/v5"), log("hanochhason@gmail.com", "usa", { area: "permissions" })), true);
+await t("member cannot log", setDoc(doc(cong, "activityLog/v6"), log("cong@x.com", "ucong")), false);
+await t("signed out cannot log", setDoc(doc(anon, "activityLog/v7"), { area: "join", action: "x", who: "", whoUid: "", when: serverTimestamp() }), false);
+await t("screen: forged who rejected", setDoc(doc(scr, "activityLog/v8"), log("hanochhason@gmail.com", "uscr")), false);
+await t("screen: forged when rejected", setDoc(doc(scr, "activityLog/v9"), log("scr@x.com", "uscr", { when: new Date(2026, 0, 1) })), false);
+await t("super admin cannot update a log line", updateDoc(doc(sa, "activityLog/a1"), { action: "z" }), false);
+await t("super admin cannot delete a log line", deleteDoc(doc(sa, "activityLog/a1")), false);
+await t("finance cannot delete a log line", deleteDoc(doc(fin, "activityLog/a1")), false);
+const ver = (n) => Array.from({ length: n }, (_, i) => ({ version: i + 1, action: "update", savedAt: "2026-11-05T12:00:00.000Z", snapshot: { titleHe: "v" + (i + 1), status: "draft" } }));
+for (const col of ["announcements", "dedications", "sponsors", "flyers", "yahrzeits"]) {
+  await t(col + ": screen saves an item with 10 earlier versions", setDoc(doc(scr, col + "/vv1"), { titleHe: "x", status: "draft", version: 11, versions: ver(10) }), true);
+  await t(col + ": 11 earlier versions rejected", setDoc(doc(scr, col + "/vv1"), { titleHe: "x", status: "draft", version: 12, versions: ver(11) }), false);
+}
+await t("versions that is not a list rejected", setDoc(doc(scr, "announcements/vv2"), { titleHe: "x", status: "draft", versions: { a: 1 } }), false);
+await t("an item with no versions is still saved (every item today)", setDoc(doc(scr, "announcements/vv3"), { titleHe: "x", status: "draft", version: 1 }), true);
+await t("update of an item to 10 versions", updateDoc(doc(scr, "announcements/vv3"), { version: 2, versions: ver(1) }), true);
+await t("finance still cannot write screen items", setDoc(doc(fin, "announcements/vv4"), { titleHe: "x", status: "draft", versions: [] }), false);
+await t("signed out reads a published item with its versions (public, no emails in versions)", (async () => { await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), "announcements/pub1"), { titleHe: "x", status: "published", versions: ver(2) }); }); return getDoc(doc(anon, "announcements/pub1")); })(), true);
 
 console.log("--- 4. email_verified ---");
 await t("super admin verified: reads a ledger entry", getDoc(doc(sa, "ledgerEntries/seed1")), true);
