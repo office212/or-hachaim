@@ -257,7 +257,7 @@ body.oha,body.oha-page{background-color:#f1e9dc;background-image:radial-gradient
 .oha .m-only{display:none}
 @media (max-width:640px){
  body.oha{font-size:17px}
- .oha-topbar{padding:10px 16px;gap:10px}
+ .oha-topbar{padding:10px 16px;gap:10px;flex-wrap:wrap;row-gap:8px}
  .oha .brand-txt,.oha .tb-link,.oha .who-txt,.oha .tb-out{display:none}
  .oha .logo-badge{height:46px;padding:3px 8px}
  .oha .logo-badge img{height:38px}
@@ -440,3 +440,65 @@ html:not(.oh-sa) .oh-help{display:none !important}
 
 /* text cleanup (Nov 5): only the active language is shown; the small second-language lines are hidden */
 .oha .h1-en,.oha .sec-title span,.oha .tile .en,#ptSection .ohpt-head h2 small{display:none}
+
+
+/* ===========================================================================
+   Install popup + footer link + notifications bell (combined package, 2026-11-05)
+   Direction A only: stone/gold/navy, no red or burgundy anywhere, touch
+   targets at least 48px, RTL. Signed-in dashboard pages only (built by
+   src/ui/oh-shell.js, which never runs on the public landing page).
+   =========================================================================== */
+
+/* ---- bell in the top bar ---- */
+.oha-bell-wrap{position:relative}
+.oha .tb-bell{position:relative;min-width:48px;padding:0 14px}
+.oha-bell-badge{position:absolute;top:2px;inset-inline-end:2px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:var(--gold-dark);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 0 2px var(--topbar)}
+.oha-bell-panel{position:absolute;top:calc(100% + 10px);inset-inline-end:0;width:min(360px,88vw);max-height:70vh;overflow:auto;background:var(--surface-solid);border:1px solid var(--hair);border-radius:16px;box-shadow:var(--shadow-lift);z-index:20;padding:14px}
+.oha-bell-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.oha-bell-head b{font-size:17px}
+.oha-bell-markall{background:transparent;border:none;color:var(--gold-text);font-weight:700;font-size:14px;cursor:pointer;min-height:36px;padding:0 6px}
+.oha-bell-enable{border:1px solid var(--hair-soft);border-radius:12px;padding:10px;margin-bottom:10px;background:var(--sky-pale)}
+.oha-bell-enable .btn{width:100%}
+.oha-bell-list{display:flex;flex-direction:column;gap:6px}
+.oha-bell-item{display:block;width:100%;text-align:start;background:var(--surface2);border:1px solid var(--hair-soft);border-radius:12px;padding:10px 12px;cursor:pointer;min-height:48px}
+.oha-bell-item b{display:block;font-size:15px}
+.oha-bell-item span{display:block;font-size:14px;color:var(--ink2);margin-top:2px}
+.oha-bell-item small{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+.oha-bell-item.unread{background:var(--chip);border-color:var(--hair)}
+.oha-bell-item.unread b::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--gold-dark);margin-inline-end:8px;vertical-align:1px}
+
+/* ---- the auth error line, next to sign-in/out in the top bar ---- */
+.oha-auth-msg{font-size:14px;color:var(--gold-text);max-width:220px}
+.oha-auth-msg[hidden]{display:none}
+
+/* ---- install popup: one small calm dialog, shown once ---- */
+.oha-install-popup{position:fixed;inset:0;background:rgba(14,44,76,.38);display:flex;align-items:flex-end;justify-content:center;z-index:50;padding:16px}
+.oha-install-popup[hidden]{display:none}
+.oha-install-card{background:var(--surface-solid);border:1px solid var(--hair);border-radius:18px;box-shadow:var(--shadow-lift);max-width:400px;width:100%;padding:22px;text-align:center}
+.oha-install-title{font-family:var(--font-display-he);font-size:21px;font-weight:700;color:var(--navy);margin:0 0 8px}
+.oha-install-body{font-size:16px;color:var(--ink2);margin:0 0 16px;line-height:1.5}
+.oha-install-actions{display:flex;gap:10px;flex-wrap:wrap}
+.oha-install-actions .btn{flex:1 1 auto;min-width:120px}
+
+/* ---- footer install link: one small line, dashboard pages only ---- */
+.oha-install-foot{text-align:center;padding:22px 16px 28px}
+.oha-install-foot[hidden]{display:none}
+.oha-install-foot button{background:transparent;border:none;color:var(--gold-text);font:inherit;font-weight:700;font-size:15px;cursor:pointer;min-height:48px;padding:0 10px;text-decoration:underline}
+
+/* ---- retroactive payment date field (finance) ---- */
+.oh-entry-date{min-height:48px}
+
+/* The bell must stay visible on mobile even though the existing mobile rule
+   hides every .tb-link (those move to the bottom nav bar instead; the bell
+   has no bottom-nav equivalent, so it stays in the top bar at every width). */
+@media (max-width:640px){
+  .oha .tb-bell{display:inline-flex !important}
+}
+
+/* Mobile: the bell panel anchors to the viewport instead of the button's own
+   position, since the button itself can wrap to its own line at this width
+   (see the topbar flex-wrap rule above) and a panel anchored to a wrapped
+   button's exact x can run past the screen edge. */
+@media (max-width:640px){
+  .oha-bell-panel{position:fixed;top:112px;inset-inline-end:10px;inset-inline-start:10px;width:auto;max-width:none}
+}
