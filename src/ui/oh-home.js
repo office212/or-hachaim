@@ -53,15 +53,39 @@
   var main = document.getElementById("ohHome");
   var state = { key: "", published: null, drafts: null, zman: null, today: null, nedarim: null, unsub: null, frame: null };
 
+  /* datefix (Nov 5, Hanoch): the Hebrew date turns at shkiah, the same rule and
+     the same shkiah (the daily zmanim file) as the landing page and the TV.
+     After shkiah: tomorrow's Hebrew date, and the weekday is left out. */
+  var ZDAYS = null;
+  function nyKey(off) {
+    var p = {}; new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; });
+    return new Date(Date.UTC(+p.year, +p.month - 1, +p.day + (off || 0))).toISOString().slice(0, 10);
+  }
+  function afterShkiah() {
+    try {
+      var z = ZDAYS && ZDAYS[nyKey(0)]; if (!z || !z.shkiah) return false;
+      var p = {}; new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(new Date()).forEach(function (x) { p[x.type] = x.value; });
+      var a = String(z.shkiah).split(":");
+      return (+p.hour % 24) * 60 + (+p.minute) >= (+a[0]) * 60 + (+a[1]);
+    } catch (e) { return false; }
+  }
+  try {
+    fetch(ROOT + "src/zmanim/roy-daily-5787.json").then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+      if (j && j.days) { ZDAYS = j.days; paintDate(); }
+    }).catch(function () {});
+  } catch (e) {}
+  function paintDate() { var el = main && main.querySelector(".hello .date"); if (el) el.innerHTML = I.cal + esc(dateLine()); }
+  setInterval(paintDate, 60000);
   function dateLine() {
-    var d = new Date(), tz = "America/New_York";
+    var d = new Date(), tz = "America/New_York", after = afterShkiah();
+    var hd = after ? new Date(nyKey(1) + "T16:00:00Z") : d; /* noon in New York tomorrow */
     var wd = "", heb = "", en = "";
-    try { wd = new Intl.DateTimeFormat("he-IL", { weekday: "long", timeZone: tz }).format(d); } catch (e) {}
-    try { heb = new Intl.DateTimeFormat("he-IL-u-ca-hebrew", { day: "numeric", month: "long", timeZone: tz }).format(d); } catch (e) {}
-    try { en = new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: tz }).format(d); } catch (e) {}
+    try { if (!after) wd = new Intl.DateTimeFormat("he-IL", { weekday: "long", timeZone: tz }).format(d); } catch (e) {}
+    try { heb = new Intl.DateTimeFormat("he-IL-u-ca-hebrew", { day: "numeric", month: "long", timeZone: tz }).format(hd); } catch (e) {}
+    try { en = new Intl.DateTimeFormat("en-US", { weekday: after ? undefined : "long", month: "long", day: "numeric", timeZone: tz }).format(d); } catch (e) {}
     heb = hebDay(heb);
     if (window.OH_LANG === "en") { /* English: Wednesday, November 4 | 24 Cheshvan */
-      var hm = ""; try { hm = new Intl.DateTimeFormat("en-u-ca-hebrew", { day: "numeric", month: "long", timeZone: tz }).format(d); } catch (e) {}
+      var hm = ""; try { hm = new Intl.DateTimeFormat("en-u-ca-hebrew", { day: "numeric", month: "long", timeZone: tz }).format(hd); } catch (e) {}
       hm = hm.replace(/Heshvan/, "Cheshvan").replace(/Tishri/, "Tishrei").replace(/Shevat|Shvat/, "Shevat").replace(/Tamuz|Tammuz/, "Tamuz");
       return [en, hm].filter(Boolean).join(" | ");
     }
@@ -99,7 +123,20 @@
     main.innerHTML = '<section class="card hello goldframe" style="max-width:640px"><span class="date">' + I.cal + esc(dateLine()) + '</span><p>' + esc(t("loading", "טוען...")) + "</p></section>";
   }
 
+  /* 6a (Nov 5): the account lookup failed. Not the join screen and not "not
+     authorized": one line and "נסה שוב" (the hardening package's pattern). */
+  function renderLoadErr() {
+    var en = window.OH_LANG === "en";
+    main.innerHTML = '<section class="card hello goldframe" style="max-width:640px"><span class="date">' + I.cal + esc(dateLine()) + "</span>" +
+      '<div class="oh-loaderr" role="alert" style="display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-top:12px;font-weight:700"><span>' +
+      esc(en ? "Couldn't load your account." : "לא הצלחנו לטעון את החשבון.") + '</span><button type="button" class="btn" id="ohRetry">' + esc(en ? "Try again" : "נסה שוב") + "</button></div></section>";
+    document.getElementById("ohRetry").addEventListener("click", function () {
+      var fb = window.OH_FIREBASE; state.key = ""; renderLoading();
+      if (fb && fb.retryRole) Promise.resolve(fb.retryRole()).then(tick, tick);
+    });
+  }
   function renderRole(user, role) {
+    if (role && role.loadFailed) { renderLoadErr(); return; }
     /* Stage D: a signed-in person who is not a member yet goes to the join screen */
     if (role && !role.authorized && (role.canRequestJoin || role.joinStatus)) { location.replace(ROOT + "congregant/"); return; }
     var S = window.OH_SHELL || {};
@@ -259,7 +296,7 @@
     var role = null;
     try { role = await fb.resolveRole(); } catch (e) {}
     if (!role) { if (state.key !== "wait") { state.key = "wait"; renderLoading(); } return; }
-    var key = fb.user.uid + "|" + [role.isSuperAdmin, role.canScreen, role.canFinance, role.isCongregant, role.authorized].join(",");
+    var key = fb.user.uid + "|" + [role.isSuperAdmin, role.canScreen, role.canFinance, role.isCongregant, role.authorized, !!role.loadFailed].join(",");
     if (key === state.key) return;
     state.key = key;
     renderRole(fb.user, role);
