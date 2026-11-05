@@ -8,6 +8,7 @@
    - nyDate: today's date in New York, not in UTC. A payment entered
      at 9 PM on Motzei Shabbat is dated that day, not tomorrow, and a
      December 31 evening donation stays in the right tax year.
+   - balanceInfo: owed / credit ("זכות") / zero ("אין חוב ✓") wording.
    - ledgerTotals: the totals finance and congregant pages call. It
      used to live only in test-data.js, which those pages do not load,
      so the first real congregant made both pages fail silently. */
@@ -37,6 +38,16 @@
       if (e.type === "correction") corrections += cents(e.amount);
     });
     return { charges: charges / 100, payments: payments / 100, corrections: corrections / 100, balance: (charges - payments + corrections) / 100 };
+  }
+  /* Hardening (2026-11-05, Hanoch): how a balance reads, decided in whole
+     cents. Owed (> 0): "יתרה לתשלום" and the amount, as before. Credit (< 0):
+     "זכות:" and the amount without a minus, shown in green. Zero: "אין חוב ✓".
+     Only the active language. */
+  function balanceInfo(n) {
+    var c = cents(n), en = global.OH_LANG === "en";
+    if (c < 0) return { kind: "credit", label: en ? "Credit:" : "זכות:", amount: money(-c / 100) };
+    if (c === 0) return { kind: "zero", label: en ? "No balance due ✓" : "אין חוב ✓", amount: "" };
+    return { kind: "owed", label: en ? "Balance owed" : "יתרה לתשלום", amount: money(n) };
   }
   /* Add months to a YYYY-MM-DD date, clamped to the month's last day. */
   function addMonths(ymd, n) {
@@ -84,7 +95,7 @@
     };
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
   }
-  var api = { isolateBilingual: isolateBilingual, esc: esc, jsArg: jsArg, cents: cents, money: money, nyDate: nyDate, ledgerTotals: ledgerTotals, addMonths: addMonths };
+  var api = { isolateBilingual: isolateBilingual, esc: esc, jsArg: jsArg, cents: cents, money: money, nyDate: nyDate, ledgerTotals: ledgerTotals, balanceInfo: balanceInfo, addMonths: addMonths };
   global.OH_UI = api;
   if (typeof global.ledgerTotals !== "function") global.ledgerTotals = ledgerTotals;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
