@@ -69,6 +69,8 @@ async function refreshCong(){
     var fb = window.OH_FIREBASE;
     if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastCongUser !== null){ _lastCongUser = null; document.getElementById('congSource').textContent = CL_('כניסה נדרשת', 'Sign-in required'); document.getElementById('card').innerHTML = '<p>' + CL_("כניסה נדרשת", "Sign-in required") + '</p>'; } return; }
     var role = await fb.resolveRole();
+    /* 6a (Nov 5): the membership lookup failed: not the join form, one line and "נסה שוב" */
+    if(role && role.loadFailed){ document.body.classList.remove('gated', 'joining'); document.getElementById('gateMsg').textContent = ''; if(_lastCongUser !== 'loadfail'){ _lastCongUser = 'loadfail'; document.getElementById('congSource').textContent = CL_('מחובר: ', 'Signed in: ') + (fb.user.email || ''); document.getElementById('card').innerHTML = '<div class="oh-loaderr" role="alert"><span>' + CL_('לא הצלחנו לטעון את החשבון שלך.', "Couldn't load your account.") + '</span><button class="btn secondary" onclick="retryCong()">' + CL_('נסה שוב', 'Try again') + '</button></div>'; } return; }
     /* Stage D: a signed-in person who is not a member yet sees only the join
        screen (or "sent" / "not approved"), nothing else. */
     if(role && !role.authorized && window.OH_MEMBERS && (role.canRequestJoin || role.joinStatus)){
@@ -90,7 +92,7 @@ async function refreshCong(){
     else { document.getElementById('congSource').textContent = CL_('מחובר: ', 'Signed in: ') + email; document.getElementById('card').innerHTML = '<div class="gold-frame" style="padding:1rem"><p>' + CL_('לא נמצא כרטיס מתפלל למייל ', 'No member card for ') + OH_UI.esc(email) + '.</p></div>'; }
   } catch(e) {}
 }
-function retryCong(){ _lastCongUser = null; document.getElementById('card').innerHTML = '<p class="oh-help">' + CL_('טוען...', 'Loading...') + '</p>'; refreshCong(); }
+function retryCong(){ _lastCongUser = null; document.getElementById('card').innerHTML = '<p class="oh-help">' + CL_('טוען...', 'Loading...') + '</p>'; var fb = window.OH_FIREBASE; if(fb && fb.retryRole && fb.role && fb.role.loadFailed){ Promise.resolve(fb.retryRole()).then(refreshCong, refreshCong); return; } refreshCong(); }
 setInterval(refreshCong, 1000);
 refreshCong();
 </script>
