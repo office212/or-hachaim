@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>יומן פעולות | אור החיים</title>
+<!-- Activity log (Hanoch 2026-11-05 7:28 AM): every action with date, time and who did it,
+     separate from every other page, for the super admin only (the Firestore rules allow
+     nobody else to read it). Words: src/ui/oh-activity.js -->
+<link rel="preload" href="../../src/assets/fonts/assistant-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../../src/ui/oh-design.css">
+<link rel="stylesheet" href="../../src/ui/oh-2040.css">
+<style>
+.act-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px}
+.act-list{list-style:none;margin:0;padding:0}
+.act-row{display:grid;grid-template-columns:minmax(150px,200px) 1fr;gap:4px 18px;padding:14px 4px;border-bottom:1px solid var(--hair-soft,#e6dccb)}
+.act-row:last-child{border-bottom:0}
+.act-when{color:var(--gold-text,#7a5c32);font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+.act-what{font-size:17px;font-weight:700;color:var(--ink,#26231e);overflow-wrap:anywhere}
+.act-detail{display:block;font-weight:400;font-size:15px;color:var(--ink2,#4a4338);margin-top:2px;overflow-wrap:anywhere}
+.act-who{display:block;font-weight:400;font-size:14px;color:var(--muted,#7a6f61);margin-top:2px;overflow-wrap:anywhere;direction:ltr;text-align:right}
+.act-area{display:inline-block;font-size:13px;font-weight:700;background:var(--chip,#f3e9d6);color:var(--gold-text,#7a5c32);border-radius:999px;padding:1px 10px;margin-inline-start:8px;vertical-align:middle}
+.act-more{margin-top:16px;display:flex;flex-wrap:wrap;align-items:center;gap:12px}
+.act-empty{margin:8px 0;color:var(--ink2,#4a4338)}
+@media (max-width:640px){.act-row{grid-template-columns:1fr}}
+</style>
+<script src="../../src/ui/labels.js"></script>
+<script src="../../src/firebase/firebase-config.js"></script>
+<script src="../../src/firebase/firebase-app.js"></script>
+<script src="../../src/ui/oh-ui.js"></script>
+</head>
+<body class="oha" data-oha-page="activity">
+<main class="wrap ohx" id="ohActivity"></main>
+<script src="../../src/ui/oh-shell.js"></script>
+<script src="../../src/ui/oh-activity.js"></script>
+</body>
+</html>
