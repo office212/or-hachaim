@@ -10,6 +10,11 @@
   background: linear-gradient(180deg, rgba(255, 251, 242, 0.86), rgba(246, 236, 214, 0.86)), url("../src/assets/textures/jerusalem-stone.webp"); background-size: auto, 512px; }
 .balance-hero .bh-label { font-size: 15px; font-weight: 700; letter-spacing: 0.06em; color: var(--muted); }
 .balance-hero .bh-amount { font-size: 46px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; line-height: 1.1; }
+/* hardening (Nov 5): a credit reads "זכות" in green, zero reads "אין חוב ✓"; a load error is navy, never red */
+.balance-hero.bh-credit .bh-label, .balance-hero.bh-credit .bh-amount { color: #2e6b3f; }
+.balance-hero.bh-zero .bh-label { font-size: 28px; letter-spacing: 0; color: var(--navy); }
+.oh-loaderr { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 16px; color: var(--navy); font-weight: 700; border: 1px solid var(--navy); border-radius: var(--radius); background: rgba(255, 251, 242, 0.9); }
+.oh-loaderr .btn { width: auto; min-height: 48px; margin: 0; }
 .ledger-summary { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 28px; color: var(--muted); }
 .cong-news { margin-top: 22px; }
 .cong-news h2 { color: var(--navy); margin-top: 0; }
@@ -42,7 +47,8 @@ function renderCong(c, sourceLabel){
   var rows = (c.ledger || []).slice().sort(function(a, b){ return String(b.date).localeCompare(String(a.date)); });
   var typeHe = { charge: L("חיוב", "Charge"), payment: L("תשלום", "Payment"), correction: L("תיקון", "Correction") };
   document.getElementById("card").innerHTML = '<div class="gold-frame"><h2>' + esc(c.name) + '</h2>' +
-  '<div class="balance-hero"><span class="bh-label">' + L("יתרה לתשלום", "Balance owed") + '</span><span class="bh-amount" dir="ltr">' + money(t.balance) + '</span></div>' +
+  (function(){ var b = OH_UI.balanceInfo(t.balance); /* hardening (Nov 5): owed as before, credit "זכות" in green, zero "אין חוב ✓" */
+    return '<div class="balance-hero bh-' + b.kind + '"><span class="bh-label">' + esc(b.label) + '</span>' + (b.amount ? '<span class="bh-amount" dir="ltr">' + b.amount + '</span>' : '') + '</div>'; })() +
   '<p class="ledger-summary"><span>' + L("סך חיובים: ", "Total charges: ") + '<span dir="ltr">' + money(t.charges) + '</span></span><span>' + L("סך תשלומים: ", "Total payments: ") + '<span dir="ltr">' + money(t.payments) + '</span></span></p>' +
   '<table><tr><th>' + L("תאריך", "Date") + '</th><th>' + L("סוג", "Type") + '</th><th>' + L("סכום", "Amount") + '</th><th>' + L("תיאור", "Description") + '</th></tr>' +
   rows.map(function(e){ return "<tr><td>" + esc(e.date) + "</td><td>" + esc(typeHe[e.type] || e.type) + '</td><td dir="ltr">' + money(e.amount) + "</td><td>" + esc(e.description) + "</td></tr>"; }).join("") +
@@ -78,10 +84,13 @@ async function refreshCong(){
     document.body.classList.remove('gated'); document.getElementById('gateMsg').textContent = '';
     _lastCongUser = email;
     var own = await fb.loadOwnCongregant();
+    /* hardening (Nov 5): a failed load is not "no member card": one line and "נסה שוב" */
+    if(!own && fb.lastLoadError){ document.getElementById('congSource').textContent = CL_('מחובר: ', 'Signed in: ') + email; document.getElementById('card').innerHTML = '<div class="oh-loaderr" role="alert"><span>' + CL_('לא הצלחנו לטעון את החשבון שלך.', "Couldn't load your account.") + '</span><button class="btn secondary" onclick="retryCong()">' + CL_('נסה שוב', 'Try again') + '</button></div>'; return; }
     if(own){ document.getElementById('congSource').textContent = CL_('מחובר: ', 'Signed in: ') + email; renderCong(own, ''); }
     else { document.getElementById('congSource').textContent = CL_('מחובר: ', 'Signed in: ') + email; document.getElementById('card').innerHTML = '<div class="gold-frame" style="padding:1rem"><p>' + CL_('לא נמצא כרטיס מתפלל למייל ', 'No member card for ') + OH_UI.esc(email) + '.</p></div>'; }
   } catch(e) {}
 }
+function retryCong(){ _lastCongUser = null; document.getElementById('card').innerHTML = '<p class="oh-help">' + CL_('טוען...', 'Loading...') + '</p>'; refreshCong(); }
 setInterval(refreshCong, 1000);
 refreshCong();
 </script>
