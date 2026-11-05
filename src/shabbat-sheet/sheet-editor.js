@@ -210,7 +210,7 @@
       });
     }).then(function (next) {
       st.settings = { weeks: next.weeks, regular: next.regular }; rebuild(); paint(); setMsg(L("edSaved"), "ok");
-      try { if (fb.logActivity) fb.logActivity("shabbatSheet." + op.type, sh + (op.id ? " " + op.id : op.key ? " " + op.key : ""), { collection: "settings", itemId: "shabbatSheet" }); } catch (e) {}
+      try { if (fb.logActivity) fb.logActivity("עודכן דף השבת (" + sh + ")", op.type + (op.id ? " " + op.id : op.key ? " " + op.key : ""), { area: "shabbat", code: "shabbatSheet." + op.type, collection: "settings", itemId: "shabbatSheet" }); } catch (e) {} /* Nov 5: Hebrew sentence, area "shabbat" */
       return true;
     }).catch(function () { st.settings = prev; rebuild(); paint(); setMsg(L("edFailed"), "warn"); return false; });
   }
