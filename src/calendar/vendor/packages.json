@@ -1,0 +1,9 @@
+[
+{"name":"@hebcal/core","version":"6.14.7","license":"GPL-2.0-or-later","repository":"git+https://github.com/hebcal/hebcal-es6.git","licenseFile":"_hebcal_core.LICENSE.txt"},
+{"name":"@hebcal/hdate","version":"0.23.1","license":"GPL-2.0-or-later","repository":"git+https://github.com/hebcal/hdate-js.git","licenseFile":"_hebcal_hdate.LICENSE.txt"},
+{"name":"@hebcal/leyning","version":"10.1.0","license":"BSD-2-Clause","repository":"git+https://github.com/hebcal/hebcal-leyning.git","licenseFile":"_hebcal_leyning.LICENSE.txt"},
+{"name":"@hebcal/noaa","version":"0.12.4","license":"LGPL-2.1","repository":"git+https://github.com/hebcal/noaa.git","licenseFile":"_hebcal_noaa.LICENSE.txt"},
+{"name":"quick-lru","version":"7.3.0","license":"MIT","repository":"sindresorhus/quick-lru","licenseFile":"quick-lru.LICENSE.txt"},
+{"name":"temporal-polyfill","version":"1.0.6","license":"MIT","repository":"https://github.com/fullcalendar/temporal-polyfill.git","licenseFile":"temporal-polyfill.LICENSE.txt"},
+{"name":"temporal-utils","version":"1.0.3","license":"MIT","repository":"https://github.com/fullcalendar/temporal-polyfill.git","licenseFile":"temporal-utils.LICENSE.txt"}
+]
