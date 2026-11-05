@@ -1,4 +1,4 @@
-/* Or Hachaim Firebase wiring layer, TEST phase.
+/* Or Hachaim Firebase wiring layer (live project or-hachaim).
    - Auth: Google only, via Firebase Auth. No other provider is used.
    - Firestore: reads/writes only when a complete config is present AND
      the user is signed in. Otherwise every page keeps the existing
@@ -10,12 +10,11 @@
    - Shabbat safety, burn-in, theme, and Hebrew/English rules are NOT
      changed here: this file never touches src/theme.css, never hides
      or shows weekday-only items, and never moves screen content.
-   - Storage is NOT used: Storage is unavailable (Blaze upgrade not
-     approved). Images stay local preview only, as in the admin page.
+   - Storage: used for screen images (uploadScreenImage, storage.rules);
+     the project is on the Blaze plan.
    - If the Firebase CDN fails to load, or the config is incomplete,
      this file degrades silently to test-only mode and the pages keep
-     working on TEST data. It never throws on page load.
-   - TEST DATA ONLY labels stay in place until real data arrives. */
+     working on TEST data. It never throws on page load. */
 (function () {
   var cfg = window.FIREBASE_CONFIG || {};
   var complete = !!(cfg.apiKey && cfg.appId && cfg.projectId);
@@ -259,13 +258,19 @@
       return p.then(function (v) { go(); return v; }, function (e) { go(); throw e; });
     },
     get siteRoot() { return SITE_ROOT; },
+    /* Hardening (2026-11-05): the last load that FAILED (not an empty
+       result): { fn, code } or null. loadCongregants / loadOwnCongregant
+       still return null on failure (callers unchanged); a page checks this
+       to tell "could not load" from "nothing there". Cleared on success. */
+    get lastLoadError() { return state.loadError || null; },
     /* Return Firestore congregants mapped to the TEST_DATA shape, or
        null when Firestore is unavailable/empty, so callers fall back
-       to TEST_DATA. Never throws. */
+       to TEST_DATA. Never throws (a failure is also kept in lastLoadError). */
     _db: function () { return state.db; },
     loadCongregants: async function () {
       if (!state.ready || !state.db) return null;
       try {
+        state.loadError = null;
         var snap = await state.db.collection("congregants").get();
         if (snap.empty) return null;
         var out = [];
@@ -282,7 +287,7 @@
           if (c) c.ledger.push({ date: d.date || "", operationId: d.operationId || doc.id, type: d.type || "charge", amount: d.amount || 0, description: d.description || "", enteredBy: d.enteredBy || "" });
         });
         return out;
-      } catch (e) { return null; }
+      } catch (e) { state.loadError = { fn: "loadCongregants", code: String((e && (e.code || e.message)) || e) }; return null; }
     },
     /* Load only the signed-in user's own congregant record, by email,
        plus that congregant's ledger entries. Returns the congregant
@@ -291,6 +296,7 @@
     loadOwnCongregant: async function () {
       if (!state.ready || !state.db || !state.user || !state.user.email) return null;
       try {
+        state.loadError = null;
         var snap = await state.db.collection("congregants").where("email", "==", state.user.email).get();
         /* Stage D: a join request (pending or declined) is not a member record. */
         var docs = snap.docs.filter(function (x) { var st = memberStatus(x.data()); return st === "active" || st === "inactive"; });
@@ -304,7 +310,7 @@
           out.ledger.push({ date: ed.date || "", operationId: ed.operationId || e.id, type: ed.type || "charge", amount: ed.amount || 0, description: ed.description || "", enteredBy: ed.enteredBy || "" });
         });
         return out;
-      } catch (e) { return null; }
+      } catch (e) { state.loadError = { fn: "loadOwnCongregant", code: String((e && (e.code || e.message)) || e) }; return null; }
     },
     /* Add a congregant to the existing "congregants" collection (the
        rules already allow create/update for hasFinance only; no rules
@@ -590,9 +596,9 @@
        only; the Firestore rules are the real enforcement (super
        admin create/update/delete on users). Congregants are NOT
        added here; they are added separately in the finance flow.
-       imageUpload is stored as a field only. It does NOT yet
-       enforce Storage access; Storage enforcement by custom claim
-       is a separate open item. */
+       imageUpload is stored as a field here; Storage access itself is
+       enforced by storage.rules through the ohImageUpload custom claim
+       (set by the setUserClaims function). */
     isSuperAdminClient: function () {
       return !!(state.user && state.user.email && state.user.email.toLowerCase() === SUPER_ADMIN_EMAIL);
     },
