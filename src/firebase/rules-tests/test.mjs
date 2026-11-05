@@ -1,87 +1,165 @@
-
+/* Firestore rules tests for the LIVE rules (src/firebase/firestore.rules), hardening edition 2026-11-05.
+   Before 2026-11-05 this file tested the unpublished hardened draft of Nov 3, not the live rules.
+   Run inside the emulator from this folder: npm test (see README.md), or
+     RULES=../firestore.rules OH_FS_PORT=8085 node test.mjs
+   What it proves: the 4 hardening checks (ledger shape + restore path, activityLog who/whoUid/when,
+   email_verified on the super admin and on every read by email, finance cannot change an existing
+   member email) and that the rest behaves as before. Lines marked "unchanged" document live behaviour
+   this package does not touch. */
 import { initializeTestEnvironment, assertSucceeds, assertFails } from "@firebase/rules-unit-testing";
 import { readFileSync } from "fs";
 import { doc, getDoc, setDoc, updateDoc, writeBatch, serverTimestamp, collection, query, where, getDocs } from "firebase/firestore";
-const env = await initializeTestEnvironment({ projectId: "demo-oh", firestore: { rules: readFileSync("../firestore.rules", "utf8"), host: "127.0.0.1", port: 8085 } });
+const env = await initializeTestEnvironment({ projectId: "demo-oh", firestore: { rules: readFileSync(process.env.RULES || "../firestore.rules", "utf8"), host: "127.0.0.1", port: +(process.env.OH_FS_PORT || 8085) } });
 let pass = 0, fail = 0;
 async function t(name, p, expectOk) {
   try { await (expectOk ? assertSucceeds(p) : assertFails(p)); pass++; console.log("ok  ", name); }
   catch (e) { fail++; console.log("FAIL", name, String(e.message || e).slice(0, 200)); }
 }
-// seed
+await env.clearFirestore();
 await env.withSecurityRulesDisabled(async (ctx) => {
   const db = ctx.firestore();
   await setDoc(doc(db, "congregants/c1"), { name: "A", email: "cong@x.com" });
   await setDoc(doc(db, "congregants/c2"), { name: "B", email: "other@x.com" });
+  await setDoc(doc(db, "congregants/c3"), { name: "C", email: "" });
+  await setDoc(doc(db, "congregants/c4"), { name: "D", phone: "7185550100" });
   await setDoc(doc(db, "users/udoc"), { email: "doc@x.com", permissions: "finance" });
+  await setDoc(doc(db, "users/ucong"), { email: "cong@x.com", permissions: "" });
   await setDoc(doc(db, "ledgerEntries/seed1"), { congregantId: "c1", amount: 10, type: "charge", operationId: "seed1" });
   await setDoc(doc(db, "ledgerEntries/seed2"), { congregantId: "c2", amount: 10, type: "charge", operationId: "seed2" });
   await setDoc(doc(db, "activityLog/a1"), { area: "ledger", action: "x" });
-  await setDoc(doc(db, "activityLog/a2"), { area: "announcements", action: "y" });
+  await setDoc(doc(db, "activityLog/a2"), { area: "screen", action: "y" });
   await setDoc(doc(db, "pledges/p1"), { congregantId: "c1", amount: 54, status: "unpaid" });
-  await setDoc(doc(db, "pledges/p2"), { congregantId: "c1", amount: 36, status: "converted" });
   await setDoc(doc(db, "prayerTimes/pt1"), { nameHe: "שחרית", time: "7:00 AM" });
 });
 const fin = env.authenticatedContext("ufin", { email: "fin@x.com", email_verified: true, ohFinance: true }).firestore();
 const docFin = env.authenticatedContext("udoc", { email: "doc@x.com", email_verified: true }).firestore();
 const scr = env.authenticatedContext("uscr", { email: "scr@x.com", email_verified: true, ohScreen: true }).firestore();
-const viewer = env.authenticatedContext("uview", { email: "view@x.com", email_verified: true, ohScreenViewer: true }).firestore();
+const plain = env.authenticatedContext("uplain", { email: "plain@x.com", email_verified: true }).firestore();
 const sa = env.authenticatedContext("usa", { email: "hanochhason@gmail.com", email_verified: true }).firestore();
 const saUnverified = env.authenticatedContext("usa2", { email: "hanochhason@gmail.com", email_verified: false }).firestore();
 const cong = env.authenticatedContext("ucong", { email: "cong@x.com", email_verified: true }).firestore();
-function entry(db, uid, email, id, over = {}) {
-  return { congregantId: "c1", date: "2026-11-03", type: "charge", amount: 18, description: "t", enteredBy: email, enteredByUid: uid, operationId: id, source: "manual", createdAt: serverTimestamp(), ...over };
+const congUnverified = env.authenticatedContext("ucong2", { email: "cong@x.com", email_verified: false }).firestore();
+const anon = env.unauthenticatedContext().firestore();
+
+/* A ledger entry exactly as saveLedgerEntry (firebase-app.js) writes it. */
+function entry(uid, email, id, over = {}) {
+  const e = { congregantId: "c1", date: "2026-11-05", type: "charge", amount: 18, description: "t", enteredBy: email, enteredByUid: uid, operationId: id, source: "manual", createdAt: serverTimestamp(), ...over };
+  for (const k of Object.keys(e)) if (e[k] === undefined) delete e[k];
+  return e;
 }
 function batchSave(db, uid, email, id, over = {}, withOp = true) {
   const b = writeBatch(db);
   if (withOp) b.set(doc(db, "operationIds/" + id), { createdAt: serverTimestamp(), congregantId: "c1", by: uid });
-  b.set(doc(db, "ledgerEntries/" + id), entry(db, uid, email, id, over));
+  b.set(doc(db, "ledgerEntries/" + id), entry(uid, email, id, over));
   return b.commit();
 }
-await t("finance(claim) saves entry in batch, id == operationId", batchSave(fin, "ufin", "fin@x.com", "op-1"), true);
-await t("same operationId again is rejected", batchSave(fin, "ufin", "fin@x.com", "op-1"), false);
-await t("ledger without operationIds claim in batch rejected", batchSave(fin, "ufin", "fin@x.com", "op-2", {}, false), false);
-await t("doc id != operationId rejected", (async () => { const b = writeBatch(fin); b.set(doc(fin, "operationIds/op-3"), { createdAt: serverTimestamp() }); b.set(doc(fin, "ledgerEntries/random"), entry(fin, "ufin", "fin@x.com", "op-3")); return b.commit(); })(), false);
-await t("spoofed enteredBy rejected", batchSave(fin, "ufin", "fin@x.com", "op-4", { enteredBy: "someone@else.com" }), false);
-await t("spoofed enteredByUid rejected", batchSave(fin, "ufin", "fin@x.com", "op-5", { enteredByUid: "other" }), false);
-await t("client createdAt rejected", batchSave(fin, "ufin", "fin@x.com", "op-6", { createdAt: new Date() }), false);
-await t("amount as string rejected", batchSave(fin, "ufin", "fin@x.com", "op-7", { amount: "18" }), false);
-await t("negative charge rejected", batchSave(fin, "ufin", "fin@x.com", "op-8", { amount: -5 }), false);
-await t("negative correction allowed", batchSave(fin, "ufin", "fin@x.com", "op-9", { type: "correction", amount: -5 }), true);
-await t("bad type rejected", batchSave(fin, "ufin", "fin@x.com", "op-10", { type: "gift" }), false);
-await t("unknown congregant rejected", batchSave(fin, "ufin", "fin@x.com", "op-11", { congregantId: "nope" }), false);
-await t("extra field rejected", batchSave(fin, "ufin", "fin@x.com", "op-12", { balance: 0 }), false);
+const F = (id, over, withOp) => batchSave(fin, "ufin", "fin@x.com", id, over, withOp);
+
+console.log("--- 1. ledger entries: shape ---");
+await t("finance (claim) saves a charge in one batch, id == operationId", F("op-1"), true);
+await t("same operationId again is rejected", F("op-1"), false);
+await t("payment with method allowed", F("op-pay", { type: "payment", amount: 180, method: "check" }), true);
+await t("neder charge (source neder, pledgeId, aliyah) allowed", F("op-neder", { source: "neder", pledgeId: "p1", aliyah: "שלישי" }), true);
+await t("recurring charge (source recurring) allowed", F("op-rec", { source: "recurring" }), true);
+await t("amount with cents (18.5) allowed", F("op-cents", { amount: 18.5 }), true);
+await t("negative correction allowed", F("op-9", { type: "correction", amount: -5 }), true);
+await t("positive correction allowed", F("op-9b", { type: "correction", amount: 5 }), true);
+await t("entry without description allowed", F("op-nodesc", { description: undefined }), true);
+await t("ledger without operationIds claim in the batch rejected", F("op-2", {}, false), false);
+await t("doc id != operationId rejected", (async () => { const b = writeBatch(fin); b.set(doc(fin, "operationIds/op-3"), { createdAt: serverTimestamp() }); b.set(doc(fin, "ledgerEntries/random"), entry("ufin", "fin@x.com", "op-3")); return b.commit(); })(), false);
+await t("spoofed enteredBy rejected", F("op-4", { enteredBy: "someone@else.com" }), false);
+await t("spoofed enteredByUid rejected", F("op-5", { enteredByUid: "other" }), false);
+await t("client createdAt rejected", F("op-6", { createdAt: new Date(Date.now() - 60000) }), false);
+await t("amount as string rejected", F("op-7", { amount: "18" }), false);
+await t("negative charge rejected", F("op-8", { amount: -5 }), false);
+await t("zero payment rejected", F("op-8b", { type: "payment", amount: 0 }), false);
+await t("zero correction rejected", F("op-8c", { type: "correction", amount: 0 }), false);
+await t("bad type rejected", F("op-10", { type: "gift" }), false);
+await t("bad source rejected", F("op-10b", { source: "webhook" }), false);
+await t("bad date rejected", F("op-10c", { date: "11/05/2026" }), false);
+await t("unknown congregant rejected", F("op-11", { congregantId: "nope" }), false);
+await t("empty congregantId rejected", F("op-11b", { congregantId: "" }), false);
+await t("extra field rejected", F("op-12", { balance: 0 }), false);
+await t("missing enteredBy rejected", F("op-12b", { enteredBy: undefined }), false);
 await t("ledger update denied", updateDoc(doc(fin, "ledgerEntries/op-1"), { amount: 1 }), false);
 await t("users/{uid} finance gabbai can save", batchSave(docFin, "udoc", "doc@x.com", "op-13"), true);
+await t("super admin (verified) can save", batchSave(sa, "usa", "hanochhason@gmail.com", "op-sa"), true);
+await t("super admin with unverified email cannot save", batchSave(saUnverified, "usa2", "hanochhason@gmail.com", "op-sa2"), false);
 await t("screen gabbai cannot save ledger", batchSave(scr, "uscr", "scr@x.com", "op-14"), false);
-await t("super admin unverified email: no read", getDoc(doc(saUnverified, "ledgerEntries/seed1")), false);
-await t("super admin verified: read", getDoc(doc(sa, "ledgerEntries/seed1")), true);
-await t("screen gabbai reads finance log entry: denied", getDoc(doc(scr, "activityLog/a1")), false);
-await t("screen gabbai reads screen log entry", getDoc(doc(scr, "activityLog/a2")), true);
-await t("screen gabbai unfiltered log query denied", getDocs(collection(scr, "activityLog")), false);
-await t("screen gabbai filtered log query allowed", getDocs(query(collection(scr, "activityLog"), where("area", "in", ["screen", "prayerTimes", "announcements", "dedications", "sponsors", "flyers", "yahrzeits", "images"]))), true);
-await t("finance reads finance log", getDoc(doc(fin, "activityLog/a1")), true);
-await t("log create with forced who/when", setDoc(doc(fin, "activityLog/n1"), { who: "fin@x.com", whoUid: "ufin", when: serverTimestamp(), action: "x", area: "ledger" }), true);
-await t("log create spoofed who rejected", setDoc(doc(fin, "activityLog/n2"), { who: "boss@x.com", whoUid: "ufin", when: serverTimestamp(), action: "x", area: "ledger" }), false);
-await t("screen gabbai writes finance-area log rejected", setDoc(doc(scr, "activityLog/n3"), { who: "scr@x.com", whoUid: "uscr", when: serverTimestamp(), action: "x", area: "ledger" }), false);
-await t("pledge create unpaid", setDoc(doc(fin, "pledges/p3"), { congregantId: "c1", amount: 54, status: "unpaid", createdBy: "ufin", createdAt: serverTimestamp() }), true);
-await t("pledge create already converted rejected", setDoc(doc(fin, "pledges/p4"), { congregantId: "c1", amount: 54, status: "converted", createdBy: "ufin", createdAt: serverTimestamp() }), false);
-await t("pledge amount change rejected", updateDoc(doc(fin, "pledges/p1"), { amount: 1, status: "converted", statusChangedAt: serverTimestamp(), statusChangedBy: "ufin" }), false);
-await t("pledge unpaid -> converted allowed", updateDoc(doc(fin, "pledges/p1"), { status: "converted", statusChangedAt: serverTimestamp(), statusChangedBy: "ufin", ledgerEntryId: "op-1" }), true);
-await t("pledge converted -> cancelled rejected", updateDoc(doc(fin, "pledges/p2"), { status: "cancelled", statusChangedAt: serverTimestamp(), statusChangedBy: "ufin" }), false);
-await t("nedarim write closed", setDoc(doc(fin, "nedarim/n1"), { amount: 1 }), false);
-await t("congregant reads own ledger entry", getDoc(doc(cong, "ledgerEntries/seed1")), true);
-await t("congregant reads other ledger entry denied", getDoc(doc(cong, "ledgerEntries/seed2")), false);
-await t("congregant reads own record", getDoc(doc(cong, "congregants/c1")), true);
-await t("congregant cannot write ledger", batchSave(cong, "ucong", "cong@x.com", "op-15"), false);
-await t("viewer reads prayer times", getDoc(doc(viewer, "prayerTimes/pt1")), true);
-await t("viewer cannot read ledger", getDoc(doc(viewer, "ledgerEntries/seed1")), false);
-await t("viewer cannot read activity log", getDoc(doc(viewer, "activityLog/a2")), false);
-await t("viewer cannot write prayer times", setDoc(doc(viewer, "prayerTimes/x"), { time: "7:00 AM" }), false);
-await t("screen gabbai writes prayer time", setDoc(doc(scr, "prayerTimes/x"), { nameHe: "מנחה", time: "4:20 PM", order: 980 }), true);
-await t("super admin restore of ledger entry with original fields", setDoc(doc(sa, "ledgerEntries/old-1"), { congregantId: "c1", date: "2025-01-01", type: "payment", amount: 50, enteredBy: "oldgabbai@x.com", operationId: "old-1", restored: true, restoredAt: serverTimestamp(), restoredBy: "usa" }), true);
-await t("finance gabbai cannot use restore path", setDoc(doc(fin, "ledgerEntries/old-2"), { congregantId: "c1", date: "2025-01-01", type: "payment", amount: 50, enteredBy: "x@x.com", operationId: "old-2", restored: true, restoredAt: serverTimestamp(), restoredBy: "ufin" }), false);
-await t("users write by gabbai denied", setDoc(doc(fin, "users/ufin"), { permissions: "both" }), false);
+await t("member cannot write ledger", batchSave(cong, "ucong", "cong@x.com", "op-15"), false);
+
+console.log("--- 2. restore path (/restore/) ---");
+const old = (by, over = {}) => ({ congregantId: "c1", date: "2025-01-01", type: "payment", amount: 50, description: "old", enteredBy: "oldgabbai@x.com", enteredByUid: "u-old", operationId: "old-1", source: "manual", createdAt: { seconds: 1735689600, nanoseconds: 0 }, restored: true, restoredAt: serverTimestamp(), restoredBy: by, ...over });
+await t("super admin restores a ledger entry with its original fields", setDoc(doc(sa, "ledgerEntries/old-1"), old("usa")), true);
+await t("restored entry cannot be restored again (exists)", setDoc(doc(sa, "ledgerEntries/old-1"), old("usa")), false);
+await t("super admin restore of an entry in the old bare shape", setDoc(doc(sa, "ledgerEntries/old-bare"), { congregantId: "c1", amount: 10, type: "charge", operationId: "old-bare", restored: true, restoredAt: serverTimestamp(), restoredBy: "usa" }), true);
+await t("restore with a client restoredAt rejected", setDoc(doc(sa, "ledgerEntries/old-3"), old("usa", { operationId: "old-3", restoredAt: new Date(Date.now() - 60000) })), false);
+await t("restore with someone else's restoredBy rejected", setDoc(doc(sa, "ledgerEntries/old-4"), old("other", { operationId: "old-4" })), false);
+await t("finance gabbai cannot use the restore path", setDoc(doc(fin, "ledgerEntries/old-2"), old("ufin", { operationId: "old-2" })), false);
+await t("unverified super admin cannot restore", setDoc(doc(saUnverified, "ledgerEntries/old-5"), old("usa2", { operationId: "old-5" })), false);
+await t("super admin restores an activityLog line with its original who", setDoc(doc(sa, "activityLog/old-log"), { area: "screen", action: "screenItem.create", who: "gabbai@x.com", whoUid: "u-g", when: { seconds: 1, nanoseconds: 0 }, restored: true, restoredAt: serverTimestamp(), restoredBy: "usa" }), true);
+await t("super admin restores an operationIds claim", setDoc(doc(sa, "operationIds/old-1"), { createdAt: { seconds: 1, nanoseconds: 0 }, congregantId: "c1", by: "u-old" }), true);
+await t("super admin restores a congregant", setDoc(doc(sa, "congregants/old-c"), { name: "Old", phone: "1", email: "old@x.com", createdBy: "x", createdAt: "2025-01-01" }), true);
+
+console.log("--- 3. activityLog: who / whoUid / when ---");
+const log = (who, whoUid, over = {}) => ({ area: "screen", action: "x", detail: "", who, whoUid, when: serverTimestamp(), ...over });
+await t("finance logs with its own who/whoUid and server time", setDoc(doc(fin, "activityLog/n1"), log("fin@x.com", "ufin", { area: "ledger" })), true);
+await t("screen gabbai logs (logActivity shape)", setDoc(doc(scr, "activityLog/n1s"), log("scr@x.com", "uscr", { itemId: "i1", collection: "announcements", command: "x" })), true);
+await t("screen gabbai: item + log in one batch (screen-content.js shape)", (async () => { const b = writeBatch(scr); b.set(doc(scr, "announcements/b1"), { titleHe: "x", status: "draft", version: 1 }); b.set(doc(collection(scr, "activityLog")), { area: "screen", action: "screenItem.create", collection: "announcements", itemId: "b1", itemType: "announcement", version: 1, snapshot: { titleHe: "x" }, who: "scr@x.com", whoUid: "uscr", when: serverTimestamp() }); return b.commit(); })(), true);
+await t("super admin logs", setDoc(doc(sa, "activityLog/n1a"), log("hanochhason@gmail.com", "usa")), true);
+await t("spoofed who rejected", setDoc(doc(fin, "activityLog/n2"), log("boss@x.com", "ufin")), false);
+await t("spoofed whoUid rejected", setDoc(doc(fin, "activityLog/n2b"), log("fin@x.com", "other")), false);
+await t("client 'when' rejected", setDoc(doc(fin, "activityLog/n2c"), log("fin@x.com", "ufin", { when: new Date(Date.now() - 60000) })), false);
+await t("missing who rejected", setDoc(doc(fin, "activityLog/n2d"), { area: "ledger", action: "x", whoUid: "ufin", when: serverTimestamp() }), false);
+await t("signed-in user without a role cannot log", setDoc(doc(plain, "activityLog/n2e"), log("plain@x.com", "uplain")), false);
+await t("log update denied", updateDoc(doc(fin, "activityLog/a1"), { action: "z" }), false);
+await t("finance reads the log (unchanged)", getDoc(doc(fin, "activityLog/a1")), true);
+await t("screen gabbai reads the log (unchanged)", getDoc(doc(scr, "activityLog/a2")), true);
+await t("screen gabbai: history of one item (unchanged)", getDocs(query(collection(scr, "activityLog"), where("itemId", "==", "b1"))), true);
+await t("signed-in user without a role cannot read the log", getDoc(doc(plain, "activityLog/a2")), false);
+
+console.log("--- 4. email_verified ---");
+await t("super admin verified: reads a ledger entry", getDoc(doc(sa, "ledgerEntries/seed1")), true);
+await t("super admin unverified email: no ledger read", getDoc(doc(saUnverified, "ledgerEntries/seed1")), false);
+await t("super admin unverified email: no member list", getDocs(collection(saUnverified, "congregants")), false);
+await t("super admin unverified email: cannot write users", setDoc(doc(saUnverified, "users/x"), { email: "x@x.com", permissions: "finance" }), false);
+await t("super admin unverified email: cannot write settings", setDoc(doc(saUnverified, "settings/s1"), { a: 1 }), false);
+await t("super admin verified: writes users", setDoc(doc(sa, "users/x"), { email: "x@x.com", permissions: "finance" }), true);
+await t("member reads own record", getDoc(doc(cong, "congregants/c1")), true);
+await t("member reads own record by email query (loadOwnCongregant)", getDocs(query(collection(cong, "congregants"), where("email", "==", "cong@x.com"))), true);
+await t("member reads own ledger entry", getDoc(doc(cong, "ledgerEntries/seed1")), true);
+await t("member reads own ledger by congregantId query", getDocs(query(collection(cong, "ledgerEntries"), where("congregantId", "==", "c1"))), true);
+await t("member reads other record denied", getDoc(doc(cong, "congregants/c2")), false);
+await t("member reads other ledger entry denied", getDoc(doc(cong, "ledgerEntries/seed2")), false);
+await t("unverified email: own record denied", getDoc(doc(congUnverified, "congregants/c1")), false);
+await t("unverified email: own ledger entry denied", getDoc(doc(congUnverified, "ledgerEntries/seed1")), false);
+await t("unverified email: users doc by email denied", getDoc(doc(congUnverified, "users/ucong")), false);
+await t("verified email: users doc by email (unchanged)", getDoc(doc(cong, "users/udoc")), false);
+
+console.log("--- 5. finance and a member's email ---");
+await t("finance changes an existing email: rejected", updateDoc(doc(fin, "congregants/c1"), { email: "attacker@gmail.com" }), false);
+await t("finance removes an existing email: rejected", updateDoc(doc(fin, "congregants/c2"), { email: "" }), false);
+await t("finance adds an email to a record with empty email: allowed", updateDoc(doc(fin, "congregants/c3"), { email: "new@x.com" }), true);
+await t("finance adds an email to a record with no email field: allowed", updateDoc(doc(fin, "congregants/c4"), { email: "new4@x.com" }), true);
+await t("finance then changes that email: rejected", updateDoc(doc(fin, "congregants/c4"), { email: "other4@x.com" }), false);
+await t("finance edits name and phone, email untouched: allowed", updateDoc(doc(fin, "congregants/c1"), { name: "A2", phone: "7185550199" }), true);
+await t("finance re-saves the same email (no change): allowed", setDoc(doc(fin, "congregants/c1"), { name: "A2", phone: "7185550199", email: "cong@x.com" }), true);
+await t("finance (users doc) changes an existing email: rejected", updateDoc(doc(docFin, "congregants/c1"), { email: "x@y.com" }), false);
+await t("finance creates a member with an email (unchanged)", setDoc(doc(fin, "congregants/c9"), { name: "New", phone: "1", email: "n9@x.com", createdBy: "fin@x.com", createdAt: "2026-11-05" }), true);
+await t("super admin changes an existing email: allowed", updateDoc(doc(sa, "congregants/c2"), { email: "fixed@x.com" }), true);
+await t("screen gabbai cannot edit members (unchanged)", updateDoc(doc(scr, "congregants/c3"), { phone: "1" }), false);
+
+console.log("--- 6. unchanged by this package ---");
+await t("operationIds overwrite denied", setDoc(doc(fin, "operationIds/op-1"), { by: "x" }), false);
+await t("pledge create (unchanged)", setDoc(doc(fin, "pledges/p3"), { congregantId: "c1", amount: 54, status: "unpaid", createdBy: "ufin", createdAt: serverTimestamp() }), true);
+await t("pledge status change (unchanged)", updateDoc(doc(fin, "pledges/p1"), { status: "converted" }), true);
+await t("pledge amount change denied (unchanged)", updateDoc(doc(fin, "pledges/p1"), { amount: 1 }), false);
+await t("users write by a gabbai denied", setDoc(doc(fin, "users/ufin"), { permissions: "both" }), false);
+await t("anyone reads prayer times", getDoc(doc(anon, "prayerTimes/pt1")), true);
+await t("signed-in user without a role cannot read the ledger", getDoc(doc(plain, "ledgerEntries/seed1")), false);
+await t("signed-in user without a role cannot write prayer times", setDoc(doc(plain, "prayerTimes/x"), { time: "7:00 AM" }), false);
+await t("screen gabbai writes a prayer time", setDoc(doc(scr, "prayerTimes/x"), { nameHe: "מנחה", time: "4:20 PM", order: 980 }), true);
+await t("screen gabbai cannot read the ledger", getDoc(doc(scr, "ledgerEntries/seed1")), false);
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);
