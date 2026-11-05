@@ -1,9 +1,9 @@
 {
   "name": "or-hachaim-notifications",
-  "description": "Or Hachaim: web push notifications (combined package, 2026-11-05). Role-based (finance/content gabbaim, members) and super-admin broadcast.",
+  "description": "Or Hachaim: web push notifications (combined package, 2026-11-05). Role-based (finance/content gabbais, members) and super-admin broadcast.",
   "main": "index.js",
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "dependencies": {
     "firebase-admin": "^12.1.0",
