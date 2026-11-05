@@ -265,10 +265,29 @@
     },
     unauthMessage: function () { return "החשבון הזה אינו מורשה למערכת הגבאים. / This account isn't authorized for the Gabbai system."; },
     statusText: statusText,
+    /* Auth fix (2026-11-05, combined package): popup -> redirect fallback.
+       Every page that is not the landing page signs in through this one
+       function (via src/ui/oh-shell.js). The landing page's own sign-in
+       button (src/home/home.js) already had this fallback; this function
+       did not, and a failed popup here used to resolve to nothing (the
+       caller in oh-shell.js then swallowed the rejection silently). This
+       matters most for an installed, standalone app on iOS, where popup
+       sign-in is widely documented as unreliable (see NOTES.md): a
+       standalone web view either fails to open a real popup, or opens one
+       that cannot pass its result back. Minimal change: same fallback
+       codes as the landing page, same shape (try popup, fall back to
+       redirect on exactly the codes that mean "a popup will not work
+       here"), nothing else about sign-in touched. */
     signIn: function () {
       if (!state.auth || !window.firebase || !window.firebase.auth) return Promise.reject(new Error("Firebase not ready"));
       var provider = new window.firebase.auth.GoogleAuthProvider();
-      return state.auth.signInWithPopup(provider);
+      return state.auth.signInWithPopup(provider).catch(function (e) {
+        var c = e && e.code || "";
+        if (c === "auth/popup-blocked" || c === "auth/operation-not-supported-in-environment" || c === "auth/web-storage-unsupported") {
+          return state.auth.signInWithRedirect(provider);
+        }
+        throw e;
+      });
     },
     /* 2040 phase 2 (Hanoch 2026-11-04 9:21 AM): signing out anywhere in the
        gabbai system goes straight to the landing page (the site root), not to
@@ -288,6 +307,10 @@
        still return null on failure (callers unchanged); a page checks this
        to tell "could not load" from "nothing there". Cleared on success. */
     get lastLoadError() { return state.loadError || null; },
+    /* Auth fix (2026-11-05): the error from a completed signInWithRedirect,
+       if it failed (e.g. the Google picker was cancelled). null the rest
+       of the time, including on a successful sign-in. */
+    get lastRedirectError() { return state.lastRedirectError || null; },
     /* Return Firestore congregants mapped to the TEST_DATA shape, or
        null when Firestore is unavailable/empty, so callers fall back
        to TEST_DATA. Never throws (a failure is also kept in lastLoadError). */
@@ -722,6 +745,28 @@
     revokeUserClaims: async function (email) {
       return window.OH_FIREBASE.grantUserClaims(email, "viewer", false, "revoke");
     },
+    /* Notifications (combined package, 2026-11-05): the super admin's
+       broadcast form. Same shape as grantUserClaims/claimsFunctionUrl just
+       above: a public URL whose real access control is the caller's
+       Firebase ID token, checked in the function itself
+       (functions/notifications/index.js, sendBroadcast), not in IAM. */
+    broadcastFunctionUrl: function () {
+      return window.OH_BROADCAST_FUNCTION_URL || (cfg && cfg.broadcastFunctionUrl) || "https://us-east1-or-hachaim.cloudfunctions.net/sendBroadcast";
+    },
+    sendBroadcastNotification: async function (title, body, audience) {
+      if (!state.ready || !state.user) return { ok: false, reason: "not-signed-in" };
+      if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { ok: false, reason: "not-super-admin" };
+      var url = window.OH_FIREBASE.broadcastFunctionUrl();
+      try {
+        var token = await state.user.getIdToken();
+        var resp = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+          body: JSON.stringify({ title: String(title || "").trim(), body: String(body || "").trim(), audience: audience }) });
+        var data = null;
+        try { data = await resp.json(); } catch (e) {}
+        if (!resp.ok) return { ok: false, reason: (data && data.error) || ("http-" + resp.status) };
+        return { ok: true, sentTo: data && data.sentTo };
+      } catch (e) { return { ok: false, reason: String(e && e.message ? e.message : e) }; }
+    },
     grantUserClaimsAndSave: async function (email, permission, imageUpload) {
       var r = await window.OH_FIREBASE.grantUserClaims(email, permission, imageUpload, "grant");
       if (r && r.ok) return { saved: true, viaClaims: true, pending: false, data: r.data };
@@ -995,6 +1040,17 @@
         renderStatus();
         if (state._btn) { var _sp = state._btn.querySelector("span"); if (_sp) _sp.textContent = u ? "Sign out" : "Sign in with Google"; else state._btn.textContent = u ? "Sign out" : "Sign in with Google"; }
       });
+      /* Auth fix (2026-11-05): pick up a signInWithRedirect that just came
+         back (the popup-blocked fallback above, or the landing page's own
+         existing redirect fallback). onAuthStateChanged above already fires
+         once Firebase Auth processes the redirect, so sign-in itself does
+         not depend on this call; this is only to surface a redirect that
+         FAILED (e.g. the Google account picker was cancelled), which
+         onAuthStateChanged never reports since no user ever becomes
+         signed in. Kept on state.lastRedirectError, read by nothing today
+         (nothing before this package asked for it); a future caller can
+         show it instead of nothing. Never throws. */
+      state.auth.getRedirectResult().catch(function (e) { state.lastRedirectError = e || null; });
       renderStatus();
     })
     .catch(function () {
