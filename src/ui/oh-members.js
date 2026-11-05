@@ -105,7 +105,8 @@
 
   function paint() { renderRequests(); renderToggle(); if (S.rerender) S.rerender(); }
   function findCon(id) { return (S.cons || []).find(function (c) { return c.id === id; }); }
-  function log(text) { try { var f = fb(); if (f && f.logActivity) f.logActivity("members." + text.split(" ")[0], text, { area: "congregants", collection: "congregants" }); } catch (e) {} }
+  /* Activity log (Nov 5): one Hebrew line after each saved change (super admin reads it on gabbai/activity/) */
+  function log(area, sentence, code, target, targetId) { try { var f = fb(); if (f && f.logActivity) f.logActivity(sentence, "", { area: area, code: code, target: target, targetId: targetId, collection: "congregants" }); } catch (e) {} }
 
   async function refreshAdmin() {
     if (!isSA()) { S.requests = []; paint(); return; }
@@ -140,7 +141,7 @@
             if (!g.saved) line = req.name + " אושר/ה כמתפלל. התפקיד לא נשמר (" + why(g) + "), אפשר לבחור שוב ברשימה.";
             else line += ". שיתנתק ויתחבר שוב.";
           }
-          log("approve " + req.email + " " + role);
+          log("join", "אושרה בקשת הצטרפות: " + req.name + " (" + (g && !g.saved ? ROLE_HE.member : ROLE_HE[role]) + ")", "join.approve", req.name, id);
           S.requests = S.requests.filter(function (x) { return x.id !== id; });
           var cons = S.cons || [];
           var c = cons.find(function (x) { return x.id === id; });
@@ -154,7 +155,7 @@
           S.open = null;
           if (g2.saved) {
             S.msg[id] = "נשמר: " + ROLE_HE[role] + (role === "member" ? "" : ". שיתנתק ויתחבר שוב.");
-            log("role " + c2.email + " " + role);
+            log("permissions", "שונתה הרשאה של " + (c2.name || c2.email) + ": " + ROLE_HE[role], "permissions.role", c2.name || c2.email, id);
             var m2 = await f.loadMemberRoles(); S.roles = m2.roles || S.roles;
           } else S.msg[id] = "לא נשמר (" + why(g2) + ")";
         }
@@ -168,13 +169,13 @@
           var req = S.requests.find(function (x) { return x.id === id; });
           var r = await f.setMemberStatus(id, "declined");
           S.open = null;
-          if (r.saved) { S.requests = S.requests.filter(function (x) { return x.id !== id; }); S.msg.req = "הבקשה נדחתה" + (req ? ": " + req.name : ""); log("decline " + (req ? req.email : id)); }
+          if (r.saved) { S.requests = S.requests.filter(function (x) { return x.id !== id; }); S.msg.req = "הבקשה נדחתה" + (req ? ": " + req.name : ""); log("join", "נדחתה בקשת הצטרפות" + (req ? ": " + req.name : ""), "join.decline", req ? req.name : "", id); }
           else S.msg.req = "לא נשמר (" + why(r) + ")";
         } else if (kind === "inactive" || kind === "active") {
           var c = findCon(id);
           var r2 = await f.setMemberStatus(id, kind);
           S.open = null;
-          if (r2.saved && c) { c.status = kind; S.msg[id] = kind === "inactive" ? "עכשיו לא פעיל" : "חזר לפעיל"; log((kind === "inactive" ? "inactive " : "reactivate ") + (c.email || c.name)); }
+          if (r2.saved && c) { c.status = kind; S.msg[id] = kind === "inactive" ? "עכשיו לא פעיל" : "חזר לפעיל"; log("members", (kind === "inactive" ? "מתפלל סומן לא פעיל: " : "מתפלל חזר לפעיל: ") + (c.name || c.email), kind === "inactive" ? "member.inactive" : "member.active", c.name || c.email, id); }
           else S.msg[id] = "לא נשמר (" + why(r2) + ")";
         }
       } finally { S.busy = false; paint(); }
