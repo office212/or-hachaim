@@ -70,8 +70,9 @@ function isShabbatDay() {
   var wd = nyWeekday(), now = nowMinsNY();
   if (wd === 5) return now >= (ROY_DAY && ROY_DAY.candle18 ? mins(ROY_DAY.candle18) : 16 * 60);
   if (wd === 6) {
-    var ends = ROY_DAY && (ROY_DAY.shabbatEndsMyZmanim || ROY_DAY.shabbatEndsAngle85);
-    return ends ? now < mins(ends) : true;
+    var ends = ROY_DAY && ROY_DAY.shabbatEndsMyZmanim;
+    var endsM = ends ? mins(ends) : (ROY_DAY && ROY_DAY.shabbatEndsAngle85 ? mins(ROY_DAY.shabbatEndsAngle85) + 1 : null); /* hardening: the 8.5 degree fallback + 1 minute */
+    return endsM != null ? now < endsM : true;
   }
   return false;
 }
