@@ -141,6 +141,25 @@ service cloud.firestore {
     function isDate(v) {
       return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
     }
+    /* Retroactive payments (2026-11-05, Hanoch): the live rules already
+       accepted any correctly-shaped date, past included (isDate() above
+       only checks the YYYY-MM-DD shape); nothing there needed to change for
+       a past date. What they never checked is a FUTURE date, so this is an
+       addition, not a fix. notFuture() blocks a date more than one day
+       ahead of the server clock. The one-day grace is deliberate, not
+       sloppy: the server clock is UTC, and New York's wall-clock date is
+       always equal to or one day BEHIND the UTC date (never ahead), so a
+       true "today" entered from New York can, for a few hours around
+       midnight UTC, already read as "tomorrow" against a same-day-only UTC
+       check; one full day of grace absorbs that gap and still rejects
+       anything genuinely in the future (next week, next month). The exact
+       "not after today in New York" boundary is enforced at the UI (the
+       date field's max attribute, see finance/index.html); this rule is
+       the server-side backstop, intentionally a little looser. */
+    function notFuture(d) {
+      let p = d.split('-');
+      return timestamp.date(int(p[0]), int(p[1]), int(p[2])) <= request.time + duration.value(1, 'd');
+    }
     /* Hardening: the restore page (/restore/), super admin only: the original
     fields are kept, the document is marked restored, with the server time and
     the uid of who restored it (restore/index.html writes exactly this). */
@@ -164,6 +183,7 @@ service cloud.firestore {
         && d.amount is number
         && (d.type == 'correction' ? d.amount != 0 : d.amount > 0)
         && isDate(d.date)
+        && notFuture(d.date)
         && d.get('source', 'manual') in ['manual', 'neder', 'recurring']
         && d.get('description', '') is string
         && d.enteredByUid == request.auth.uid
@@ -393,6 +413,58 @@ service cloud.firestore {
         && (!('weeks' in request.resource.data) || (request.resource.data.weeks is map && request.resource.data.weeks.size() <= 60))
         && (!('regular' in request.resource.data) || (request.resource.data.regular is list && request.resource.data.regular.size() <= 30))
         && (!('updatedBy' in request.resource.data) || (request.resource.data.updatedBy is string && request.resource.data.updatedBy.size() <= 200));
+      allow delete: if false;
+    }
+
+    /* Notifications (combined package, 2026-11-05, Hanoch approved): web push
+       (Firebase Cloud Messaging) for signed-in users only, never read or
+       written by anyone but the person it belongs to, except that the
+       actual notification ITEMS (notifications/{id}) are written only by
+       the Cloud Function (Admin SDK bypasses rules entirely, which is
+       exactly why create is false here for every client including the
+       super admin: the super admin's broadcast form calls the function,
+       the function writes, the client never does). Two new collections,
+       the fewest this needed: one to hold each person's push registration
+       (notificationTokens), one to hold the in-app bell items
+       (notifications). No existing collection or rule is changed here
+       beyond the ledger date check above. */
+
+    /* A person's own push registration: which browsers/devices of theirs
+       should receive a push, and nothing else. The uid IS the document id,
+       so "is this my doc" is a plain id check, no lookup needed. Role is
+       decided at send time by the Cloud Function reading live custom
+       claims (Admin SDK), not by anything stored here, so there is no
+       role flag on this document that could ever go stale. */
+    match /notificationTokens/{uid} {
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow create, update: if isSignedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid', 'email', 'tokens', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['uid', 'email', 'tokens', 'updatedAt'])
+        && request.resource.data.uid == uid
+        && emailMatches(request.resource.data.email)
+        && request.resource.data.tokens is list
+        && request.resource.data.tokens.size() <= 6
+        && isServerNow('updatedAt');
+      allow delete: if isSignedIn() && request.auth.uid == uid;
+    }
+
+    /* One in-app notification, addressed to exactly one person (recipientUid).
+       Only that person ever reads their own items (a member's "a payment was
+       recorded for you" is never visible to anyone else, a gabbai's "new
+       join request" is never visible to a member, and so on. The super
+       admin reads nothing here directly either: broadcast send is a function
+       call, not a Firestore read of other people's notifications). Create is
+       always false: only the Cloud Function (functions/notifications, Admin
+       SDK) ever writes one of these, whether it was triggered by a ledger
+       entry, a join request, a prayer time change, a published announcement,
+       or the super admin's broadcast form. The one thing the owner may do to
+       their own item is mark it read, nothing else about it. */
+    match /notifications/{id} {
+      allow read: if isSignedIn() && resource.data.recipientUid == request.auth.uid;
+      allow create: if false;
+      allow update: if isSignedIn() && resource.data.recipientUid == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+        && request.resource.data.read == true;
       allow delete: if false;
     }
 
