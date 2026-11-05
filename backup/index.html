@@ -44,6 +44,7 @@ async function runBackup(){
   a.href = URL.createObjectURL(new Blob([JSON.stringify(out, null, 2)], {type: 'application/json'}));
   a.download = 'or-hachaim-backup-' + new Date().toISOString().slice(0,10) + '.json';
   a.click();
+  if(fb.logActivity) fb.logActivity('הורד גיבוי מלא של האתר', '', { area: 'backup', code: 'backup.full' }); /* activity log (Nov 5) */
 }
 </script>
 </div></body></html>
