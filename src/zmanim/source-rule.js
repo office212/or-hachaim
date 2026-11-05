@@ -9,18 +9,14 @@
    the one place where the two configurable deviations
    live, so a single future decision can change them.
 
-   OPEN QUESTION, not decided, do not guess:
-   Hanoch has NOT yet confirmed whether "all times from
-   Zemaneh Yosef" overrides the two earlier binding
-   decisions in decisions-2026-11-01.js, candle 18 minutes
-   and Shema Magen Avraham equal minutes, or whether
-   those two decisions stay in force. Until he confirms,
-   this codebase KEEPS the earlier decisions (candle 18,
-   Shema equal minutes) and does NOT silently switch to
-   Roy defaults (candle 20, Shema seasonal). The equal
-   minutes validation in validation/ is kept, not deleted.
-   To apply a future confirmation, change only the two
-   fields below and record the decision in the plan.
+   DECIDED (owner, binding, see README "Binding decisions"):
+   the two earlier decisions in decisions-2026-11-01.js stay
+   in force over "all times from Zemaneh Yosef": candle
+   lighting 18 minutes before sunset (not Roy's 20) and
+   Sof Zman Shema Magen Avraham in equal minutes (not Roy's
+   seasonal). The equal minutes validation in validation/
+   is kept. To change either one later, change only the two
+   fields below, with a new owner decision.
    No other file needs a value change for these two items. */
 (function () {
   var SOURCE_RULE = {
@@ -37,7 +33,7 @@
       candleLightingRoyDefault: 20,
       shemaMagenAvrahamMethod: "equal-minutes",
       shemaMagenAvrahamRoyDefault: "seasonal",
-      openQuestion: "Hanoch has not confirmed whether the final source rule overrides these two deviations. Kept as decided 2026-11-01 until he confirms."
+      openQuestion: "None: decided by the owner (README, Binding decisions). Candle 18 minutes and Shema Magen Avraham equal minutes stay."
     },
     location: {
       latitude: 40.60155,
