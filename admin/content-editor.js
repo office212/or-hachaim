@@ -6,8 +6,8 @@
    section of the old admin page (announcements, dedications and
    sponsors, flyers, yahrzeit, images) in one flow. It writes to the
    existing content collections (announcements, dedications, sponsors,
-   flyers, yahrzeits, chosen by type) plus one activityLog line per save
-   that keeps the version for history and restore, and images to Storage
+   flyers, yahrzeits, chosen by type); each item keeps its earlier versions
+   for history and restore (Nov 5), one activity log line per save, and images to Storage
    under screen/ for accounts with image upload.
    - every item type in the plan: announcements, dedications (including
      permanent leiluy nishmat), flyers with an image, yahrzeit (entered
@@ -227,11 +227,11 @@
     var it = st.items.filter(function (x) { return x.id === id; })[0];
     if (it && (!st.editing || st.editing.id !== id)) openEditor(it);
     var box = $("scHistory"); box.innerHTML = "<p>טוען היסטוריה...</p>";
-    var r = await SC.history(id);
+    var r = await SC.history(id, it && it.col);
     if (!r.ok) { box.innerHTML = '<p class="sc-err">טעינת ההיסטוריה נכשלה: ' + esc(r.reason) + "</p>"; return; }
     var ACT = { create: "נוצר", update: "עודכן", publish: "פורסם", unpublish: "הורד מהמסך", archive: "הועבר לארכיון", restore: "שוחזר" };
     box.innerHTML = '<h3>היסטוריית שינויים</h3><ol class="sc-hist">' + r.versions.map(function (v) {
-      return '<li><span class="sc-hv">גרסה ' + v.version + "</span> <span>" + esc(ACT[v.action] || v.action) + (v.restoredFromVersion ? " מגרסה " + v.restoredFromVersion : "") + "</span> <span class=\"sc-meta\">" + esc(fmtStamp(v.savedAt)) + " | " + esc(v.savedBy || "") + "</span>" +
+      return '<li><span class="sc-hv">גרסה ' + v.version + "</span> <span>" + esc(ACT[v.action] || v.action) + (v.restoredFromVersion ? " מגרסה " + v.restoredFromVersion : "") + "</span> <span class=\"sc-meta\">" + esc(fmtStamp(v.savedAt)) + (v.savedBy ? " | " + esc(v.savedBy) : "") + "</span>" +
         ' <button type="button" class="btn secondary sc-sm" data-hact="view" data-v="' + v.version + '">הצגה בתצוגה</button>' +
         (v.version !== (it && it.version) ? ' <button type="button" class="btn secondary sc-sm" data-hact="restore" data-v="' + v.version + '">שחזור גרסה זו</button>' : ' <span class="sc-badge st-published">הגרסה הנוכחית</span>') + "</li>";
     }).join("") + "</ol>";
