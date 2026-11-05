@@ -28,6 +28,27 @@ window.OH_LABELS = {
   navRestore: "שחזור",                      /* בדף הגיבוי: קישור לדף השחזור */
   navSettings: "הגדרות",                    /* הכפתור ⚙ בסרגל העליון */
 
+  /* ---------- התקנה כאפליקציה + התראות (חבילה משולבת, 2026-11-05) ---------- */
+  installTitle: "התקנת האפליקציה",
+  installBody: "אפשר להתקין את האתר כאפליקציה במסך הבית, לגישה מהירה.",
+  installIosBody: "כדי להתקין: לוחצים על כפתור השיתוף, ואז על \u201cהוסף למסך הבית\u201d.",
+  installNow: "התקן",
+  installLater: "לא עכשיו",
+  installGotIt: "הבנתי",
+  installFooterLink: "התקן אפליקציה",
+  signinError: "הכניסה לא הצליחה. נסה שוב.",
+  bellTitle: "התראות",
+  bellEmpty: "אין התראות",
+  bellMarkAllRead: "סמן הכל כנקרא",
+  notifyIdle: "הפעל התראות",
+  notifyActive: "ההתראות פעילות ✓",
+  notifyBlocked: "ההתראות חסומות בדפדפן",
+  notifyBusy: "רגע...",
+  notifyUnsupported: "הדפדפן הזה לא תומך בהתראות.",
+  notifyIosNeedsInstall: "באייפון: התראות עובדות רק כשהאפליקציה מותקנת למסך הבית.",
+  notifyNotConfigured: "ההתראות עוד לא מוגדרות. נסה שוב מאוחר יותר.",
+  notifyFailed: "לא הצלחנו להפעיל התראות. נסה שוב מאוחר יותר.",
+
   /* ---------- סרגל כפתורים בטלפון ---------- */
   bottomHome: "דף הבית",
   bottomTimes: "זמני תפילה",
@@ -430,6 +451,28 @@ window.OH_TERMS_EN = {
     navBackup: "Backup",
     navRestore: "Restore",
     navSettings: "Settings",
+
+    /* Install + notifications (combined package, 2026-11-05). House register:
+       never synagogue/prayer/service/worship/congregant(s)/Shabbos. */
+    installTitle: "Install the app",
+    installBody: "You can install the site as an app on your home screen, for quick access.",
+    installIosBody: "To install: tap the share button, then \u201cAdd to Home Screen\u201d.",
+    installNow: "Install",
+    installLater: "Not now",
+    installGotIt: "Got it",
+    installFooterLink: "Install app",
+    signinError: "Sign-in didn't go through. Please try again.",
+    bellTitle: "Notifications",
+    bellEmpty: "No notifications",
+    bellMarkAllRead: "Mark all as read",
+    notifyIdle: "Turn on notifications",
+    notifyActive: "Notifications on \u2713",
+    notifyBlocked: "Notifications are blocked in this browser",
+    notifyBusy: "One sec...",
+    notifyUnsupported: "This browser does not support notifications.",
+    notifyIosNeedsInstall: "On iPhone: notifications only work once the app is installed to the home screen.",
+    notifyNotConfigured: "Notifications are not set up yet. Please try again later.",
+    notifyFailed: "Could not turn on notifications. Please try again later.",
     bottomHome: "Home",
     bottomTimes: T.daveningTimes,
     bottomSignOut: "Sign out",
