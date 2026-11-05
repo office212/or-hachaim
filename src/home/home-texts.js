@@ -28,6 +28,8 @@ window.OH_HOME_TEXTS = {
     signinBusy: "רגע...",
     signinUnauth: "החשבון הזה אינו מורשה למערכת הגבאים.",
     signinError: "הכניסה לא הצליחה. אפשר לנסות שוב.",
+    signinRetry: "נסה שוב",
+    signinLoadErr: "לא הצלחנו לטעון את החשבון. נסה שוב.",
     langLabel: "שפה",
 
     heroEyebrow: "OR HACHAIM CONGREGATION OF STATEN ISLAND",
@@ -101,6 +103,8 @@ window.OH_HOME_TEXTS = {
     signinBusy: "One moment...",
     signinUnauth: "This account isn't authorized for the Gabbai system.",
     signinError: "Sign-in didn't go through. Please try again.",
+    signinRetry: "Try again",
+    signinLoadErr: "Couldn't load your account. Please try again.",
     langLabel: "Language",
 
     heroEyebrow: "OR HACHAIM CONGREGATION OF STATEN ISLAND",
@@ -178,6 +182,8 @@ window.OH_HOME_TEXTS = {
     signinBusy: { group: "top", desc: "בזמן הכניסה" },
     signinUnauth: { group: "top", desc: "הודעה לחשבון לא מורשה" },
     signinError: { group: "top", desc: "הודעה כשהכניסה נכשלה" },
+    signinRetry: { group: "top", desc: "הכפתור כשטעינת החשבון נכשלה" },
+    signinLoadErr: { group: "top", desc: "הודעה כשטעינת החשבון נכשלה" },
     langLabel: { group: "top", desc: "שם בורר השפה (לקוראי מסך)" },
 
     heroEyebrow: { group: "hero", desc: "שורה קטנה מעל הכותרת" },
