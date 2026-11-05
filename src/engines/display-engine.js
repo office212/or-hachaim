@@ -97,9 +97,19 @@
      the daily zmanim JSON (or null). Returns {rest, reason, label}.
      Start: candle18 on the day before the stretch (16:00 when the row
      is missing, the safe side). End: Shabbat ends (MyZmanim) on a
-     Shabbat, otherwise the 8.5 degree nightfall field of that day
-     (later than plain tzeit, the safe side for hiding); when the row is
+     Shabbat, otherwise the 8.5 degree nightfall field of that day + 1
+     minute (later than plain tzeit, the safe side for hiding); when the row is
      missing, the whole day counts as rest. */
+  /* Hardening (2026-11-05, Hanoch): when a day has no MyZmanim end, the 8.5
+     degree field is used + 1 minute (never early: it ran 1 minute before
+     MyZmanim on 12 of 55 Saturdays). The same rule as the calendar layer. */
+  function anglePlus1(t) {
+    if (!t) return t;
+    var q = String(t).split(":"), h = +q[0], n = +q[1];
+    if (q.length < 2 || !isFinite(h) || !isFinite(n)) return t;
+    var x = h * 60 + n + 1;
+    return String(Math.floor(x / 60) % 24).padStart(2, "0") + ":" + String(x % 60).padStart(2, "0");
+  }
   function restState(now, dayLookup) {
     var p = nyParts(now), today = p.key, tomorrow = addDays(today, 1);
     var look = typeof dayLookup === "function" ? dayLookup : function () { return null; };
@@ -108,7 +118,7 @@
     var label = function (key) { return yomTovName(key) ? "yomtov" : "shabbat"; };
     if (todayRest) {
       if (tomorrowRest) return { rest: true, reason: label(today), label: yomTovName(today) || "שבת" };
-      var endT = rowT ? (weekdayOf(today) === 6 ? (rowT.shabbatEndsMyZmanim || rowT.shabbatEndsAngle85) : (rowT.yomTovEndsMyZmanim || rowT.shabbatEndsAngle85 || rowT.tzeit)) : null; /* v5.1: 5788 Yom Tov weekdays carry the MyZmanim-rule end */
+      var endT = rowT ? (weekdayOf(today) === 6 ? (rowT.shabbatEndsMyZmanim || anglePlus1(rowT.shabbatEndsAngle85)) : (rowT.yomTovEndsMyZmanim || anglePlus1(rowT.shabbatEndsAngle85) || rowT.tzeit)) : null; /* v5.1: 5788 Yom Tov weekdays carry the MyZmanim-rule end; hardening: the 8.5 degree fallback + 1 minute */
       var end = endT ? mins(endT) : 24 * 60;
       if (p.mins < end) return { rest: true, reason: label(today), label: yomTovName(today) || "שבת" };
       return { rest: false, reason: null, label: "" };
