@@ -74,6 +74,8 @@
      the known permissions (finance, screen = content and times, times,
      both) are kept from a users document. */
   var KNOWN_PERMS = ["finance", "screen", "times", "both"];
+  /* Activity log areas (Nov 5): the kinds of action a log line belongs to. */
+  var LOG_AREAS = ["finance", "members", "permissions", "join", "screen", "times", "texts", "shabbat", "backup"];
   /* Stage D (Hanoch 2026-11-04): a congregant record's status. No status
      (every record written before stage D) means active. */
   function memberStatus(d) {
@@ -812,22 +814,56 @@
         return { saved: true, id: id };
       } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
     },
-    /* 2040 phase 1: one line in the existing activityLog (area "screen"),
-       the same shape screen-content.js writes. The rules allow create for
-       the super admin, finance and screen gabbaim; a refusal is returned,
-       never thrown, so the change itself is never blocked by its log line. */
+    /* Activity log (Nov 5, Hanoch: every action with date, time and who; only
+       the super admin reads it). One line per real change, written by the page
+       AFTER the change itself succeeded:
+         when (server time), who (email), whoUid, area, action (a short Hebrew
+         sentence), and when they apply: detail, target, targetId, amount, code.
+       area: finance, members, permissions, join, screen, times, texts, shabbat, backup.
+       The rules allow create for the super admin, finance and screen gabbaim.
+       A refusal or an error is returned (and noted in the console), never thrown,
+       so the change itself is never blocked by its log line. */
+    LOG_AREAS: LOG_AREAS,
     logActivity: async function (action, detail, extra) {
       if (!state.ready || !state.db || !state.user) return { saved: false, reason: "not-signed-in" };
+      var x = extra || {};
       try {
         var ts = window.firebase && window.firebase.firestore ? window.firebase.firestore.FieldValue.serverTimestamp() : new Date().toISOString();
-        var log = { area: (extra && extra.area) || "screen", action: String(action || ""), detail: String(detail || "").slice(0, 500),
+        var log = { area: LOG_AREAS.indexOf(x.area) >= 0 ? x.area : "screen", action: String(action || "").slice(0, 300),
           who: state.user.email || "", whoUid: state.user.uid || "", when: ts };
-        if (extra && extra.itemId) log.itemId = String(extra.itemId);
-        if (extra && extra.collection) log.collection = String(extra.collection);
-        if (extra && extra.command) log.command = String(extra.command).slice(0, 300);
+        if (detail) log.detail = String(detail).slice(0, 500);
+        if (x.target) log.target = String(x.target).slice(0, 120);
+        if (x.targetId) log.targetId = String(x.targetId).slice(0, 120);
+        if (typeof x.amount === "number" && isFinite(x.amount)) log.amount = Math.round(x.amount * 100) / 100;
+        if (x.code) log.code = String(x.code).slice(0, 60);
+        if (x.itemId) log.itemId = String(x.itemId);
+        if (x.collection) log.collection = String(x.collection);
+        if (x.command) log.command = String(x.command).slice(0, 300);
+        if (typeof x.version === "number") log.version = x.version;
         await state.db.collection("activityLog").add(log);
         return { saved: true };
-      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
+      } catch (e) {
+        try { console.warn("activity log: line not written (" + String(x.code || action || "") + "): " + String((e && (e.code || e.message)) || e)); } catch (e2) {}
+        return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" };
+      }
+    },
+    /* Activity log page (gabbai/activity/), super admin only (the rules allow
+       nobody else to read it). Newest first, one page at a time (limit), the
+       next page after the last line of the previous one. Never throws. */
+    loadActivity: async function (limit, after) {
+      if (!state.ready || !state.db || !state.user) return { ok: false, reason: "not-signed-in", items: [] };
+      if (String(state.user.email || "").toLowerCase() !== SUPER_ADMIN_EMAIL) return { ok: false, reason: "not-super-admin", items: [] };
+      try {
+        var q = state.db.collection("activityLog").orderBy("when", "desc");
+        if (after) q = q.startAfter(after);
+        var snap = await q.limit(Math.max(1, Math.min(200, limit || 50))).get();
+        var items = [];
+        snap.forEach(function (doc) {
+          var d = doc.data() || {}, w = d.when;
+          items.push(Object.assign({}, d, { id: doc.id, when: w && typeof w.toDate === "function" ? w.toDate().toISOString() : (w || "") }));
+        });
+        return { ok: true, items: items, last: snap.docs.length ? snap.docs[snap.docs.length - 1] : null, more: snap.docs.length >= (limit || 50) };
+      } catch (e) { return { ok: false, reason: String(e && e.code ? e.code : (e && e.message ? e.message : e)), items: [] }; }
     },
     /* 2040 phase 1 (Hanoch 2026-11-04, 5:29 to 5:33 AM): every word on the screen
        easy to edit, in Hebrew and English, the screen language, and the order of
