@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>כספים / Finance</title>
+<title>כספים</title>
 <link rel="stylesheet" href="../src/theme.css">
 <link rel="stylesheet" href="../src/ui/oh-design.css">
 <script src="../src/ui/labels.js"></script>
@@ -21,37 +21,35 @@
 </style></head>
 <body class="gated" data-oha-page="finance">
 <div class="page">
-<div class="gate-card" id="signInGate"><h2>כניסה נדרשת / Sign-in required</h2><p class="oh-help">פיננסים מוצגים רק לאחר כניסה. / Finance is shown only after sign-in.</p><button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>Sign in with Google / התחברות עם Google</span></button><p class="hint" id="gateMsg"></p></div>
+<div class="gate-card" id="signInGate"><h2>כניסה נדרשת</h2><button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>התחברות עם Google</span></button><p class="hint" id="gateMsg"></p></div>
 <div id="ohJoinReqs" hidden></div>
-<p class="oh-help">היומן הוא append-only: תיקונים נעשים ברשומות תיקון, לעולם לא במחיקה. / Ledger is append-only: corrections are correction entries, never deletes. כל פעולה כספית נושאת operationId ייחודי, ושליחה כפולה נדחית. / Every financial action carries a unique operationId, and a duplicate submission is rejected. התחייבות, חיוב, תשלום, ויתרה פתוחה הם ארבעה מצבים נפרדים, לעולם לא מעורבבים. / Pledge, charge, payment, and open balance are four distinct states, never conflated.</p>
-<p id="dataSource" class="oh-help">כניסה נדרשת / Sign-in required</p><label>חיפוש מתפללים / Search congregants</label><input id="search" placeholder="חפש מתפלל / Search congregant" oninput="renderList()">
+<p id="dataSource" class="oh-help">כניסה נדרשת</p><label>חיפוש מתפללים</label><input id="search" placeholder="חפש מתפלל" oninput="renderList()">
 <div id="ohInactiveToggle" hidden></div>
 <div id="list"></div>
-<h2>הוספת מתפלל / Add congregant</h2>
-<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מייל הוא אופציונלי. / Email is optional. A congregant without email is fully managed here and cannot sign in until the super admin adds an email to this same existing record; history and balance are preserved.</p>
-<label>Name</label><input id="newName"><label>Phone</label><input id="newPhone"><label>Email (optional, Google login later)</label><input id="newEmail">
-<button class="btn" id="addCongBtn" onclick="addCong()">הוסף מתפלל / Add congregant</button><p id="addMsg"></p></div>
+<h2>הוספת מתפלל</h2>
+<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מייל לא חובה. בלי מייל אין כניסה לאתר.</p>
+<label>שם</label><input id="newName"><label>טלפון</label><input id="newPhone"><label>מייל (לא חובה)</label><input id="newEmail">
+<button class="btn" id="addCongBtn" onclick="addCong()">הוסף מתפלל</button><p id="addMsg"></p></div>
 <div id="printArea"></div>
-<h2 id="nedarim">נדרים / Nedarim, fast entry for Motzei Shabbat</h2>
-<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">לחיצה אחת לכל נדר: שם, סכום, עלייה. / One click per neder: name, amount, aliyah. A neder creates a ledger charge, stored as a ledger entry with source "neder", so the append-only rules apply to it.</p>
-<label>Congregant</label><select id="nederCong"></select><label>Name</label><input id="nederName"><label>Amount</label><input id="nederAmt" type="number" step="0.01"><label>Aliyah</label><input id="nederAliyah" placeholder="e.g. Cohen, Levi, Yisrael">
-<button class="btn btn-gold" onclick="addNeder()">הוסף נדר, לחיצה אחת / Add neder, one click</button><p id="nederMsg"></p><div id="nederList"></div></div>
-<h2 id="reports">חיובים קבועים / Recurring charges</h2>
-<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">Monthly or annual membership fees are recorded automatically on schedule, with no manual entry each month. Pausing or cancelling a schedule stops future charges only; it never deletes past ledger entries.</p>
-<div id="recList"></div><button class="btn" onclick="applyRecurring()">החל חיובים קבועים שחייבים עכשיו / Apply due recurring charges now</button><p id="recMsg"></p></div>
-<h2>קבלות מס שנתיות / Annual tax receipts, January</h2>
-<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">לחיצה אחת יוצרת מכתב תרומה 501c3 מוכן להדפסה לכל מתפלל לשנה. / One click generates a print-ready 501c3 donation letter for every congregant for the year. This letter is separate from a balance statement. No PDF library is included yet, so this is a print-ready letter per congregant (window.print), not a claimed PDF file. Which payments count as tax-deductible donations is not decided here; the letter lists payments recorded in the year and says the gabbai must confirm the deductible portion before issuing a real letter, including any benefit received in return, such as meals or tickets, and the nonprofit eligibility to issue the letter.</p>
-<label>Year</label><input id="taxYear" value="2026"><button class="btn btn-gold" onclick="taxLetters()">צור מכתבים לכל המתפללים / Generate letters for all congregants</button><div id="taxArea"></div></div>
-<h2>התחייבויות / Pledges, distinct from charges and payments</h2>
-<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">Foundation: a pledge is a commitment, not a charge and not a payment. An unpaid pledge does not change the open balance until it is converted to a charge, and it is reported separately. A neder fast entry first creates a pledge here; converting it creates a ledger charge.</p><div id="pledgeList"></div></div>
-<h2>דוח שנתי / Annual financial report</h2>
-<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">Foundation, priority high: one annual report with total income, total charges, open balances, payments by payment method, and unpaid commitments. This report is separate from a balance statement and separate from a tax letter.</p>
-<label>Year</label><input id="annualYear" value="2026"><button class="btn btn-gold" onclick="annualReport()">צור דוח שנתי / Generate annual report</button><div id="annualArea"></div></div>
-<h2 id="activity">יומן פעולות / Activity log</h2>
-<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">Who changed what and when, for permissions, congregants, and ledger changes, not only the ledger itself. In the Firebase phase this log is append only in the database rules, like the ledger.</p><div id="activityList"></div></div>
-<h2>גיבוי מהיום הראשון / Backup from day one</h2>
-<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">גיבוי הוא דרישה מהיום הראשון. / Backup is a day-one requirement, not a go-live item. Export downloads the full ledger, congregant records, recurring schedules, and activity log. Restore never deletes or overwrites existing entries; it imports only missing entries.</p>
-<button class="btn btn-gold" onclick="backupExport()">ייצוא גיבוי מלא / Export full backup (JSON)</button><p id="backupMsg"></p></div>
+<h2 id="nedarim">נדרים</h2>
+<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">לכל נדר: שם, סכום ועלייה.</p>
+<label>מתפלל</label><select id="nederCong"></select><label>שם</label><input id="nederName"><label>סכום</label><input id="nederAmt" type="number" step="0.01"><label>עלייה</label><input id="nederAliyah" placeholder="למשל כהן, לוי, ישראל">
+<button class="btn btn-gold" onclick="addNeder()">הוסף נדר</button><p id="nederMsg"></p><div id="nederList"></div></div>
+<h2 id="reports">חיובים קבועים</h2>
+<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">דמי חבר נרשמים לבד, כל חודש או כל שנה.</p>
+<div id="recList"></div><button class="btn" onclick="applyRecurring()">חייב עכשיו את מה שהגיע זמנו</button><p id="recMsg"></p></div>
+<h2>קבלות מס שנתיות</h2>
+<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מכתב 501c3 לכל מתפלל. הגבאי מאשר את הסכום המוכר.</p>
+<label>שנה</label><input id="taxYear" value="2026"><button class="btn btn-gold" onclick="taxLetters()">צור מכתבים לכל המתפללים</button><div id="taxArea"></div></div>
+<h2>התחייבויות</h2>
+<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">התחייבות נכנסת ליתרה רק אחרי שהופכים אותה לחיוב.</p><div id="pledgeList"></div></div>
+<h2>דוח שנתי</h2>
+<div class="gold-frame no-print" style="padding:1rem"><label>שנה</label><input id="annualYear" value="2026"><button class="btn btn-gold" onclick="annualReport()">צור דוח שנתי</button><div id="annualArea"></div></div>
+<h2 id="activity">יומן פעולות</h2>
+<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מי שינה מה, ומתי.</p><div id="activityList"></div></div>
+<h2>גיבוי</h2>
+<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מוריד קובץ עם כל נתוני הכספים.</p>
+<button class="btn btn-gold" onclick="backupExport()">ייצוא גיבוי מלא</button><p id="backupMsg"></p></div>
 <script>
 /* Finance page logic. Changed 2026-11-03 (see design_suggestions file):
    every Firestore value is escaped (OH_UI.esc / OH_UI.jsArg); amounts are
@@ -61,6 +59,10 @@
    entry only after the database accepted it; the activity log records
    the signed-in email, never a hard-coded "Gabbai". */
 var esc = OH_UI.esc, jsArg = OH_UI.jsArg, money = OH_UI.money, today = OH_UI.nyDate;
+/* text cleanup (Nov 5): only the active language is shown */
+function L(he, en){ return window.OH_LANG === "en" ? en : he; }
+var WORDS = { charge: ["חיוב", "Charge"], payment: ["תשלום", "Payment"], correction: ["תיקון", "Correction"], active: ["פעיל", "Active"], cancelled: ["מושהה", "Paused"], unpaid: ["לא שולם", "Unpaid"], converted: ["הפך לחיוב", "Converted"], paid: ["שולם", "Paid"], monthly: ["חודשי", "Monthly"], annual: ["שנתי", "Annual"] };
+function word(k){ var w = WORDS[k]; return w ? L(w[0], w[1]) : esc(k); }
 var cons = [];
 var opStore = new window.Idempotency.IdempotencyStore();
 function newOp(prefix){ return window.Idempotency.makeOperationId(prefix); }
@@ -74,10 +76,10 @@ function renderList(){
   var M = window.OH_MEMBERS;
   document.getElementById("list").innerHTML = cons.filter(function(c){ return (!M || M.listed(c)) && String(c.name || "").toLowerCase().includes(q); }).map(function(c){
     var t = totals(c);
-    return '<div class="gold-frame cong-card" style="margin:1rem 0"><h3>' + esc(c.name) + '</h3><p class="hint">טלפון / Phone: ' + esc(c.phone) + ' | מייל / Email: ' + (c.email ? esc(c.email) : "(none yet)") + '</p>' +
-    '<p class="ledger-summary"><span>חיובים / Charges: ' + amt$(t.charges) + '</span><span>תשלומים / Payments: ' + amt$(t.payments) + '</span><strong>יתרה / Balance owed: ' + amt$(t.balance) + '</strong></p>' +
-    '<button class="btn secondary" style="width:auto" onclick="showCard(' + jsArg(c.id) + ')">פתח כרטיס / Open card</button>' + (M ? M.cardExtras(c) : "") + '</div>';
-  }).join("") || "<p>אין מתפללים עדיין / No congregants yet.</p>";
+    return '<div class="gold-frame cong-card" style="margin:1rem 0"><h3>' + esc(c.name) + '</h3><p class="hint">' + L("טלפון: ", "Phone: ") + esc(c.phone) + ' | ' + L("מייל: ", "Email: ") + (c.email ? esc(c.email) : L("אין", "none")) + '</p>' +
+    '<p class="ledger-summary"><span>' + L("חיובים: ", "Charges: ") + amt$(t.charges) + '</span><span>' + L("תשלומים: ", "Payments: ") + amt$(t.payments) + '</span><strong>' + L("יתרה: ", "Balance: ") + amt$(t.balance) + '</strong></p>' +
+    '<button class="btn secondary" style="width:auto" onclick="showCard(' + jsArg(c.id) + ')">' + L("פתח כרטיס", "Open card") + '</button>' + (M ? M.cardExtras(c) : "") + '</div>';
+  }).join("") || "<p>" + L("אין מתפללים עדיין", "No members yet") + "</p>";
 }
 /* One pending operationId per open card. It is created when the card
    opens and replaced only after a confirmed save, so pressing the
@@ -87,18 +89,18 @@ function showCard(id){
   var c = cons.find(function(x){ return x.id === id; }); if(!c) return;
   var t = totals(c);
   if(!pendingOp[id]) pendingOp[id] = newOp("entry");
-  var rows = c.ledger.map(function(e){ return "<tr><td>" + esc(e.date) + "</td><td>" + esc(e.type) + "</td><td>" + amt$(e.amount) + "</td><td>" + esc(e.description) + "</td><td>" + esc(e.enteredBy) + "</td></tr>"; }).join("");
+  var rows = c.ledger.map(function(e){ return "<tr><td>" + esc(e.date) + "</td><td>" + word(e.type) + "</td><td>" + amt$(e.amount) + "</td><td>" + esc(e.description) + "</td><td>" + esc(e.enteredBy) + "</td></tr>"; }).join("");
   document.getElementById("printArea").innerHTML =
-    '<div class="gold-frame"><h2>כרטיס מתפלל / Congregant card: ' + esc(c.name) + '</h2>' +
-    '<p>טלפון / Phone: ' + esc(c.phone) + ' | מייל / Email: ' + (c.email ? esc(c.email) : "(none yet)") + ' | תאריך הדפסה / Print date: ' + esc(today()) + '</p>' +
-    '<p class="ledger-summary"><span>סך חיובים / Charges total: ' + amt$(t.charges) + '</span><span>סך תשלומים / Payments total: ' + amt$(t.payments) + '</span><strong>יתרה לתשלום / Balance owed: ' + amt$(t.balance) + '</strong></p>' +
-    '<table><tr><th>תאריך / Date</th><th>סוג / Type</th><th>סכום / Amount</th><th>תיאור / Description</th><th>הוזן ע״י / Entered by</th></tr>' + rows + '</table>' +
-    '<div class="no-print" style="margin-top:1rem;display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-gold" style="width:auto" onclick="window.print()">הדפס יתרה / Print balance</button>' +
-    '<button class="btn secondary" style="width:auto" onclick="exportCSV(' + jsArg(c.id) + ')">ייצוא דוח כ-CSV / Export statement as CSV</button></div>' +
-    '<div class="no-print" style="margin-top:1rem"><label>הוסף רשומה / Add entry</label>' +
-    '<select id="eType"><option value="charge">חיוב / Charge</option><option value="payment">תשלום / Payment</option><option value="correction">רשומת תיקון / Correction entry</option></select>' +
-    '<label>סכום / Amount (for a correction, use a signed amount: negative lowers the balance)</label><input id="eAmt" type="number" step="0.01" inputmode="decimal"><label>תיאור / Description</label><input id="eDesc">' +
-    '<button class="btn" id="eBtn" onclick="addEntry(' + jsArg(c.id) + ')">הוסף רשומה / Add entry</button><p id="eMsg" class="hint"></p></div></div>';
+    '<div class="gold-frame"><h2>' + L("כרטיס מתפלל: ", "Member card: ") + esc(c.name) + '</h2>' +
+    '<p>' + L("טלפון: ", "Phone: ") + esc(c.phone) + ' | ' + L("מייל: ", "Email: ") + (c.email ? esc(c.email) : L("אין", "none")) + ' | ' + L("תאריך הדפסה: ", "Print date: ") + esc(today()) + '</p>' +
+    '<p class="ledger-summary"><span>' + L("סך חיובים: ", "Total charges: ") + amt$(t.charges) + '</span><span>' + L("סך תשלומים: ", "Total payments: ") + amt$(t.payments) + '</span><strong>' + L("יתרה לתשלום: ", "Balance owed: ") + amt$(t.balance) + '</strong></p>' +
+    '<table><tr><th>' + L("תאריך", "Date") + '</th><th>' + L("סוג", "Type") + '</th><th>' + L("סכום", "Amount") + '</th><th>' + L("תיאור", "Description") + '</th><th>' + L("הוזן ע״י", "Entered by") + '</th></tr>' + rows + '</table>' +
+    '<div class="no-print" style="margin-top:1rem;display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-gold" style="width:auto" onclick="window.print()">' + L("הדפס יתרה", "Print balance") + '</button>' +
+    '<button class="btn secondary" style="width:auto" onclick="exportCSV(' + jsArg(c.id) + ')">' + L("ייצוא ל-CSV", "Export to CSV") + '</button></div>' +
+    '<div class="no-print" style="margin-top:1rem"><label>' + L("הוסף רשומה", "Add entry") + '</label>' +
+    '<select id="eType"><option value="charge">' + L("חיוב", "Charge") + '</option><option value="payment">' + L("תשלום", "Payment") + '</option><option value="correction">' + L("תיקון", "Correction") + '</option></select>' +
+    '<label>' + L("סכום (בתיקון: מינוס מוריד יתרה)", "Amount (correction: minus lowers it)") + '</label><input id="eAmt" type="number" step="0.01" inputmode="decimal"><label>' + L("תיאור", "Description") + '</label><input id="eDesc">' +
+    '<button class="btn" id="eBtn" onclick="addEntry(' + jsArg(c.id) + ')">' + L("הוסף רשומה", "Add entry") + '</button><p id="eMsg" class="hint"></p></div></div>';
 }
 async function addEntry(id){
   var c = cons.find(function(x){ return x.id === id; }); if(!c) return;
@@ -108,13 +110,13 @@ async function addEntry(id){
   var msg = document.getElementById("eMsg"), btn = document.getElementById("eBtn");
   /* Validation: a number, not zero; charge and payment are positive;
      only a correction may be negative. */
-  if(!isFinite(amt) || amt === 0){ msg.textContent = "הזן סכום / Enter an amount (not zero)."; return; }
-  if(type !== "correction" && amt < 0){ msg.textContent = "חיוב ותשלום חייבים להיות חיוביים. לתיקון בחר רשומת תיקון. / Charges and payments must be positive; use a correction entry to lower a balance."; return; }
+  if(!isFinite(amt) || amt === 0){ msg.textContent = L("הזן סכום (לא אפס).", "Enter an amount (not zero)."); return; }
+  if(type !== "correction" && amt < 0){ msg.textContent = L("חיוב ותשלום רק בפלוס. להורדה: תיקון.", "Charges and payments are plus only. To lower: correction."); return; }
   var opId = pendingOp[id] || (pendingOp[id] = newOp("entry"));
   if(btn.disabled) return; /* a save with this id is already running */
   var entry = { congregantId: id, date: today(), type: type, amount: Math.round(amt * 100) / 100, description: desc, operationId: opId, source: "manual" };
   var fb = window.OH_FIREBASE;
-  btn.disabled = true; msg.textContent = "שומר... / Saving...";
+  btn.disabled = true; msg.textContent = L("שומר...", "Saving...");
   var r = (fb && fb.saveLedgerEntry) ? await fb.saveLedgerEntry(entry) : { saved: false, reason: "test-only" };
   btn.disabled = false;
   if (r.saved || r.reason === "duplicate-operationId" || r.reason === "test-only") {
@@ -122,11 +124,11 @@ async function addEntry(id){
     delete pendingOp[id]; /* the next entry gets a new id */
     logActivity(who(), "Added " + type + " entry, " + money(entry.amount) + ", for " + c.name, "ledger");
     showCard(id); renderList();
-    document.getElementById("eMsg").textContent = r.saved ? "נשמר / Saved (append-only)." : (r.reason === "test-only" ? "תצוגה מקומית בלבד / Local preview only, not saved." : "כבר נשמר / Already saved, not recorded twice.");
+    document.getElementById("eMsg").textContent = r.saved ? L("נשמר.", "Saved.") : (r.reason === "test-only" ? L("תצוגה מקומית בלבד, לא נשמר.", "Local preview only, not saved.") : L("כבר נשמר.", "Already saved."));
   } else {
     /* Not saved: nothing is added on screen, and the same operationId
        is kept, so pressing again cannot create a second entry. */
-    msg.textContent = "לא נשמר / Not saved: " + r.reason + ". לחץ שוב לנסות / Press again to retry (it will not be recorded twice).";
+    msg.textContent = L("לא נשמר: ", "Not saved: ") + r.reason + L(". לחץ שוב.", ". Tap again.");
   }
 }
 function csvCell(v){
@@ -148,16 +150,16 @@ function exportCSV(id){
 var pendingCongId = null;
 /* Hebrew and English kept in their own direction, so the punctuation of
    one never jumps into the other on a right-to-left page. */
-function addMsg(he, en){ document.getElementById("addMsg").innerHTML = '<bdi dir="rtl">' + esc(he) + '</bdi> / <bdi dir="ltr">' + esc(en) + '</bdi>'; }
+function addMsg(he, en){ document.getElementById("addMsg").textContent = L(he, en); }
 async function addCong(){
   var btn = document.getElementById("addCongBtn");
   if(btn.disabled) return; /* a save is already running */
   var n = document.getElementById("newName").value.trim();
   var phone = document.getElementById("newPhone").value.trim();
   var email = document.getElementById("newEmail").value.trim().toLowerCase();
-  if(!n){ addMsg("הזן שם", "Enter a name."); return; }
-  if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ addMsg("המייל לא תקין", "The email is not valid."); return; }
-  if(email && cons.some(function(c){ return String(c.email || "").toLowerCase() === email; })){ addMsg("כבר קיים מתפלל עם המייל הזה", "Already exists: a mitpalel with this email."); return; }
+  if(!n){ addMsg("הזן שם.", "Enter a name."); return; }
+  if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ addMsg("המייל לא תקין.", "The email is not valid."); return; }
+  if(email && cons.some(function(c){ return String(c.email || "").toLowerCase() === email; })){ addMsg("כבר קיים מתפלל עם המייל הזה.", "A member with this email already exists."); return; }
   var fb = window.OH_FIREBASE;
   if(!pendingCongId && fb && fb.newCongregantId) pendingCongId = fb.newCongregantId();
   btn.disabled = true; addMsg("שומר...", "Saving...");
@@ -169,13 +171,13 @@ async function addCong(){
     pendingCongId = null; /* the next add gets a new id */
     ["newName", "newPhone", "newEmail"].forEach(function(f){ document.getElementById(f).value = ""; });
     logActivity(who(), (r.saved ? "הוסיף מתפלל / Added mitpalel: " : "תצוגה מקומית / Local preview: ") + n, "מתפללים / Mitpalelim");
-    if(r.saved) addMsg("נשמר", "Saved."); else addMsg("תצוגה מקומית בלבד", "Local preview only, not saved.");
+    if(r.saved) addMsg("נשמר.", "Saved."); else addMsg("תצוגה מקומית בלבד, לא נשמר.", "Local preview only, not saved.");
     renderList(); renderNederCong();
   } else if(r.reason === "duplicate-email"){
-    addMsg("כבר קיים מתפלל עם המייל הזה", "Already exists: a mitpalel with this email.");
+    addMsg("כבר קיים מתפלל עם המייל הזה.", "A member with this email already exists.");
   } else {
     var why = { "permission-denied": ["אין הרשאה", "No permission"], "unavailable": ["אין חיבור", "No connection"], "not-signed-in": ["לא מחובר", "Not signed in"] }[r.reason] || [r.reason, r.reason];
-    addMsg("לא נשמר (" + why[0] + "). לחץ שוב לנסות.", "Not saved (" + why[1] + "). Press again to retry.");
+    addMsg("לא נשמר (" + why[0] + "). לחץ שוב.", "Not saved (" + why[1] + "). Tap again.");
   }
 }
 var activity = [];
@@ -193,8 +195,8 @@ function renderNederCong(){
   /* Stage D: only active members are offered for a new neder */
   document.getElementById("nederCong").innerHTML = cons.filter(function(c){ return !window.OH_MEMBERS || window.OH_MEMBERS.isActive(c); }).map(function(c){ return '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>'; }).join("");
   document.getElementById("nederList").innerHTML = pledges.map(function(n){
-    return "<p>" + esc(n.date) + " | " + esc(n.name) + " | " + amt$(n.amount) + " | Aliyah: " + esc(n.aliyah) + "</p>";
-  }).join("") || "<p>אין נדרים עדיין / No nedarim yet.</p>";
+    return "<p>" + esc(n.date) + " | " + esc(n.name) + " | " + amt$(n.amount) + " | " + L("עלייה: ", "Aliyah: ") + esc(n.aliyah) + "</p>";
+  }).join("") || "<p>" + L("אין נדרים עדיין", "No nedarim yet") + "</p>";
 }
 /* One operationId for the neder form, kept until a confirmed save. */
 var nederOp = null;
@@ -203,7 +205,7 @@ async function addNeder(){
   var c = cons.find(function(x){ return x.id === id; });
   var name = document.getElementById("nederName").value.trim(), amt = Number(document.getElementById("nederAmt").value), aliyah = document.getElementById("nederAliyah").value.trim();
   var msg = document.getElementById("nederMsg");
-  if(!c || !name || !isFinite(amt) || amt <= 0){ msg.textContent = "Enter a congregant, a name, and a positive amount."; return; }
+  if(!c || !name || !isFinite(amt) || amt <= 0){ msg.textContent = L("בחר מתפלל, שם וסכום בפלוס.", "Choose a member, a name and a plus amount."); return; }
   /* Foundation: a neder first creates a pledge, not a payment.
      Converting it creates a ledger charge with a unique operationId,
      so a double click records one charge only. */
@@ -216,7 +218,7 @@ async function addNeder(){
   var r = (fb && fb.saveLedgerEntry) ? await fb.saveLedgerEntry(entry) : { saved: false, reason: "test-only" };
   if (btn) btn.disabled = false;
   if (!(r.saved || r.reason === "duplicate-operationId" || r.reason === "test-only")) {
-    msg.textContent = "הנדר לא נשמר / Neder not saved: " + r.reason + ". Press again to retry, it will not be recorded twice.";
+    msg.textContent = L("הנדר לא נשמר: ", "Neder not saved: ") + r.reason + L(". לחץ שוב.", ". Tap again.");
     return;
   }
   if (r.reason !== "duplicate-operationId") {
@@ -226,22 +228,22 @@ async function addNeder(){
   }
   nederOp = null;
   document.getElementById("nederName").value = ""; document.getElementById("nederAmt").value = ""; document.getElementById("nederAliyah").value = "";
-  msg.textContent = (r.saved ? "נשמר / Saved: " : (r.reason === "test-only" ? "תצוגה מקומית / Local preview: " : "כבר נשמר / Already saved: ")) + "neder for " + c.name + ".";
+  msg.textContent = (r.saved ? L("נשמר: ", "Saved: ") : (r.reason === "test-only" ? L("תצוגה מקומית: ", "Local preview: ") : L("כבר נשמר: ", "Already saved: "))) + L("נדר של ", "neder for ") + c.name + ".";
   renderList(); renderNederCong();
 }
 var recs = [];
 function renderRec(){
   document.getElementById("recList").innerHTML = recs.map(function(r){
     var c = cons.find(function(x){ return x.id === r.congregantId; });
-    return "<p>" + esc(r.name) + " | " + esc(c ? c.name : r.congregantId) + " | " + amt$(r.amount) + " | " + esc(r.period) + " | Status: " + esc(r.status) + " | Next due: " + esc(r.nextDue) +
-    ' <button class="btn secondary" style="width:auto;min-height:44px;padding:8px 14px" onclick="toggleRec(' + jsArg(r.id) + ')">' + (r.status === "active" ? "Pause or cancel" : "Reactivate") + '</button></p>';
+    return "<p>" + esc(r.name) + " | " + esc(c ? c.name : r.congregantId) + " | " + amt$(r.amount) + " | " + word(r.period) + " | " + word(r.status) + " | " + L("החיוב הבא: ", "Next: ") + esc(r.nextDue) +
+    ' <button class="btn secondary" style="width:auto;min-height:44px;padding:8px 14px" onclick="toggleRec(' + jsArg(r.id) + ')">' + (r.status === "active" ? L("השהה", "Pause") : L("הפעל שוב", "Resume")) + '</button></p>';
   }).join("");
 }
 function toggleRec(id){
   var r = recs.find(function(x){ return x.id === id; }); if(!r) return;
   r.status = (r.status === "active") ? "cancelled" : "active";
   logActivity(who(), (r.status === "active" ? "Reactivated" : "Paused or cancelled") + " recurring schedule: " + r.name + ". Past ledger entries were NOT deleted.", "recurring");
-  document.getElementById("recMsg").textContent = "Schedule status changed. Past ledger entries were NOT deleted.";
+  document.getElementById("recMsg").textContent = L("עודכן. החיובים הקודמים נשארו.", "Updated. Past charges are kept.");
   renderRec();
 }
 /* Recurring charges: only schedules whose nextDue has arrived are
@@ -265,14 +267,14 @@ async function applyRecurring(){
     } else if (res.reason !== "duplicate-operationId") { failed++; continue; }
     r.nextDue = OH_UI.addMonths(r.nextDue, r.period === "annual" ? 12 : 1);
   }
-  document.getElementById("recMsg").textContent = "Applied " + applied + " due recurring charge(s). Not due yet: " + skipped + (failed ? ". Failed: " + failed + " (press again to retry)." : ".");
+  document.getElementById("recMsg").textContent = L("חויבו: ", "Charged: ") + applied + L(". עוד לא הגיע זמנם: ", ". Not due yet: ") + skipped + (failed ? L(". נכשלו: ", ". Failed: ") + failed + L(" (לחץ שוב).", " (tap again).") : ".");
   renderList(); renderRec();
 }
 function renderPledges(){
   var el = document.getElementById("pledgeList"); if(!el) return;
   el.innerHTML = pledges.map(function(p){
     var c = cons.find(function(x){ return x.id === p.congregantId; });
-    return "<p>" + esc(p.date) + " | " + esc(c ? c.name : p.congregantId) + " | " + esc(p.name) + " | " + amt$(p.amount) + " | Aliyah: " + esc(p.aliyah) + " | Status: " + esc(p.status) + " (pledge, not a payment)</p>";
+    return "<p>" + esc(p.date) + " | " + esc(c ? c.name : p.congregantId) + " | " + esc(p.name) + " | " + amt$(p.amount) + " | " + L("עלייה: ", "Aliyah: ") + esc(p.aliyah) + " | " + word(p.status) + "</p>";
   }).join("");
 }
 function annualReport(){
@@ -280,13 +282,13 @@ function annualReport(){
   var r = window.FinanceStates.annualReport(cons, pledges, year);
   var methods = Object.keys(r.paymentsByMethod).map(function(k){ return esc(k) + ": " + amt$(r.paymentsByMethod[k]); }).join(" | ") || "-";
   document.getElementById("annualArea").innerHTML =
-    '<div class="gold-frame" style="margin:1rem 0"><h3>דוח שנתי / Annual financial report, ' + esc(year) + '</h3>' +
-    '<p>Total income (payments in ' + esc(year) + '): ' + amt$(r.totalIncome) + '</p>' +
-    '<p>Total charges (in ' + esc(year) + '): ' + amt$(r.totalCharges) + '</p>' +
-    '<p>יתרות פתוחות / Open balances (all time): ' + amt$(r.openBalances) + '</p>' +
-    '<p>Payments by method: ' + methods + '</p>' +
-    '<p>Unpaid commitments: ' + amt$(r.unpaidCommitments) + '</p>' +
-    '<p><small>This report is separate from a balance statement and separate from a tax letter. Unpaid pledges are not counted as income.</small></p></div>';
+    '<div class="gold-frame" style="margin:1rem 0"><h3>' + L("דוח שנתי ", "Annual report ") + esc(year) + '</h3>' +
+    '<p>' + L("הכנסות ב-", "Income in ") + esc(year) + ': ' + amt$(r.totalIncome) + '</p>' +
+    '<p>' + L("חיובים ב-", "Charges in ") + esc(year) + ': ' + amt$(r.totalCharges) + '</p>' +
+    '<p>' + L("יתרות פתוחות (מתמיד): ", "Open balances (all time): ") + amt$(r.openBalances) + '</p>' +
+    '<p>' + L("תשלומים לפי אמצעי: ", "Payments by method: ") + methods + '</p>' +
+    '<p>' + L("התחייבויות שלא שולמו: ", "Unpaid pledges: ") + amt$(r.unpaidCommitments) + '</p>' +
+    '<p><small>' + L("התחייבות שלא שולמה אינה הכנסה.", "An unpaid pledge is not income.") + '</small></p></div>';
   logActivity(who(), "Generated annual financial report for " + year, "finance");
 }
 function taxLetters(){
@@ -295,11 +297,11 @@ function taxLetters(){
   var html = cons.filter(function(c){ return !window.OH_MEMBERS || window.OH_MEMBERS.isMember(c); }).map(function(c){
     var pays = c.ledger.filter(function(e){ return e.type === "payment" && String(e.date).indexOf(year) === 0; });
     var total = pays.reduce(function(s, e){ return s + OH_UI.cents(e.amount); }, 0) / 100;
-    return '<div class="gold-frame tax-letter" style="margin:1rem 0"><h3>מכתב תרומה 501c3, מוכן להדפסה / 501c3 donation letter, print-ready (' + esc(year) + '): ' + esc(c.name) + '</h3>' +
+    return '<div class="gold-frame tax-letter" style="margin:1rem 0"><h3>' + L("מכתב 501c3", "501c3 letter") + ' (' + esc(year) + '): ' + esc(c.name) + '</h3>' +
     '<p>Payments recorded in ' + esc(year) + ': ' + amt$(total) + ' (' + pays.length + ' payment(s)).</p>' +
-    '<p>Dear ' + esc(c.name) + ', thank you for your support of Or Hachaim Congregation in ' + esc(year) + '. Before issuing a real letter, the gabbai must confirm which payments count as tax-deductible donations, because not every payment (for example, a membership fee) is necessarily a donation.</p></div>';
+    '<p>Dear ' + esc(c.name) + ', thank you for your support of Or Hachaim Congregation in ' + esc(year) + '.</p></div>';
   }).join("");
-  document.getElementById("taxArea").innerHTML = html + (html ? '<button class="btn btn-gold" style="width:auto" onclick="printTaxLetters()">הדפס את כל המכתבים / Print all letters</button>' : "");
+  document.getElementById("taxArea").innerHTML = html + (html ? '<button class="btn btn-gold" style="width:auto" onclick="printTaxLetters()">' + L("הדפס את כל המכתבים", "Print all letters") + '</button>' : "");
   logActivity(who(), "Generated annual tax letters for " + cons.length + " congregant(s) for " + year + " (print-ready)", "tax");
 }
 /* The print rule shows only #printArea. Letters are copied there (one
@@ -313,31 +315,31 @@ function printTaxLetters(){
 function backupExport(){
   var data = { exportedAt: new Date().toISOString(), exportedBy: who(), congregants: cons, pledges: pledges, recurringSchedules: recs, activityLog: activity, note: "Restore imports only missing entries and never deletes or overwrites existing entries. Automatic daily backup with a copy outside Firebase and a tested full restore is the standard." };
   var a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {type: "application/json"})); a.download = "or-hachaim-finance-backup-" + today() + ".json"; a.click();
-  document.getElementById("backupMsg").textContent = "Full backup exported (this view's data).";
+  document.getElementById("backupMsg").textContent = L("הגיבוי ירד למכשיר.", "Backup downloaded.");
   logActivity(who(), "Exported full finance backup", "backup");
 }
 renderList(); renderActivity(); renderNederCong(); renderRec(); renderPledges();
 var _lastUserEmail = null;
 function signInFromGate(){
   var fb = window.OH_FIREBASE;
-  if(!fb || !fb.signIn){ document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.'; return; }
+  if(!fb || !fb.signIn){ document.getElementById('gateMsg').textContent = L('הכניסה עוד לא מוכנה. נסה שוב בעוד רגע.', 'Sign-in is not ready yet. Try again in a moment.'); return; }
   if(fb.user){ fb.signOut(); return; }
   var r = fb.signIn();
-  if(r && r.catch) r.catch(function(e){ document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e); });
+  if(r && r.catch) r.catch(function(e){ document.getElementById('gateMsg').textContent = L('הכניסה לא הצליחה: ', 'Sign-in failed: ') + (e && e.message ? e.message : e); });
 }
 async function refreshFromFirestore(){
   try {
     var fb = window.OH_FIREBASE;
-    if(!fb || !fb.ready || !fb.user) { document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastUserEmail !== null){ _lastUserEmail = null; cons = []; document.getElementById('dataSource').textContent = 'כניסה נדרשת / Sign-in required'; renderList(); renderNederCong(); } return; }
+    if(!fb || !fb.ready || !fb.user) { document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastUserEmail !== null){ _lastUserEmail = null; cons = []; document.getElementById('dataSource').textContent = L('כניסה נדרשת', 'Sign-in required'); renderList(); renderNederCong(); } return; }
     var role = await fb.resolveRole();
-    if(!role || !fb.canAccess('finance')) { document.body.classList.add('gated'); if(role){ if(role.authorized){ location.replace('../gabbai/'); return; } document.getElementById('gateMsg').textContent = (window.OH_LABELS && window.OH_LABELS.notAuthorized) || 'החשבון הזה אינו מורשה למערכת הגבאים.'; } /* 2040 phase 1: no access prompts; a gabbai on a page that is not theirs goes home */ _lastUserEmail = null; cons = []; document.getElementById('dataSource').textContent = 'כניסה נדרשת / Sign-in required'; renderList(); renderNederCong(); return; }
+    if(!role || !fb.canAccess('finance')) { document.body.classList.add('gated'); if(role){ if(role.authorized){ location.replace('../gabbai/'); return; } document.getElementById('gateMsg').textContent = (window.OH_LABELS && window.OH_LABELS.notAuthorized) || 'החשבון הזה אינו מורשה למערכת הגבאים.'; } /* 2040 phase 1: no access prompts; a gabbai on a page that is not theirs goes home */ _lastUserEmail = null; cons = []; document.getElementById('dataSource').textContent = L('כניסה נדרשת', 'Sign-in required'); renderList(); renderNederCong(); return; }
     document.body.classList.remove('gated'); document.getElementById('gateMsg').textContent = '';
     var email = fb.user.email || '';
     if(email === _lastUserEmail) return;
     _lastUserEmail = email;
     var live = await fb.loadCongregants();
-    if(live && live.length){ cons = live; document.getElementById('dataSource').textContent = 'Signed in as ' + email; renderList(); renderNederCong(); }
-    else { cons = []; document.getElementById('dataSource').textContent = 'Signed in as ' + email + ', no congregants yet'; renderList(); renderNederCong(); }
+    if(live && live.length){ cons = live; document.getElementById('dataSource').textContent = L('מחובר: ', 'Signed in: ') + email; renderList(); renderNederCong(); }
+    else { cons = []; document.getElementById('dataSource').textContent = L('מחובר: ', 'Signed in: ') + email + L(', אין מתפללים עדיין', ', no members yet'); renderList(); renderNederCong(); }
     /* Stage D: join requests, roles, inactive (super admin); the toggle for everyone here */
     if(window.OH_MEMBERS) OH_MEMBERS.attach(cons, function(){ renderList(); renderNederCong(); });
   } catch(e) {}
