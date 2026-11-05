@@ -1,3 +1,9 @@
+/* HARDENING (2026-11-05, owner approved Nov 4 9:41 PM): additive checks only, see RULES_DELTA.md.
+1. ledgerEntries create: shape checked (validLedgerCreate) or the super admin restore path (isRestore).
+2. activityLog create: who / whoUid / when are the signed-in person and the server time (or the restore path).
+3. email_verified: isSuperAdmin() and the 3 reads by email (users, congregants, ledgerEntries).
+4. congregants: finance cannot change or remove an email that is already on a record (adding one to an empty record is still allowed).
+Every other line is unchanged. */
 /* SHABBAT SHEET (2026-11-04, Hanoch 1:02 to 1:25 PM): ONE addition, see RULES_DELTA.md.
 NEW block settings/shabbatSheet: the weekly Shabbat sheet's changes for one
 Shabbat (weeks) and its rows kept for every week (regular). Read: signed in
@@ -62,14 +68,9 @@ admin added to their existing record reads ONLY their own
 congregant record and its ledger entries, nothing else.
 Roles are stored in users/{uid} documents, written by the super
 admin only. A role document has: email and permissions (finance,
-screen = content and times, or both). This draft assumes that shape; the exact
-field names must be frozen when the Firebase project is created,
-and the rules must be tested with test users before any real data
-is imported. Do not deploy this draft to a project with real data
-until those tests pass.
-NOTE: this file is a draft for review. Firestore rules syntax must
-be validated with the Firebase emulator or the Firebase console
-rules tester before deployment. */
+screen = content and times, or both). These rules are the published
+rules of project or-hachaim; every change is tested with the Firebase
+emulator (src/firebase/rules-tests/) before it is published. */
 
 rules_version = '2';
 service cloud.firestore {
@@ -84,7 +85,11 @@ service cloud.firestore {
       return userDocExists() ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data : null;
     }
     function isSuperAdmin() {
-      return isSignedIn() && request.auth.token.email == 'hanochhason@gmail.com';
+      return isSignedIn() && request.auth.token.email == 'hanochhason@gmail.com' && request.auth.token.email_verified == true;
+    }
+    /* Hardening: a read by email needs a verified email. */
+    function emailMatches(email) {
+      return isSignedIn() && request.auth.token.email_verified == true && email == request.auth.token.email;
     }
     /* Custom claims (option 2, transition: UID-doc checks are KEPT
     below, claims are added, not substituted, until migration
@@ -115,6 +120,53 @@ service cloud.firestore {
         && (!('status' in request.resource.data) || request.resource.data.status == 'active');
     }
 
+    /* Hardening: finance may add an email to a record that has none, but
+    never changes or removes an email already on a record (that would move
+    the member's balance to another Google account). The super admin still can. */
+    function financeEmailOk() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['email'])
+        || resource.data.get('email', '') == '';
+    }
+    /* Hardening: the date fields the app writes (YYYY-MM-DD) and the server time. */
+    function isServerNow(field) {
+      return request.resource.data[field] == request.time;
+    }
+    function isDate(v) {
+      return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+    /* Hardening: the restore page (/restore/), super admin only: the original
+    fields are kept, the document is marked restored, with the server time and
+    the uid of who restored it (restore/index.html writes exactly this). */
+    function isRestore() {
+      return isSuperAdmin()
+        && request.resource.data.get('restored', false) == true
+        && isServerNow('restoredAt')
+        && request.resource.data.get('restoredBy', '') == request.auth.uid;
+    }
+    /* Hardening: a ledger entry as saveLedgerEntry writes it (firebase-app.js):
+    the document id IS the operationId and its operationIds claim is written in
+    the same batch; enteredBy / enteredByUid are the signed-in person, createdAt
+    the server time; amount a number (positive for charge and payment, not zero
+    for a correction); a known type, source and date; an existing member. */
+    function validLedgerCreate(id) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['congregantId', 'date', 'type', 'amount', 'description', 'enteredBy', 'enteredByUid', 'operationId', 'source', 'createdAt', 'method', 'pledgeId', 'aliyah'])
+        && d.keys().hasAll(['congregantId', 'date', 'type', 'amount', 'enteredBy', 'enteredByUid', 'operationId', 'createdAt'])
+        && d.operationId == id
+        && d.type in ['charge', 'payment', 'correction']
+        && d.amount is number
+        && (d.type == 'correction' ? d.amount != 0 : d.amount > 0)
+        && isDate(d.date)
+        && d.get('source', 'manual') in ['manual', 'neder', 'recurring']
+        && d.get('description', '') is string
+        && d.enteredByUid == request.auth.uid
+        && d.enteredBy == request.auth.token.email
+        && isServerNow('createdAt')
+        && d.congregantId is string && d.congregantId.size() > 0
+        && exists(/databases/$(database)/documents/congregants/$(d.congregantId))
+        && existsAfter(/databases/$(database)/documents/operationIds/$(id));
+    }
+
     /* Users and roles: super admin only writes. Nobody else can
     grant themselves finance or screen access. */
     match /users/{uid} {
@@ -124,7 +176,7 @@ service cloud.firestore {
       It does NOT list all users, and it does NOT grant finance
       or screen access by itself; hasFinance/hasScreen above
       still decide data access. */
-      allow read: if isSuperAdmin() || request.auth.uid == uid || (isSignedIn() && resource.data.email == request.auth.token.email);
+      allow read: if isSuperAdmin() || request.auth.uid == uid || emailMatches(resource.data.email);
       allow create, update, delete: if isSuperAdmin();
     }
 
@@ -156,7 +208,7 @@ service cloud.firestore {
     records. A congregant reads only their own record, by
     signed-in Google email. No congregant can list all records. */
     match /congregants/{id} {
-      allow read: if hasFinance() || (isSignedIn() && resource.data.email == request.auth.token.email);
+      allow read: if hasFinance() || emailMatches(resource.data.email);
       /* Stage D (Hanoch 2026-11-04 4:12-4:14 PM): members and join requests.
       status: "pending" (a join request), "active" (or no status at all, as
       every record written before stage D), "declined", "inactive".
@@ -165,7 +217,7 @@ service cloud.firestore {
       keeps every write it had, except those fields. Nobody deletes. */
       allow create, update: if isSuperAdmin();
       allow create: if hasFinance() && financeCreateOk();
-      allow update: if hasFinance() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(stageDKeys());
+      allow update: if hasFinance() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(stageDKeys()) && financeEmailOk();
       /* A signed-in person who is not a member yet sends ONE join request:
       document id "join_" + their own uid, their own verified sign-in email,
       only name + phone + email + status "pending" + createdAt, size caps.
@@ -206,8 +258,8 @@ service cloud.firestore {
     super admin create. Nobody updates or deletes. A
     congregant reads only their own entries. */
     match /ledgerEntries/{id} {
-      allow read: if hasFinance() || (isSignedIn() && exists(/databases/$(database)/documents/congregants/$(resource.data.congregantId)) && get(/databases/$(database)/documents/congregants/$(resource.data.congregantId)).data.email == request.auth.token.email);
-      allow create: if hasFinance();
+      allow read: if hasFinance() || (isSignedIn() && request.auth.token.email_verified == true && exists(/databases/$(database)/documents/congregants/$(resource.data.congregantId)) && get(/databases/$(database)/documents/congregants/$(resource.data.congregantId)).data.email == request.auth.token.email);
+      allow create: if hasFinance() && (validLedgerCreate(id) || isRestore());
       allow update, delete: if false;
     }
 
@@ -230,7 +282,10 @@ service cloud.firestore {
     admin read and create; nobody updates or deletes. */
     match /activityLog/{id} {
       allow read: if isSuperAdmin() || hasFinance() || hasScreen();
-      allow create: if isSuperAdmin() || hasFinance() || hasScreen();
+      allow create: if (isSuperAdmin() || hasFinance() || hasScreen())
+        && (isRestore() || (request.resource.data.get('who', null) == request.auth.token.email
+          && request.resource.data.get('whoUid', null) == request.auth.uid
+          && isServerNow('when')));
       allow update, delete: if false;
     }
 
