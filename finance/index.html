@@ -18,6 +18,10 @@
 .ledger-summary strong { color: var(--navy); }
 .cong-card h3 { margin: 0 0 4px; }
 .amt { direction: ltr; unicode-bidi: isolate; white-space: nowrap; margin: 0 0.4em; }
+/* hardening (Nov 5): a balance in credit reads "זכות" in green; a load error is navy, never red */
+.ledger-summary strong.bal-credit, .ledger-summary strong.bal-credit .amt { color: #2e6b3f; }
+.oh-loaderr { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 12px 0; padding: 12px 16px; color: var(--navy); font-weight: 700; border: 1px solid var(--navy); border-radius: var(--radius); background: rgba(255, 251, 242, 0.9); }
+.oh-loaderr .btn { width: auto; min-height: 48px; margin: 0; }
 </style></head>
 <body class="gated" data-oha-page="finance">
 <div class="page">
@@ -69,7 +73,20 @@ function newOp(prefix){ return window.Idempotency.makeOperationId(prefix); }
 function totals(c){ return OH_UI.ledgerTotals(c); }
 function who(){ var fb = window.OH_FIREBASE; return (fb && fb.user && fb.user.email) || "local preview"; }
 function amt$(n){ return '<span class="amt">' + money(n) + '</span>'; }
+/* hardening (Nov 5): owed stays "יתרה: $X"; a credit reads "זכות: $X" in green; zero reads "אין חוב ✓" */
+function bal$(n, owedHe, owedEn){
+  var b = OH_UI.balanceInfo(n);
+  if(b.kind === "credit") return '<strong class="bal-credit">' + esc(b.label) + ' <span class="amt">' + b.amount + '</span></strong>';
+  if(b.kind === "zero") return '<strong class="bal-zero">' + esc(b.label) + '</strong>';
+  return '<strong>' + L(owedHe, owedEn) + amt$(n) + '</strong>';
+}
+/* hardening (Nov 5): the members list could not be loaded. Never shown as
+   "no members yet"; one line and a "נסה שוב" button that loads again. */
+var _loadFailed = false;
+function loadErrHtml(){ return '<div class="oh-loaderr" role="alert"><span>' + L("לא הצלחנו לטעון את רשימת המתפללים.", "Couldn't load the members list.") + '</span><button class="btn secondary" onclick="retryLoad()">' + L("נסה שוב", "Try again") + '</button></div>'; }
+function retryLoad(){ _loadFailed = false; _lastUserEmail = null; document.getElementById("list").innerHTML = '<p class="oh-help">' + L("טוען...", "Loading...") + '</p>'; refreshFromFirestore(); }
 function renderList(){
+  if(_loadFailed){ document.getElementById("list").innerHTML = loadErrHtml(); return; }
   var q = (document.getElementById("search").value || "").toLowerCase();
   /* Stage D: join requests and declined ones are never on this list; inactive
      members only with "הצג לא פעילים". Totals and reports keep every record. */
@@ -77,7 +94,7 @@ function renderList(){
   document.getElementById("list").innerHTML = cons.filter(function(c){ return (!M || M.listed(c)) && String(c.name || "").toLowerCase().includes(q); }).map(function(c){
     var t = totals(c);
     return '<div class="gold-frame cong-card" style="margin:1rem 0"><h3>' + esc(c.name) + '</h3><p class="hint">' + L("טלפון: ", "Phone: ") + esc(c.phone) + ' | ' + L("מייל: ", "Email: ") + (c.email ? esc(c.email) : L("אין", "none")) + '</p>' +
-    '<p class="ledger-summary"><span>' + L("חיובים: ", "Charges: ") + amt$(t.charges) + '</span><span>' + L("תשלומים: ", "Payments: ") + amt$(t.payments) + '</span><strong>' + L("יתרה: ", "Balance: ") + amt$(t.balance) + '</strong></p>' +
+    '<p class="ledger-summary"><span>' + L("חיובים: ", "Charges: ") + amt$(t.charges) + '</span><span>' + L("תשלומים: ", "Payments: ") + amt$(t.payments) + '</span>' + bal$(t.balance, "יתרה: ", "Balance: ") + '</p>' +
     '<button class="btn secondary" style="width:auto" onclick="showCard(' + jsArg(c.id) + ')">' + L("פתח כרטיס", "Open card") + '</button>' + (M ? M.cardExtras(c) : "") + '</div>';
   }).join("") || "<p>" + L("אין מתפללים עדיין", "No members yet") + "</p>";
 }
@@ -93,7 +110,7 @@ function showCard(id){
   document.getElementById("printArea").innerHTML =
     '<div class="gold-frame"><h2>' + L("כרטיס מתפלל: ", "Member card: ") + esc(c.name) + '</h2>' +
     '<p>' + L("טלפון: ", "Phone: ") + esc(c.phone) + ' | ' + L("מייל: ", "Email: ") + (c.email ? esc(c.email) : L("אין", "none")) + ' | ' + L("תאריך הדפסה: ", "Print date: ") + esc(today()) + '</p>' +
-    '<p class="ledger-summary"><span>' + L("סך חיובים: ", "Total charges: ") + amt$(t.charges) + '</span><span>' + L("סך תשלומים: ", "Total payments: ") + amt$(t.payments) + '</span><strong>' + L("יתרה לתשלום: ", "Balance owed: ") + amt$(t.balance) + '</strong></p>' +
+    '<p class="ledger-summary"><span>' + L("סך חיובים: ", "Total charges: ") + amt$(t.charges) + '</span><span>' + L("סך תשלומים: ", "Total payments: ") + amt$(t.payments) + '</span>' + bal$(t.balance, "יתרה לתשלום: ", "Balance owed: ") + '</p>' +
     '<table><tr><th>' + L("תאריך", "Date") + '</th><th>' + L("סוג", "Type") + '</th><th>' + L("סכום", "Amount") + '</th><th>' + L("תיאור", "Description") + '</th><th>' + L("הוזן ע״י", "Entered by") + '</th></tr>' + rows + '</table>' +
     '<div class="no-print" style="margin-top:1rem;display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-gold" style="width:auto" onclick="window.print()">' + L("הדפס יתרה", "Print balance") + '</button>' +
     '<button class="btn secondary" style="width:auto" onclick="exportCSV(' + jsArg(c.id) + ')">' + L("ייצוא ל-CSV", "Export to CSV") + '</button></div>' +
@@ -157,6 +174,7 @@ async function addCong(){
   var n = document.getElementById("newName").value.trim();
   var phone = document.getElementById("newPhone").value.trim();
   var email = document.getElementById("newEmail").value.trim().toLowerCase();
+  if(_loadFailed){ addMsg("קודם צריך לטעון את רשימת המתפללים. לחץ נסה שוב.", "Load the members list first. Tap Try again."); return; }
   if(!n){ addMsg("הזן שם.", "Enter a name."); return; }
   if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ addMsg("המייל לא תקין.", "The email is not valid."); return; }
   if(email && cons.some(function(c){ return String(c.email || "").toLowerCase() === email; })){ addMsg("כבר קיים מתפלל עם המייל הזה.", "A member with this email already exists."); return; }
@@ -338,6 +356,8 @@ async function refreshFromFirestore(){
     if(email === _lastUserEmail) return;
     _lastUserEmail = email;
     var live = await fb.loadCongregants();
+    _loadFailed = !live && !!fb.lastLoadError;
+    if(_loadFailed){ cons = []; document.getElementById('dataSource').textContent = L('מחובר: ', 'Signed in: ') + email; renderList(); renderNederCong(); return; }
     if(live && live.length){ cons = live; document.getElementById('dataSource').textContent = L('מחובר: ', 'Signed in: ') + email; renderList(); renderNederCong(); }
     else { cons = []; document.getElementById('dataSource').textContent = L('מחובר: ', 'Signed in: ') + email + L(', אין מתפללים עדיין', ', no members yet'); renderList(); renderNederCong(); }
     /* Stage D: join requests, roles, inactive (super admin); the toggle for everyone here */
