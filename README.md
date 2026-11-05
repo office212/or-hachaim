@@ -1,239 +1,690 @@
-# Or Hachaim Congregation Site (Scaffold, TEST DATA ONLY)
+# Or Hachaim Congregation Site
 
-Synagogue: Or Hachaim Congregation, 321 Harold St, Staten Island, NY 10314.
-Super admin: hanochhason@gmail.com. Login in production is Google only, via Firebase Auth.
+> **DRAFT README, written 2026-11-04.** This draft describes the live site.
+> It supersedes the scaffold-era `README.md` still in the repo, which
+> describes the November 2 test scaffold ("TEST DATA ONLY") and is
+> outdated. This draft is not yet the repo README; do not replace that
+> file with it without the owner's approval.
 
-This scaffold is TEST DATA ONLY, NOT connected to Firebase yet,
-and contains NO real gabbai or congregant lists, NO real prayer
-times, and NO real API keys. Everything on every page is labeled TEST or SAMPLE.
-A Firebase project was created 2026-11-02, empty, see below, but no
-frontend wiring, no Firestore, no Auth, and no data import yet.
+## What this is
 
-Authoritative plan: `~/workspace/your_files/Or-Hachaim-Synagogue-Site-Plan.md`.
-That plan's YES list, NO list, Later list, and Shabbat rules govern this
-scaffold. Anything in the plan's NO or Later lists is deliberately absent
-here; this README does not enumerate them, so a search for those feature
-labels in this scaffold should come back empty.
+The website of **Or Hachaim Congregation**, a Sephardic congregation in
+Staten Island, New York.
 
-Do NOT touch `royzmanim-code/` (Roy clone, owned by a parallel validation
-task) or `validation/` (also owned by that task).
+It has two parts that share one codebase and one Firebase project:
 
-## Structure
+1. **An always-on shul screen.** A public, no-sign-in TV page that
+   shows the day's zmanim, the community's davening times, and gabbai
+   published content (announcements, dedications, flyers, yahrzeits,
+   images). It is built for a landscape 16:9 television, runs 24/7, and
+   reloads its data every 60 seconds.
+2. **A gabbai finance platform.** Member records, an append-only
+   ledger (charges, payments, corrections), balances computed from the
+   ledger, fast neder entry, recurring charges, annual tax letters, an
+   annual report, an activity log, and a personal dashboard for each
+   member. A signed-in person who is not a member yet can send a
+   join request from the site.
 
-- `tv/index.html`: the TV screen (public, no login). It loads the shared
-  files `screen/screen.css`, `screen/screen.js`, `screen/content.css` and
-  `screen/content-board.js`. `screen/index.html` (the signed-in screen) was
-  deleted on Nov 3, 2026 (commit 3371366); the shared files stay because
-  `/tv/` loads them.
-  Landscape 16:9 first, three columns (daily zmanim, rotating center, prayer
-  times), header with the official logo, date, clock with seconds, and
-  parsha, bottom dedications strip, no long vertical scroll at 1920x1080.
-  Phone and portrait layouts are secondary only.
-- `admin/index.html`: gabbai editing interface, mock and local state only.
-  Edit prayer times, announcements, dedications, sponsors, flyers with date
-  windows, yahrzeit (add once, recurs yearly in its week), images and
-  graphics (local preview only). No login wired yet, no saving to a backend.
-- `finance/index.html`: congregant list (TEST names only), search, add a
-  congregant with or without email, congregant card, append-only ledger.
-  Every charge, payment, and correction is an entry with date, amount,
-  description, and entered-by. Balance is computed from entries. Corrections
-  are correction entries with a signed amount; nothing is ever deleted.
-  Balance print uses `window.print` with a print stylesheet. Statement
-  export is CSV (and printable). No PDF library is included, so no PDF
-  library is claimed.
-  Finance additions, decisions 2026-11-01 23:06, TEST data only:
-  nedarim fast entry for Motzei Shabbat (name, amount, aliyah, one
-  click per neder, stored as a ledger charge); recurring charges
-  (monthly or annual membership, recorded on schedule, pausing or
-  cancelling stops future charges only and never deletes past
-  entries); annual tax receipts in January (one click, print-ready
-  501c3 letters for all congregants, clearly labeled print-ready
-  because no PDF library is included yet); activity log (who
-  changed what and when, for permissions, congregants, and ledger
-  changes, not only the ledger); backup from day one (full export
-  button, see `src/firebase/backup-design.md`).
-  Append-only is enforced in the database draft rules
-  (`src/firebase/firestore.rules`): ledger entries, nedarim, and
-  activity log entries can be created but never updated or deleted,
-  by anyone, including the super admin. The user interface alone
-  is not the enforcement.
-- `congregant/index.html`: own-data-only dashboard for one TEST congregant.
-  Real access is gated in the Firebase phase by the email the super admin
-  added to that congregant's existing record plus Google login.
-- `src/theme.css`: the separate theme layer. ALL colors, fonts, and frames
-  live here only, so the design can change later without touching data.
-  Theme: luxurious Sephardic, Jerusalem stone and marble with sky blue,
-  navy `#0E2C4C`, gold from the logo, gold frames, Sephardic ornaments.
-- `src/data/test-data.js`: ALL test data in one place, clearly labeled
-  TEST or SAMPLE, easy to replace with Firebase reads later.
-- `src/zmanim/shabbat-ends.js`: our own angle-based Shabbat ends
-  module (sun centre 8.5 degrees below the horizon), NOT Roy,
-  NOT fixed minutes.
-- `src/zmanim/decisions-2026-11-01.js`: binding decisions from
-  Hanoch 2026-11-01 23:06. Candle lighting is 18 minutes before
-  sunset, NOT Roy default 20 (Toldot anchor: Friday sunset 4:40
-  PM minus 18 = candles 4:22 PM). Shema Magen Avraham is equal
-  minutes, NOT Roy seasonal (Toldot anchor: 8:35 AM).
-- `src/firebase/firebase-config.example.js`: placeholder config shape only,
-  NO real keys, plus Firestore collection and security-rule intent.
-- `src/assets/logo-4k-transparent.png` and `src/assets/logo.svg`: the
-  official Or Hachaim logo, copied verbatim, never redrawn, recolored,
-  cropped, or altered.
+**Live site:** https://orhachaimsi.org/
+**Repository:** https://github.com/office212/or-hachaim (public, branch `main`)
+**Hosting:** GitHub Pages (static frontend) + Firebase (Firestore
+database, Google Auth, Cloud Storage for images, Cloud Functions for
+claims and backup). There is no custom server.
+**Address:** 321 Harold St, Staten Island, NY 10314.
+**Public contact email:** orhachaimcong@gmail.com.
 
-## Screen rules implemented
+Design language: light Jerusalem stone, navy (#0e2c4c), thin gold
+lines, no red or burgundy, Hebrew first, then English. One language is shown at a time.
+The official congregation logo (`src/assets/logo-4k-transparent.png`)
+is never altered.
 
-- Daily zmanim in plan order: Alot (equal minutes), Talis and Tefillin,
-  Netz, Shema Magen Avraham (equal minutes), Shema Gra, Tefillah, Chatzot,
-  Mincha Gedola, Plag, Shkiah, Tzeit.
-- Next zman is highlighted.
-- Netz window: a small window in addition to Netz time, starting 5 minutes
-  before Netz, disappearing after Netz. This is the only time window of
-  this kind on the screen.
-- Hide-after rule: each zman disappears 5 minutes after it passes, for
-  that day.
-- Shabbat-adapted screen: from Shabbat entry to Shabbat exit, weekday-only
-  items (donation QR placeholder and payment text) are hidden. A Shabbat
-  preview toggle on the screen is provided for demo and testing.
-- Screen account, decision 4 (updated in stage 2, 2026-11-03): the
-  read-only screen account role is abolished. The TV page /tv/ is
-  public and needs no account at all; it reads only prayerTimes and
-  published content items (announcements, dedications, sponsors,
-  flyers, yahrzeits with status published), never finance. Super admin
-  hanochhason@gmail.com is management only.
-  This supersedes the earlier note about a super admin profile
-  on the screen device.
-- Burn-in prevention, decision 7: the screen content shifts
-  gently (a few pixels, every 5 minutes in this scaffold) to
-  protect a TV that runs 24/7. On Shabbat and on holidays there
-  is NO movement at all, including this shift. Entering Shabbat
-  preview removes any shift at once.
-- Hebrew and English only.
-- Clock: device clock with seconds in this demo. In the live phase the
-  screen will state its sync source honestly as client clock sync; this
-  demo makes no stronger sync claim.
-- Rotating center: one zone at a time, rotating through the plan's YES
-  boards only (announcements, parsha and haftarah per Edot HaMizrach,
-  special Shabbatot, Rosh Chodesh and Shabbat Mevarchim and Molad, shiur
-  schedule, Hayom Yom, daily halacha 365, seasonal prayer insertions,
-  fast start and end detail, Hanukkah candle lighting with candle count,
-  animated digital Hanukkiah, Kiddush Levana window per Edot HaMizrach,
-  Eruv Tavshilin reminder, Diaspora Yom Tov adaptation, holiday customs
-  board, festive Shabbat and Yom Tov screen styling, Mazal Tov,
-  hazkarot and condolences, Kiddush and Seudah Shlishit sponsors,
-  Parnas Hayom and Ner LaMaor, Seudah Shlishit donor, rabbi message and
-  Shabbat blessing, date-windowed flyers, date-windowed sponsorships,
-  permanent Leilui Nishmat dedication, campaign and magbit board).
+## Page map
 
-## Zmanim source rule, final, Hanoch 2026-11-02
+All addresses are in clean directory form (no `index.html` in any link
+or shared address). GitHub Pages serves each folder's `index.html`
+automatically.
 
-All times from Zemaneh Yosef, using the unmodified code
-in `royzmanim-code/`, except Shabbat ends, which stays
-only per MyZmanim with our own 8.5 degree angle module
-in `src/zmanim/shabbat-ends.js`. Central rule and
-configurable values live in `src/zmanim/source-rule.js`.
-OPEN QUESTION, not decided: Hanoch has not confirmed
-whether the final rule overrides the two earlier
-decisions, candle 18 minutes and Shema Magen Avraham
-equal minutes, or whether they stay in force. Until he
-confirms, those decisions are KEPT, not silently switched
-to Roy defaults (candle 20, Shema seasonal), and the
-equal-minutes validation is kept, not deleted.
-Haskama note: a haskama image received 2026-11-02 from
-Rav Yitzchak Yosef, Rishon Lezion, for the Zemaneh Yosef
-calendar itself is recorded in
-`validation/torah-approval-packet.md`, section 1A. It is
-NOT approval of this screen implementation.
+| Path | Who can use it | What it is |
+|---|---|---|
+| `/` | Everyone (public) | Landing page. No davening times or zmanim on the landing. A signed-in gabbai sees one button to the gabbai system; a member sees "My Account". Public hero button links to `/tv/`. |
+| `/tv/` | Everyone, no sign-in | The public TV screen. No sign-in/out button, no internal links. Loads only daily zmanim data, community davening times, and published screen content. |
+| `/gabbai/` | Signed-in gabbaim and members, by role | Gabbai home. Tiles for screen content, davening times, finance, nedarim, reports, activity, and account, shown by role. The super admin also sees a "Join requests (N)" alert here. A signed-in person who is not a member yet is sent to the join screen instead. |
+| `/gabbai/shabbat/` | Signed-in gabbaim (screen) | The Shabbat sheet ("לשבת הזאת"): the printable weekly bulletin, edited per Shabbat, plus the extended bulletin behind a button. |
+| `/gabbai/settings/` | Signed-in gabbaim (screen texts, permissions, backup moved here) | Settings page. |
+| `/admin/` | Signed-in gabbaim, by role | Gabbai editing interface: davening times, screen content editor, TV texts editor, landing texts editor, and user management (super admin only). A finance-only gabbai sees a "finance only" note here and no content editor or davening times section. |
+| `/finance/` | Finance gabbaim and super admin | Member list and cards, ledger, neder fast entry, recurring charges, tax letters, annual report, activity log, backup export. The super admin also sees join requests and role controls here. |
+| `/congregant/` | Signed-in member (own record only) | "My Account": the member's own balance and history. A signed-in person who is not a member yet sees only the join request screen here. |
+| `/backup/` | Finance gabbaim and super admin | Download a full backup file (JSON) of all finance data. Changes nothing. |
+| `/restore/` | Finance gabbaim and super admin | Restore from a backup file. Step 1 is always a dry run (no writes); step 2 imports missing documents only and never deletes or overwrites. |
 
-## Times and the Shabbat ends placeholder
+Deleted on purpose: the old gated `/screen/` page was removed on
+2026-11-03. Its shared files (`screen/screen.css`, `screen/content.css`,
+`screen/content-board.js`, `screen/screen.js`) stay in the repo because
+`/tv/` loads them. Do not recreate a gated screen page without a new
+owner decision.
 
-Sample Toldot anchor, labeled SAMPLE on the screen: candles 4:22, Netz
-6:43, Shema 8:35 and 9:11, Chatzot 11:40, Plag 3:37, Shkiah 4:39, Shabbat
-ends 5:23, Rabbeinu Tam 5:52. All other times on the sample day are labeled
-demo calculation, NOT Roy output, until the validation task lands.
+### A note on the original plan
 
-Shabbat ends: the real module is built by the parallel validation task and
-lands in `src/zmanim/shabbat-ends.js`. It must be angle-based (8.5 degrees
-of the sun below the horizon), computed for every date, NOT a Roy value
-and NOT fixed minutes after sunset. The placeholder in that file throws
-until the real module lands, so no invented Shabbat ends value can leak
-into production code from this scaffold.
+The original plan called for a dedicated read-only screen account and
+a gated screen page. Both were superseded: the viewer role was
+abolished, the gated `/screen/` page was deleted, and `/tv/` is public
+with no sign-in. The plan also once listed a "screen viewer" grant; the
+current grant payload intentionally carries `screenViewer: false`.
+Treat this README, not the early plan sections, as the current account
+of access.
 
-## Foundation, critical review 2026-11-01 23:11
+## Roles and permissions
 
-See src/engines/FOUNDATION.md. Four independent engines:
-Zmanim, Display, Financial, Identity and Permissions. No new
-features are added until the foundation gates pass: security
-rules tested with test users, daily automatic backup with an
-off-Firebase copy and a tested full restore, idempotency for
-every financial action, full-year times validation plus a Torah
-authority approval, system-enforced Shabbat safety, offline
-fallback that never goes blank, preview before publishing,
-pledge versus charge versus payment distinction, annual report,
-and fault log with automatic monitoring. Pledges are in
-src/data/test-data.js, states in src/engines/finance-states.js,
-idempotency in src/engines/idempotency.js, Shabbat safety in
-src/engines/shabbat-safe.js, validation gates in
-src/engines/validation-gates.md.
+Sign-in is **Google only**, via Firebase Auth. There is no password
+login of the site's own.
 
-## Firebase-ready, not connected
+### Roles
 
-Firestore collections (planned): congregants, ledger entries, prayer
-times, announcements, dedications, sponsors, yahrzeits, flyers, users and
-roles. Storage for images and graphics.
+- **Super admin.** One account, management only. The super admin's
+  email is the one the Firestore rules check for (`isSuperAdmin()`).
+  Only the super admin writes `users` documents, grants or revokes
+  roles, approves or declines join requests, changes a member's status,
+  and deletes uploaded images.
+- **Finance gabbai** (`finance`). Members, ledger, nedarim,
+  recurring charges, tax letters, reports, backup, restore. No screen
+  content, no davening times.
+- **Content and Times gabbai** (`screen`). Davening times, screen
+  content, TV texts, Shabbat sheet. No finance data, in any form.
+- **Both** (`both`). Finance plus content and times.
+- **Image upload.** A separate flag, granted only together with
+  content and times. It controls who may upload images to Storage.
+- **Member** (`member`). Own dashboard and history only, plus
+  read-only davening times and announcements as the rules allow. No
+  finance tools, no admin tools, no other member's data.
+- **Signed-in, not a member yet.** May send exactly one join request
+  (see below) and nothing else.
 
-Security-rule intent (draft in `src/firebase/firestore.rules`, not
-deployed, no data yet): super admin is
-hanochhason@gmail.com only, management only. The super admin
-chooses each gabbai's permissions: finance only, times and screen
-only, or both. A gabbai touches only the collections their permission
-covers. A congregant, signed in with Google using the email added to their
-existing record, reads only their own record and its ledger entries. The
-public /tv/ page reads only prayer times and published public screen
-items, and never reads finance data (stage 2: there is no separate
-screen account any more). Ledger entries, nedarim, and activity log entries can
-be created but never updated or deleted, by anyone.
+### How roles are stored and granted
 
-Firebase project: CREATED 2026-11-02, empty. Name or-hachaim,
-ID or-hachaim, number 1030831668431, owner hanochhason@gmail.com,
-Spark plan, no cost, Google Analytics off, Gemini in Firebase off,
-no apps, no Firestore, no Auth, no Storage, no data imported.
-Console: https://console.firebase.google.com/project/or-hachaim/overview
-Creation was authorized by Hanoch (2026-11-01 23:06) when needed,
-free as far as possible, under hanochhason@gmail.com. That authorization
-does not cover a paid project; a paid tier still needs a separate decision.
+Roles live in two places that must agree:
 
-## How to run locally (static server, no build step)
+1. **Firebase Auth custom claims** (`ohFinance`, `ohScreen`,
+   `ohImageUpload`), set by the deployed `setUserClaims` Cloud
+   Function. The function only accepts calls from the super admin,
+   never grants super admin, and never creates an Auth user. That
+   means a new gabbai must **sign in once with Google first** (so the
+   Auth user exists), then the super admin grants in `/admin/`, then
+   the gabbai **signs out and signs back in** to refresh the token.
+2. **`users` documents in Firestore**, written by the super admin
+   only. The rules also accept a `users` document as a fallback, so a
+   gabbai whose claims have not refreshed yet can still be recognised
+   from their document.
 
-From this folder:
+If a role is granted before the person has ever signed in, the grant
+is recorded as pending and the claims grant must be repeated after
+their first sign-in. Nothing retries it automatically.
+
+Changing a gabbai to plain `member` revokes their claims **and
+deletes that email's `users` documents**. The member record and
+the ledger are untouched; only gabbai access is removed. Use it
+knowingly: it is the one delete in the members system.
+
+### Role checks in the app
+
+Pages do not check "signed in" alone. A role resolver decides what
+the signed-in user may open, and gated pages redirect anyone without
+the role. An old or unknown Google account with no `users` document
+and no member record gets nothing.
+
+## Firestore rules philosophy
+
+The rules are the central security layer, not a backup for the UI.
+A client-side check can be bypassed; the rules cannot, for normal
+client calls. The live rules file is `src/firebase/firestore.rules`
+(the repo copy) and the same text published in the Firebase console.
+Storage rules are `src/firebase/storage.rules`. Default is deny.
+
+Key rules, in plain language:
+
+- **Append-only ledger.** `ledgerEntries` can be created by finance
+  gabbaim and the super admin, and **never updated or deleted by
+  anyone, including the super admin**. A mistake is fixed by a new
+  correction entry with a signed amount, never by editing or deleting
+  the original.
+- **No member delete.** `congregants` has `allow delete: if
+  false` for everyone, including the super admin. There is no delete
+  button for a member anywhere in the site. Test names must never
+  be added to test a live save; only real people who need adding.
+- **Idempotency.** Every financial action carries a unique
+  `operationId`. The `operationIds` collection allows create only
+  when the id does not exist yet, and never update or delete, so a
+  double tap, a retry, or a resend after a disconnect is recorded
+  once.
+- **Finance vs. status fields.** Finance gabbaim create and edit
+  member records as before, but they may not touch status or
+  audit fields (`status`, `approvedBy`, `approvedAt`, `declinedBy`,
+  `declinedAt`, `inactiveBy`, `inactiveAt`, `activeBy`, `activeAt`).
+  A finance-created record is active (no status, or status
+  `"active"`) and carries no audit field. Only the super admin writes
+  those fields.
+- **Member statuses.** A member record has no status (every
+  record written before stage D counts as active), or `"active"`,
+  `"pending"` (a join request), `"declined"`, or `"inactive"`.
+  Pending and declined records never appear in the finance member
+  list; inactive members appear only behind "Show inactive".
+  Inactive members still receive tax letters; join requests do not.
+  Only active members are offered for a new neder.
+- **A member reads only their own record**, by signed-in Google
+  email, and only its ledger entries. A member cannot list records
+  and cannot reach another record by changing an id.
+- **Davening times are public to read** (the TV needs them with no
+  sign-in). Creating, editing, and deleting them requires content
+  and times permission.
+- **Screen content** (announcements, dedications, sponsors, flyers,
+  yahrzeits) is public to read only when `status` is `"published"`.
+  Drafts and archived items are readable only by content gabbaim and
+  the super admin. Writes need content permission; deletes need the
+  super admin.
+- **Settings documents** are split by purpose, each with its own
+  block and key allowlist: `settings/screenTexts` (TV wording,
+  content gabbaim), `settings/homeTexts` (landing wording, super
+  admin only), `settings/shabbatSheet` (Shabbat sheet, content
+  gabbaim). The generic `settings/{docId}` block still lets the super
+  admin alone write any settings document in any shape (Firestore
+  ORs matching blocks); that is accepted and unchanged.
+- **Images.** Storage path `screen/{type}/{itemId}/{file}`, images
+  only (JPG, PNG, WebP), under 5 MB, upload requires content
+  permission **and** the image-upload flag, delete is super admin
+  only. There is no public read rule: the TV shows an image through
+  the download URL saved in the published document. The backup bucket
+  is guarded separately and is never writable from the site rules.
+- **Pledge vs. charge vs. payment vs. open balance are four
+  distinct states, never conflated.** A neder fast entry first
+  creates a pledge; converting it creates a ledger charge; only
+  charges and payments move the open balance. An unpaid pledge is
+  not income.
+- **Tax letters are separate from balance reports.** A balance
+  report is not a donation receipt, and no letter may claim every
+  payment is deductible. The gabbai confirms the deductible amount
+  before any real letter is issued.
+
+## Join requests
+
+A signed-in person who is not a member yet can ask to join, from
+`/congregant/` (and from the gabbai home, which sends them there):
+
+1. They fill in full name and phone and press "Send request". They
+   see "Request sent. The gabbai will approve soon."
+2. The request is a `congregants` document with id `join_` + their
+   Auth uid, exactly five fields (name, phone, email, status
+   `"pending"`, createdAt), their own verified sign-in email, name
+   2-80 characters, phone 7-30 characters. The rules allow exactly
+   that shape, once. The requester cannot edit it afterwards, cannot
+   approve themselves, cannot set a role, and cannot read anyone
+   else's request.
+3. The super admin sees "Join requests (N)" on the gabbai home and
+   in `/finance/`, presses Approve, and picks a role in one tap
+   (member, times gabbai, finance gabbai, or both). Approving sets
+   the record active with `approvedBy`/`approvedAt`; declining sets
+   it declined. The person then signs in again and sees their
+   account. A finance gabbai opening `/finance/` sees no requests
+   and no role buttons.
+4. **Resend after decline (stage D2).** A declined person sees
+   "Request not approved" with a "Send request again" button. The
+   form reopens with their name and phone prefilled, and sending
+   returns the same document to `"pending"` with a new createdAt.
+   The old `declinedBy`/`declinedAt` stay on the document, which is
+   how the super admin sees a small grey "Sent again" tag on the
+   request card. A declined person may resend after every decline.
+   There is still exactly one document per person, never two open
+   requests.
+
+## Zmanim: sources and decisions
+
+All times follow **Zemaneh Yosef** (RoyZmanim, Sephardic, after Rav
+Ovadia Yosef), except Shabbat ends, which follows **MyZmanim**.
+No "Roy" label and no source label is shown next to times on the
+site; sources live in code only. The haftarah shown is Sephardi
+only, for this Sephardic community.
+
+Binding decisions (owner-set, do not change without the owner):
+
+- **Candle lighting:** 18 minutes before sunset (not the Roy
+  default of 20).
+- **Sof Zman Shema, Magen Avraham:** equal minutes (not Roy's
+  seasonal value).
+- **Shabbat ends:** MyZmanim Nightfall, 3 stars, angle-based (8.5
+  degrees), not a fixed number of minutes. A minute late is
+  acceptable; a minute early is not.
+- **Rabbeinu Tam:** 72 zmaniyot after Shkiah, rounded **up**,
+  for Shabbat and for Yom Kippur. This replaced the earlier basis
+  (the MyZmanim column) by owner decision on 2026-11-04. Yom Kippur
+  alone can be switched back to the MyZmanim column value if the
+  owner asks.
+- **Holidays** behave like Friday/Shabbat but carry **no** Rabbeinu
+  Tam, unless the holiday falls on Shabbat or it is Yom Kippur.
+- **Yom Tov immediately after Shabbat:** candle lighting is after
+  Nightfall when Shabbat ends, not after Rabbeinu Tam.
+- **Calculation by rule is acceptable** even where it is not written
+  in a source, per the rabbi's answers relayed by the owner.
+
+Daily zmanim, in display order (11): Alot, Earliest Talis/Tefillin,
+Netz, Sof Zman Shema (Magen Avraham), Sof Zman Shema (Gra), Sof Zman
+Tefillah, Chatzot, Mincha Gedola, Plag (Halacha Brurah), Shkiah,
+Tzeit. Shabbat adds Friday candle lighting, Shabbat ends, and
+Rabbeinu Tam. Community davening times are separate database data,
+edited by gabbaim, never calculated.
+
+Display behaviour: a small Netz countdown appears from 5 minutes
+before Netz and disappears after Netz. Each zman disappears 5
+minutes after it passes. Hebrew and secular dates are shown, DST
+switches automatically (America/New_York), the content shifts
+gently against burn-in except on Shabbat and holidays (when it does
+not shift at all), and an offline fallback keeps showing the last
+data with a "last updated" stamp instead of a blank screen.
+Weekday-only items (payment text, donation QR, weather if ever
+added) are hidden automatically on Shabbat and Yom Tov by the
+system, not by gabbai memory.
+
+### Data files
+
+- `src/zmanim/roy-daily-5787.json`: the live daily file, 385 days
+  (2026-09-12 to 2027-10-01), including candle-lighting (18 min)
+  and angle-based Shabbat ends, plus Saturdays only carrying
+  MyZmanim Shabbat-ends and Rabbeinu Tam column values. The
+  **displayed** Rabbeinu Tam now comes from the 72-zmaniyot
+  function (`src/zmanim/rabbeinu-tam.js`), not from that column,
+  and it shows only on days whose record carries a Rabbeinu Tam
+  field.
+- `src/zmanim/source-rule.js`, `src/zmanim/decisions-2026-11-01.js`,
+  `src/zmanim/shabbat-ends.js`: the binding deviation rules.
+- `src/calendar/`: the calendar engine, haftarah data, and
+  date-windowed content rules. `src/tv/sunset-5787.json` holds
+  sunset seconds per date, used only for sunset-relative davening
+  rules.
+- Coordinates used: the shul, 321 Harold St, Staten Island, NY
+  10314 (lat 40.60155, lon -74.13206), America/New_York.
+
+### The 5788 gate (still closed)
+
+There is **no 5788 daily file live**. A 5788 model exists only in
+development packages: Shabbat ends and Rabbeinu Tam computed by
+MyZmanim's own rules with a 5-second safety window (values within
+5 seconds of a minute boundary are moved one minute later, so
+nothing is ever early). It stays gated until: the real MyZmanim
+5788 PDF arrives, a dry-run replacement script swaps all model
+values for real ones, a never-early recheck passes, and the owner
+approves. Do not upload any 5788 file before that.
+
+## Features by area
+
+### TV screen (`/tv/`)
+
+Three columns on a 16:9 board: daily zmanim plus a Shabbat/holiday
+block on one side (Shabbat ends and Rabbeinu Tam appear only in
+that block, shown Friday all day until 5 minutes after Rabbeinu
+Tam; after Tzeit the column shows tomorrow's zmanim labelled
+"tomorrow's zmanim"), gabbai-entered davening times on the other
+side, and the community board in the centre with an insertions
+strip on top, a thin "next zman" strip (Netz countdown inside it
+only), and a rotating centre board. The bottom bar shows the name
+and address fixed, with permanent dedications in a slow ticker.
+Donation/Zelle/QR boards are weekday-only rotating boards.
+Placeholder welcome/dedication/halacha texts show until a gabbai
+enters real content; that is by design, not a bug. A signed-in
+check of the TV preview exists in `/admin/` (exact TV preview
+before publishing).
+
+### Davening times editor (`/admin/`)
+
+Community davening times are Firestore documents (`prayerTimes`:
+Hebrew name, English name, time, order, updated by/at). The editor
+groups them into weekday (Sun-Thu) and Friday/Shabbat sections.
+The "לסדר" (sort) box assigns a time to weekday, Friday, or
+Shabbat with one tap, which writes only the rule, and every sort
+row carries a quiet blue Delete button that uses the same confirm
+and delete path as every other row (davening-time rules only, never
+members). The command bar accepts plain sentences: a time
+with no days is never saved, the bar asks "מתי?" (when?) with day
+chips and a date picker and does not confirm until a day is
+chosen, and "כל השבוע" (all week) saves the same time on Friday
+and Shabbat with full rollback if an extra save fails. All writes
+go only through the davening-time save/update/delete functions.
+No sorting of davening times by time was ordered by the owner; the
+list order comes from the `order` field.
+
+### Screen content editor (`/admin/`)
+
+Announcements, dedications, sponsors, flyers, and yahrzeits, each
+with a date window (shown only between its dates), status
+(draft/published/archived), and a TV preview before publishing.
+Yahrzeit is entered once and recurs automatically every year in
+its week. Images upload through the Storage rules above. Editor
+writes go to the existing collections (no separate screen-items
+collection) and history goes to `activityLog`.
+
+### TV texts and landing texts editors (`/admin/`)
+
+Every word on the TV and on the landing page is editable from
+`/admin/`: TV texts by content gabbaim (`settings/screenTexts`),
+landing texts by the super admin only (`settings/homeTexts`),
+each in Hebrew and English, up to 400 entries per map. The
+landing page itself shows no davening times or zmanim
+(`PUBLIC_ZMANIM` is off); turning it on is a separate owner
+decision.
+
+### Shabbat sheet (`/gabbai/shabbat/`)
+
+The printable weekly bulletin ("לשבת הזאת"), stored in
+`settings/shabbatSheet`: per-week overrides (`weeks`, up to 60
+weeks) and rows kept for every week (`regular`, up to 30 rows).
+Rows have order arrows, text size in steps that always fit the
+page, a star, and hide/restore. The sheet draws from the system
+zmanim and from davening-time documents for Friday/Shabbat, shows a
+suggestion (grey time) where a row has no source, and exports
+JPG/PDF client-side (canvas, no server round-trip, no outside
+service) with a "clean for print" option. The background artwork
+and logo are part of the sheet assets (`src/shabbat-sheet/`).
+Changes made here apply to this Shabbat only unless marked for
+every week.
+
+### Finance (`/finance/`)
+
+- Member list with search, member card, balance computed
+  from the full ledger, printable balance statement and CSV
+  export.
+- Add a member with or without email. A member without
+  email is fully managed here and cannot sign in until the super
+  admin adds an email to the same record; history and balance are
+  preserved. Duplicate email is refused.
+- Ledger entries: date, amount, description, entered by, type
+  (charge, payment, correction), source (manual, neder,
+  recurring). Amounts are handled in cents; dates are New York
+  dates.
+- Neder fast entry for Motzei Shabbat: name, amount, aliyah, one
+  click per neder, idempotent.
+- Recurring charges: monthly or annual membership fees posted
+  automatically on schedule with deterministic ids, so a schedule
+  never double-charges. Pausing or cancelling stops future charges
+  only; past ledger entries are never deleted.
+- Annual tax letters (January, 501c3): one letter per member, from
+  a dedicated print area. The gabbai confirms the deductible
+  amount; which payments count as deductible is an owner decision
+  that must be recorded before real letters go out.
+- Annual financial report: total income, total charges, open
+  balances, payments by method, unpaid pledges.
+- Activity log: who changed what and when, for permissions,
+  members, and ledger changes.
+- Backup export: one JSON file with the full ledger, member
+  records, recurring schedules, and activity log. Export files
+  are financial data: never public, never readable by a screen
+  viewer.
+
+### Member dashboard (`/congregant/`)
+
+Own balance, own history, own card only. If no record matches the
+signed-in email, the page says so and shows nothing else.
+
+### Backup and restore (`/backup/`, `/restore/`)
+
+Manual export/import as above, plus the automatic cloud backup:
+a Cloud Function (`dailybackup`) and a scheduler that runs it
+every day at **03:00 America/New_York**, writing a dated JSON file
+to a private Cloud Storage bucket (`or-hachaim-backups`) that has
+no public permission. The backup account holds only the roles it
+needs on that bucket. A Drive folder of the same name is kept
+empty for manual super-admin exports only. Restore is tested
+periodically; backup files are never published to the site.
+
+## Repository layout
 
 ```
-cd ~/workspace/or-hachaim-site
-python3 -m http.server 8000
+index.html                  Landing page
+CNAME                       orhachaimsi.org (never overwrite)
+tv/                         Public TV screen (+ service worker)
+gabbai/                     Gabbai home
+gabbai/settings/            Settings page
+gabbai/shabbat/             Shabbat sheet screen
+admin/                      Gabbai editing interface
+  prayer-times.*            Prayer times list, sort box, styles
+  content-editor.*          Announcements/dedications/flyers/yahrzeits/sponsors
+  tv-texts-editor.js        TV wording editor
+  home-texts-editor.js      Landing wording editor (super admin only)
+finance/                    Finance platform (single page app)
+congregant/                 Congregant dashboard / join screen
+backup/  restore/           Manual backup export / restore import
+screen/                     Shared screen files loaded by /tv/
+                            (the gated screen page itself is deleted)
+src/firebase/               firebase-app.js (role resolver, all Firestore calls)
+                            firestore.rules, storage.rules (repo copies)
+                            firebase-config.js (LIVE config, never push a
+                              redacted or example config over it)
+                            screen-content.js, backup-design.md
+src/ui/                     labels.js (all UI words, Hebrew + English)
+                            oh-home.js (gabbai home + tiles)
+                            oh-members.js/css (members, join requests, roles)
+                            oh-cmdbar.js, oh-command.js (command bar + parser)
+                            oh-design.css, oh-shell.js, oh-shabbat.js, ...
+src/zmanim/                 Daily data + deviation rules + Rabbeinu Tam
+src/calendar/               Calendar engine, haftarah, content data
+src/engines/                display-engine, finance-states, idempotency,
+                            shabbat-safe (Shabbat hiding), FOUNDATION.md
+src/tv/                     TV texts, day state, sunset data, prayer rules
+src/shabbat-sheet/          Sheet core, drawing, editor, background, logo
+src/assets/                 Official logo, local fonts, stone textures
+src/home/                   Landing texts + home logic
+validation/                 Zmanim validation evidence (do not overwrite)
 ```
 
-Then open: `http://localhost:8000/tv/`,
-`http://localhost:8000/admin/index.html`,
-`http://localhost:8000/finance/index.html`,
-`http://localhost:8000/congregant/index.html`.
+## Deploying changes
 
-No build, no install, no keys. If a page is opened as a plain file instead
-of through the server, relative paths still resolve, but the server route
-above is the supported one.
+There is no build step and no CI deploy. Every change is a file
+upload plus, when rules change, a console publish. The owner's
+standing rules for this repo:
 
-## Ledger worked example (TEST Congregant One)
+1. **Use the browser's signed-in GitHub session** (web editor /
+   upload), not a connector push, to avoid approval cards. Never
+   run two push tasks on the same repo at once.
+2. **Rules first, then files.** When a package changes rules, verify
+   the currently published baseline first (version/time and the
+   blocks it must contain), paste the full new rules text into the
+   Firebase console editor (there is no file import; if the editor
+   cannot load a granted file, paste the exact text), publish, and
+   verify the new version before uploading any file. Publish
+   Firestore rules only, or Storage rules only, as the package
+   states; never open the other one "while you are there".
+3. **One commit per file**, verifying each file's content after its
+   commit before moving on. New files first, then changed files,
+   unless the package says otherwise.
+4. **Verify from live, not from the commit list.** After upload,
+   check the Pages deployment (Actions run for the head commit)
+   and then check the live pages. GitHub Pages can serve the
+   previous deploy for minutes after a successful build, and a
+   browser can serve a stale cached copy long after that. When a
+   live check shows old content after a successful deploy, start a
+   **fresh browser task/tab** rather than reloading the same
+   windows, and confirm the new file is actually on the CDN
+   (fetching the file URL directly) before calling anything a
+   defect. The owner's phone view settles cache doubts.
+5. **Check before approving.** Every package is diffed file by
+   file against the live head before upload: hashes against the
+   package manifest, forbidden scope (rules, config, functions,
+   billing, domains, DNS, grants, 5788, backups, viewer roles),
+   and a rollback that reproduces the live head exactly. Package
+   test counts are the author's, not independently re-run here
+   (no Java/Firebase CLI in the checking environment); emulator
+   suites are quoted as claimed.
+6. **No silent changes to site copy or counts.** Review counts,
+   schema numbers, and public wording change only on the owner's
+   word.
 
-Charges: 180 + 120 = 300. Payments: 100 + 50 = 150.
-Balance owed: 300 - 150 = 150. Verified by the totals function in
-`src/data/test-data.js` and shown on the finance and congregant pages.
+### Rollback
 
-## NOT yet done (checklist)
+Each package ships a rollback zip that restores the changed files
+to their pre-package versions (and deletes any new files it
+lists). Rollback is: upload the rollback files, republish the
+rollback rules if the package changed rules, and verify the head.
+Rollback restores code and rules only; data created under the new
+code stays in the database (for example, a join request sent
+under stage D still shows under the old code as a member in the
+finance list, so approve or decline anything pending before
+rolling back). A rollback built against the wrong base is
+dangerous: it can wipe a later live stage. Always verify the
+rollback's "before" hashes against the actual live head first.
 
-- [x] Live GitHub repo: CREATED by Hanoch, https://github.com/office212/or-hachaim, owner office212, Public.
-- [x] Code push to office212/or-hachaim: DONE 2026-11-02, validated code with test data only. Text commit b4f84a2, logo PNG commit e977fb6, via the GitHub connector, which worked on 2026-11-02. Scope does NOT cover go-live with real data, real lists, or a paid Firebase project.
-- [x] Live Firebase project: CREATED 2026-11-02, empty, or-hachaim, Spark free, under hanochhason@gmail.com, no paid tier covered. Firestore, Auth, Storage, rules deployment, and frontend wiring are NOT done yet.
-- [ ] GitHub Pages activation and test-site verification (next step, test data only)
-- [ ] Google login wiring (placeholder only)
-- [ ] Roy engine integration (demo and sample data only for now)
-- [x] Shabbat ends module (real module in src/zmanim/shabbat-ends.js; the placeholder note above was stale and is corrected here)
-- [ ] Real gabbai list, real congregant list, real prayer times (all arrive only after verification, per the plan)
-- [ ] Go-live with real data, public sharing of real data, or any real data import (none done, none claimed)
+### Never overwrite, never do
+
+- `CNAME` content (orhachaimsi.org).
+- `firebase-config.js` (the live config). Never push the example
+  or a redacted config over it. The local copy in some checkouts
+  is stale and must never be pushed.
+- The official logo (`src/assets/logo-4k-transparent.png`).
+- `src/zmanim/roy-daily-5787.json` (the live daily file). Never
+  replace it with a model, a recomputation, or a 5788 file without
+  the 5788 gate (above) passing.
+- `validation/` evidence.
+- Never present test data as real. Test items are labelled test
+  and are removed before real data goes in.
+- Never delete a member, a ledger entry, or an operationId.
+- Never grant super admin to anyone. Never grant a role to an
+  account that has not signed in once, except as a recorded
+  pending grant to be repeated after sign-in.
+- Never re-enable auto-renew on the old domain orhachaimcong.org
+  (one year only, intentionally off; it forwards to orhachaimsi.org).
+- Never connect a domain to a test-data site.
+- Never log out of the owner's accounts after a task; scheduled
+  checks and browser work depend on staying signed in.
+- Never ship a redesign without the actual approved demo file in
+  hand, and never reinterpret an approved demo generically; copy
+  its treatments exactly.
+
+## Current status, 2026-11-04
+
+Live HEAD: **`804f423`** (text cleanup). Live domain orhachaimsi.org,
+Enforce HTTPS on. The old domain orhachaimcong.org forwards
+(temporary redirect, no path forwarding) to orhachaimsi.org.
+
+Stages live, in order:
+
+- **Stage 2** (2026-11-03): content editor writing to the existing
+  collections, published-only public reads, Storage rules with
+  claims-based image upload.
+- **Stage A** (2026-11-03): gabbai home at `/gabbai/`, unified top
+  bar, phone bottom bar ("Home | Davening times | Sign out").
+- **Stage B1** (2026-11-04): davening-times editor rebuild, delete
+  permission for content gabbaim.
+- **2040 phase 1** (2026-11-04): new Firestore block
+  `settings/screenTexts`, TV wording indirection, gabbai settings
+  and Shabbat pages, sunset-relative davening rules, chametz zmanim.
+- **2040 phase 2** (2026-11-04): new block `settings/homeTexts`
+  (landing editor, super admin only), weekday vs. Friday/Shabbat
+  davening-time sections, command-bar parser improvements, sign-out
+  returns to the landing page.
+- **Shabbat sheet** (2026-11-04): new block
+  `settings/shabbatSheet`, the sheet screen, and the Rabbeinu Tam
+  72-zmaniyot basis change (owner's own change).
+- **Combined package v2** (2026-11-04): upgraded sheet (original
+  background, sunset-based suggestions, text size, row order),
+  working finance "Add member" save, blue Delete button in the
+  "לסדר" sort box, command-bar "מתי?" flow. (v1 of this package
+  was discarded: its rollback was built against the wrong base
+  and would have wiped the Shabbat sheet stage.)
+- **Stage D** (2026-11-04): members, join requests, and roles
+  (members block change, join-request flow, role controls,
+  inactive members).
+- **Stage D2** (2026-11-04): resend after decline (one new rules
+  rule, "Send request again" with prefilled form, "Sent again"
+  tag).
+- **Text cleanup** (2026-11-04): short one-line hints, one
+  language at a time, developer notes removed, English for
+  מתפלל uniformly "member". Second-language lines are hidden by
+  CSS, not deleted from page source.
+
+Real data entered by the owner himself: the live community davening
+times (Shacharit 7:00 AM, Mincha 1:40 PM, Mincha 5:00 PM,
+Arvit 8:00 PM). The final gabbai list is granted and
+re-sign-in verified.
+
+### Still open (genuinely, not placeholders)
+
+- **Real member list not yet entered.** Names, phones, emails
+  where known, and opening charges/payments. Members can be
+  added without email and given dashboard access later by adding
+  the email to the same record.
+- **Finance "Add member" live save untested by design.** It is
+  verified in code only; it will be tested when a real person
+  needs adding, never with a test name, because a member
+  cannot be deleted.
+- **5788 times file gated** (see "The 5788 gate" above): real
+  MyZmanim PDF, dry-run replacement, never-early recheck, owner
+  approval. Nothing uploaded yet.
+- **Donations and balance payment: plan only, nothing built.**
+  Provider: **Sola Payments (Cardknox)**, merchant application
+  pending. Shape: Sola's hosted PaymentSITE (card data is entered
+  only on Sola's page), opened from "Donate Now" buttons, a QR on
+  the TV, and "Pay my balance" on the member dashboard, with amount,
+  name, email and member id (`xInvoice`) prefilled in the link.
+  The payer's email receipt comes from Sola (`xCustReceipt`). The
+  balance updates only from Sola's signed webhook (Webhook PIN,
+  `ck-signature` header) received by a Firebase Cloud Function in
+  this project (already on Blaze); the redirect back to the site is
+  never treated as proof of payment. Order: Sola sandbox, build and
+  test the function and buttons with test cards, deploy the function
+  once, then go live. Binding rules: no card data ever in
+  Firestore, donation button/payment links/QR hidden automatically
+  on Shabbat and Yom Tov, a successful payment creates exactly one
+  ledger entry with `operationId = xRefNum` (Sola's reference),
+  failed/declined payments create none, refunds are correction
+  entries, and the donor tax receipt is a separate document that
+  never claims every payment is deductible. Zeffy and Stripe were
+  earlier options and are no longer the plan.
+- **Member balance wording.** A member with a credit (paid more
+  than charged) currently sees "balance due -$180". Proposed: show
+  "Credit: $180" in green, and "No balance due" at zero. Waiting
+  for the owner's word.
+- **Two old test suites are stale.** The B1 suite expects the
+  pre-phase-2 davening-times page (an add button and edit on every
+  row) and the Shabbat sheet suite fails 9 checks (mostly an empty
+  Arvit row); both fail the same way on the untouched live head, so
+  they no longer measure anything and should be updated before they
+  are relied on.
+- **Physical TV check pending.** The TV has not been verified on
+  the shul's own television, including the Netz countdown
+  window near Netz and the full Shabbat block on Shabbat itself.
+- **Owner-side role checks pending.** Content gabbai publishing
+  an announcement and a flyer with an image (the live proof of
+  the image-upload claim), finance-only admin view, per-role
+  gabbai-home tiles, and the Shabbat sheet edit/star/PDF/share
+  checks.
+- **Holiday Shabbat logic.** Friday-night Shabbat logic covers
+  candle lighting onward, but holidays are not yet fully covered
+  by that logic.
+- **Final setUserClaims CORS cleanup.** Removing the two old-domain
+  origins from the function allowlist is a separate, approval-gated
+  step.
+- **Member read access to announcements** is still missing
+  from the rules design and must not be claimed as fixed.
+- **PUBLIC_ZMANIM flip** (showing zmanim on the landing page)
+  remains a separate owner decision; it is currently off.
+- **Firebase Hosting custom-domain migration (Level 2)** is
+  relevant in principle but not decided; do not migrate now.
+- **Rabbi questions from the 2040 package:** the owner reports
+  they are already answered and will be folded into a later
+  package; the answers themselves have not been delivered in
+  this channel, so they are not recorded here.
+
+## For a new gabbai-developer
+
+Start here, in order:
+
+1. Read this README and the plan file (the plan holds the long
+   YES/NO/Later feature lists and the original design direction;
+   where they disagree with this README, this README describes
+   what is live).
+2. Open the live site as each role in turn (super admin, finance
+   gabbai, content gabbai, member, signed-out) and compare
+   what each sees against the page map above.
+3. Before touching anything, clone the repo, check the head
+   commit, and diff your package against it file by file.
+4. Never edit live data to test. The only safe live tests are
+   the ones that create nothing (viewing, opening and closing
+   dialogs without saving) or that the owner explicitly approves
+   with a real person (join requests, real member adds).
+5. When in doubt, ask the owner. A "no" from the owner is final;
+   a green-looking answer is not approval until the owner says
+   so explicitly after the check report.
