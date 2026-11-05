@@ -124,7 +124,12 @@
   }
   async function resolveRoleInternal() {
     if (!state.ready || !state.db || !state.user) return null;
-    if (state.role && state.roleUid === state.user.uid) return state.role;
+    if (state.role && state.roleUid === state.user.uid) {
+      /* 6a (Nov 5): a role built on a failed lookup is never kept: after 15 s
+         (or at once through retryRole) the lookups run again. */
+      if (!(state.roleFailedAt && Date.now() - state.roleFailedAt >= 15000)) return state.role;
+      state.role = null; state.rolePromise = null; state.roleFailedAt = 0;
+    }
     if (state.rolePromise && state.roleUid === state.user.uid) return state.rolePromise;
     state.roleUid = state.user.uid;
     state.rolePromise = (async function () {
@@ -140,11 +145,12 @@
             tokenClaims = (tr && tr.claims) || null;
           }
         } catch (e) {}
-        var userDoc = null;
+        var userDoc = null, lookupFailed = false;
         try {
           var d = await state.db.collection("users").doc(state.user.uid).get();
           if (d.exists) userDoc = d.data() || {};
-        } catch (e) {}
+          else if (d.metadata && d.metadata.fromCache) lookupFailed = true; /* 6b: an empty answer from the offline cache is not "no doc" */
+        } catch (e) { lookupFailed = true; }
         /* Email lookup, merged with the UID doc. NOTE: under the
            current live Firestore rules this query is DENIED for a
            non-super-admin (users read is super admin or UID match
@@ -163,24 +169,34 @@
             /* Stage D: a join request ("pending") or a declined one is not a member
                yet; an active record (or one with no status, as all older ones) is. */
             var s = await state.db.collection("congregants").where("email", "==", state.user.email).limit(5).get();
+            if (s.empty && s.metadata && s.metadata.fromCache) lookupFailed = true; /* 6b: empty offline cache = could not load */
             s.forEach(function (doc) {
               var st = memberStatus(doc.data());
               if (st === "active" || st === "inactive") hasCong = true;
               else if (!joinStatus || st === "pending") joinStatus = st;
             });
-          } catch (e) {}
+          } catch (e) { lookupFailed = true; } /* 6a: a failed lookup is not "not a member" */
         }
         state.role = buildRole(state.user, userDoc, hasCong, userDocByEmail, tokenClaims);
         state.role.joinStatus = hasCong ? null : joinStatus;
         /* Stage D: a signed-in person with no access at all may ask to join. */
         state.role.canRequestJoin = !state.role.authorized && !hasCong && state.role.joinStatus !== "pending" && state.role.joinStatus !== "declined";
-        return state.role;
+        return failedRole(lookupFailed);
       } catch (e) {
         state.role = buildRole(state.user, null, false, null, null);
-        return state.role;
+        return failedRole(true);
       }
     })();
     return state.rolePromise;
+  }
+  /* 6a (Nov 5): a lookup failed. The role is not cached for good, and when it
+     leaves the person with no access it is marked loadFailed: never the join
+     form, never "not authorized"; the page shows "could not load" + retry. */
+  function failedRole(failed) {
+    var r = state.role;
+    state.roleFailedAt = failed ? Date.now() : 0;
+    if (failed && !r.isSuperAdmin && !r.authorized) { r.loadFailed = true; r.canRequestJoin = false; r.joinStatus = null; }
+    return r;
   }
   function isLandingPage() { return !!document.querySelector(".signin-box"); }
 
@@ -227,8 +243,15 @@
     reason: state.reason,
     get user() { return state.user; },
     get ready() { return state.ready; },
+    /* fix 5: false until Firebase has said whether someone is signed in */
+    get authKnown() { return !!state.authKnown; },
     get role() { return state.role; },
     resolveRole: function () { return resolveRoleInternal(); },
+    /* 6a: "נסה שוב" after a failed lookup: run the lookups again now */
+    retryRole: function () {
+      if (state.roleFailedAt) { state.role = null; state.rolePromise = null; state.roleFailedAt = 0; }
+      return resolveRoleInternal();
+    },
     canAccess: function (page) {
       var r = state.role;
       if (!r) return false;
@@ -272,6 +295,7 @@
       try {
         state.loadError = null;
         var snap = await state.db.collection("congregants").get();
+        if (snap.empty && snap.metadata && snap.metadata.fromCache) throw { code: "offline-empty-cache" }; /* 6b: not "no members" */
         if (snap.empty) return null;
         var out = [];
         snap.forEach(function (doc) {
@@ -281,10 +305,11 @@
           out.push({ id: doc.id, name: d.name || doc.id, phone: d.phone || "", email: d.email || "", status: memberStatus(d), createdAt: d.createdAt || "", ledger: [] });
         });
         var led = await state.db.collection("ledgerEntries").get();
+        if (led.empty && led.metadata && led.metadata.fromCache) throw { code: "offline-empty-cache" }; /* 6b: not "no entries" */
         led.forEach(function (doc) {
           var d = doc.data() || {};
           var c = out.find(function (x) { return x.id === d.congregantId; });
-          if (c) c.ledger.push({ date: d.date || "", operationId: d.operationId || doc.id, type: d.type || "charge", amount: d.amount || 0, description: d.description || "", enteredBy: d.enteredBy || "" });
+          if (c) c.ledger.push({ date: d.date || "", operationId: d.operationId || doc.id, type: d.type || "charge", amount: d.amount || 0, description: d.description || "", enteredBy: d.enteredBy || "", method: d.method || "" }); /* 6c: method rides along */
         });
         return out;
       } catch (e) { state.loadError = { fn: "loadCongregants", code: String((e && (e.code || e.message)) || e) }; return null; }
@@ -298,6 +323,7 @@
       try {
         state.loadError = null;
         var snap = await state.db.collection("congregants").where("email", "==", state.user.email).get();
+        if (snap.empty && snap.metadata && snap.metadata.fromCache) throw { code: "offline-empty-cache" }; /* 6b: not "no member card" */
         /* Stage D: a join request (pending or declined) is not a member record. */
         var docs = snap.docs.filter(function (x) { var st = memberStatus(x.data()); return st === "active" || st === "inactive"; });
         if (!docs.length) return null;
@@ -307,7 +333,7 @@
         var led = await state.db.collection("ledgerEntries").where("congregantId", "==", doc.id).get();
         led.forEach(function (e) {
           var ed = e.data() || {};
-          out.ledger.push({ date: ed.date || "", operationId: ed.operationId || e.id, type: ed.type || "charge", amount: ed.amount || 0, description: ed.description || "", enteredBy: ed.enteredBy || "" });
+          out.ledger.push({ date: ed.date || "", operationId: ed.operationId || e.id, type: ed.type || "charge", amount: ed.amount || 0, description: ed.description || "", enteredBy: ed.enteredBy || "", method: ed.method || "" }); /* 6c */
         });
         return out;
       } catch (e) { state.loadError = { fn: "loadOwnCongregant", code: String((e && (e.code || e.message)) || e) }; return null; }
@@ -927,8 +953,8 @@
       state.ready = true;
       state.mode = "firebase";
       state.auth.onAuthStateChanged(function (u) {
-        state.user = u;
-        state.role = null; state.roleUid = null; state.rolePromise = null;
+        state.user = u; state.authKnown = true;
+        state.role = null; state.roleUid = null; state.rolePromise = null; state.roleFailedAt = 0;
         if (u) { resolveRoleInternal().catch(function () {}); }
         renderStatus();
         if (state._btn) { var _sp = state._btn.querySelector("span"); if (_sp) _sp.textContent = u ? "Sign out" : "Sign in with Google"; else state._btn.textContent = u ? "Sign out" : "Sign in with Google"; }
