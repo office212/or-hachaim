@@ -67,6 +67,13 @@ var esc = OH_UI.esc, jsArg = OH_UI.jsArg, money = OH_UI.money, today = OH_UI.nyD
 function L(he, en){ return window.OH_LANG === "en" ? en : he; }
 var WORDS = { charge: ["חיוב", "Charge"], payment: ["תשלום", "Payment"], correction: ["תיקון", "Correction"], active: ["פעיל", "Active"], cancelled: ["מושהה", "Paused"], unpaid: ["לא שולם", "Unpaid"], converted: ["הפך לחיוב", "Converted"], paid: ["שולם", "Paid"], monthly: ["חודשי", "Monthly"], annual: ["שנתי", "Annual"] };
 function word(k){ var w = WORDS[k]; return w ? L(w[0], w[1]) : esc(k); }
+/* payment method (Nov 5): the words for each method key, used by the add-entry
+   form and the annual report; none chosen = "unspecified" = "לא צוין" */
+var MW = { unspecified: ["לא צוין", "Not specified"], cash: ["מזומן", "Cash"], check: ["צ׳ק", "Check"], cheque: ["צ׳ק", "Check"], card: ["כרטיס אשראי", "Card"], credit: ["כרטיס אשראי", "Card"], zelle: ["Zelle", "Zelle"], transfer: ["העברה בנקאית", "Bank transfer"], ach: ["העברה בנקאית", "Bank transfer"], qr: ["QR", "QR"] };
+var PAY_METHODS = ["cash", "check", "zelle", "card", "transfer"];
+function mword(k){ var m = MW[String(k || "unspecified").toLowerCase()]; return m ? L(m[0], m[1]) : esc(k); }
+/* the method choice is shown only while "תשלום" is chosen; charges and corrections never carry a method */
+function syncMethod(){ var t = document.getElementById("eType"), w = document.getElementById("eMethodWrap"); if(t && w) w.hidden = t.value !== "payment"; }
 var cons = [];
 var opStore = new window.Idempotency.IdempotencyStore();
 function newOp(prefix){ return window.Idempotency.makeOperationId(prefix); }
@@ -106,7 +113,7 @@ function showCard(id){
   var c = cons.find(function(x){ return x.id === id; }); if(!c) return;
   var t = totals(c);
   if(!pendingOp[id]) pendingOp[id] = newOp("entry");
-  var rows = c.ledger.map(function(e){ return "<tr><td>" + esc(e.date) + "</td><td>" + word(e.type) + "</td><td>" + amt$(e.amount) + "</td><td>" + esc(e.description) + "</td><td>" + esc(e.enteredBy) + "</td></tr>"; }).join("");
+  var rows = c.ledger.map(function(e){ return "<tr><td>" + esc(e.date) + "</td><td>" + word(e.type) + (e.type === "payment" && e.method ? " | " + mword(e.method) : "") + "</td><td>" + amt$(e.amount) + "</td><td>" + esc(e.description) + "</td><td>" + esc(e.enteredBy) + "</td></tr>"; }).join("");
   document.getElementById("printArea").innerHTML =
     '<div class="gold-frame"><h2>' + L("כרטיס מתפלל: ", "Member card: ") + esc(c.name) + '</h2>' +
     '<p>' + L("טלפון: ", "Phone: ") + esc(c.phone) + ' | ' + L("מייל: ", "Email: ") + (c.email ? esc(c.email) : L("אין", "none")) + ' | ' + L("תאריך הדפסה: ", "Print date: ") + esc(today()) + '</p>' +
@@ -115,7 +122,8 @@ function showCard(id){
     '<div class="no-print" style="margin-top:1rem;display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-gold" style="width:auto" onclick="window.print()">' + L("הדפס יתרה", "Print balance") + '</button>' +
     '<button class="btn secondary" style="width:auto" onclick="exportCSV(' + jsArg(c.id) + ')">' + L("ייצוא ל-CSV", "Export to CSV") + '</button></div>' +
     '<div class="no-print" style="margin-top:1rem"><label>' + L("הוסף רשומה", "Add entry") + '</label>' +
-    '<select id="eType"><option value="charge">' + L("חיוב", "Charge") + '</option><option value="payment">' + L("תשלום", "Payment") + '</option><option value="correction">' + L("תיקון", "Correction") + '</option></select>' +
+    '<select id="eType" onchange="syncMethod()"><option value="charge">' + L("חיוב", "Charge") + '</option><option value="payment">' + L("תשלום", "Payment") + '</option><option value="correction">' + L("תיקון", "Correction") + '</option></select>' +
+    '<div id="eMethodWrap" hidden><label for="eMethod">' + L("אמצעי תשלום", "Payment method") + '</label><select id="eMethod"><option value="">' + mword("unspecified") + '</option>' + PAY_METHODS.map(function(k){ return '<option value="' + k + '">' + mword(k) + '</option>'; }).join("") + '</select></div>' +
     '<label>' + L("סכום (בתיקון: מינוס מוריד יתרה)", "Amount (correction: minus lowers it)") + '</label><input id="eAmt" type="number" step="0.01" inputmode="decimal"><label>' + L("תיאור", "Description") + '</label><input id="eDesc">' +
     '<button class="btn" id="eBtn" onclick="addEntry(' + jsArg(c.id) + ')">' + L("הוסף רשומה", "Add entry") + '</button><p id="eMsg" class="hint"></p></div></div>';
 }
@@ -132,12 +140,18 @@ async function addEntry(id){
   var opId = pendingOp[id] || (pendingOp[id] = newOp("entry"));
   if(btn.disabled) return; /* a save with this id is already running */
   var entry = { congregantId: id, date: today(), type: type, amount: Math.round(amt * 100) / 100, description: desc, operationId: opId, source: "manual" };
+  /* payment method (Nov 5): only on a payment; none chosen = no method = "לא צוין" in the report.
+     Card for now only records the method. Later, when card processing (Sola) exists,
+     choosing card will open the payment page for the gabbai to enter the card. */
+  var mEl = document.getElementById("eMethod");
+  var method = (type === "payment" && mEl) ? mEl.value : "";
+  if(method) entry.method = method;
   var fb = window.OH_FIREBASE;
   btn.disabled = true; msg.textContent = L("שומר...", "Saving...");
   var r = (fb && fb.saveLedgerEntry) ? await fb.saveLedgerEntry(entry) : { saved: false, reason: "test-only" };
   btn.disabled = false;
   if (r.saved || r.reason === "duplicate-operationId" || r.reason === "test-only") {
-    if (r.reason !== "duplicate-operationId") c.ledger.push({ date: entry.date, operationId: opId, type: type, amount: entry.amount, description: desc, enteredBy: who() });
+    if (r.reason !== "duplicate-operationId") c.ledger.push({ date: entry.date, operationId: opId, type: type, amount: entry.amount, description: desc, enteredBy: who(), method: method });
     delete pendingOp[id]; /* the next entry gets a new id */
     logActivity(who(), "Added " + type + " entry, " + money(entry.amount) + ", for " + c.name, "ledger");
     showCard(id); renderList();
@@ -298,7 +312,8 @@ function renderPledges(){
 function annualReport(){
   var year = String(document.getElementById("annualYear").value || today().slice(0, 4)).trim();
   var r = window.FinanceStates.annualReport(cons, pledges, year);
-  var methods = Object.keys(r.paymentsByMethod).map(function(k){ return esc(k) + ": " + amt$(r.paymentsByMethod[k]); }).join(" | ") || "-";
+  /* 6c (Nov 5): a word for the method, not the raw key; none recorded = "לא צוין" (words in MW above) */
+  var methods = Object.keys(r.paymentsByMethod).map(function(k){ var m = MW[String(k).toLowerCase()]; return esc(m ? L(m[0], m[1]) : k) + ": " + amt$(r.paymentsByMethod[k]); }).join(" | ") || "-";
   document.getElementById("annualArea").innerHTML =
     '<div class="gold-frame" style="margin:1rem 0"><h3>' + L("דוח שנתי ", "Annual report ") + esc(year) + '</h3>' +
     '<p>' + L("הכנסות ב-", "Income in ") + esc(year) + ': ' + amt$(r.totalIncome) + '</p>' +
