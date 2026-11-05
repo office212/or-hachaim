@@ -45,7 +45,7 @@
     { k: "finance", icon: I.wallet, href: "finance/", can: function (r) { return r.canFinance; } },
     { k: "nedarim", icon: I.book, href: "finance/#nedarim", can: function (r) { return r.canFinance; } },
     { k: "reports", icon: I.doc, href: "finance/#reports", can: function (r) { return r.canFinance; } },
-    { k: "activity", icon: I.list, href: "finance/#activity", can: function (r) { return r.canFinance; } },
+    { k: "activity", icon: I.list, href: "gabbai/activity/", can: function (r) { return r.isSuperAdmin; } }, /* Nov 5: the log is super admin only */
     { k: "account", icon: I.person, href: "congregant/", can: function (r) { return r.isCongregant; } }
   ];
   window.OH_HOME_TILES = TILES;
