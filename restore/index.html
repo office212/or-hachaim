@@ -70,6 +70,7 @@ async function doImport(){
   document.getElementById('importBtn').disabled = true; /* run a new dry run before importing again */
   document.getElementById('restoreMsg').textContent = L('הוחזרו: ', 'Restored: ') + created + L(', נכשלו: ', ', failed: ') + failed.length + (failed.length ? ' ' + failed.join(', ') : '');
   document.getElementById('restoreOut').textContent = lines.join('\n');
+  if(created && fb.logActivity) fb.logActivity('שוחזרו ' + created + ' רשומות מגיבוי' + (failed.length ? ' (' + failed.length + ' נכשלו)' : ''), '', { area: 'backup', code: 'backup.restore' }); /* activity log (Nov 5) */
 }
 </script>
 </div></body></html>
