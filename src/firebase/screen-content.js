@@ -8,9 +8,11 @@
      flyers/{id}         flyer
      yahrzeits/{id}      yahrzeit
    Each document keeps its own "type", so the board shows it the same way.
-   History and restore: every save also writes one activityLog line
-   (area "screen") with the version number and a full copy of the item,
-   in the same batch, so a version never exists without its history line.
+   History and restore (Nov 5, the activity log is now super admin only):
+   each item keeps its last 10 earlier versions inside its own document
+   (versions: content fields, version, action, savedAt; no email, no uid,
+   since a published item is public). The activity log gets one separate
+   line per save, written after the save; it is not read here.
    The public /tv/ reads only status "published" (the stage 2 rules allow
    the public nothing else). Drafts and archived items stay private.
    Images go to Storage under screen/{type}/{itemId}/..., JPEG, PNG or
@@ -25,6 +27,9 @@
   var TYPES = ["announcement", "dedication", "flyer", "yahrzeit", "sponsor", "parnas", "mazaltov", "hazkara", "rabbi", "campaign", "donation"];
   var MAX_IMAGE_BYTES = 5 * 1024 * 1024, MAX_EDGE = 1920;
   var CACHE_KEY = "orHachaimScreenItems";
+  var MAX_VERSIONS = 10; /* the rules allow at most 10 (versionsOk) */
+  var ACT_HE = { create: "נוסף פריט במסך", update: "עודכן פריט במסך", publish: "פורסם במסך", unpublish: "הורד מהמסך",
+    archive: "הועבר לארכיון", restore: "שוחזרה גרסה קודמת של פריט במסך" };
   var COLLECTION_OF = { announcement: "announcements", rabbi: "announcements", mazaltov: "announcements", hazkara: "announcements",
     campaign: "announcements", donation: "announcements", dedication: "dedications", parnas: "dedications",
     sponsor: "sponsors", flyer: "flyers", yahrzeit: "yahrzeits" };
@@ -89,6 +94,7 @@
       if (v && typeof v.toDate === "function") v = v.toDate().toISOString();
       o[k] = v;
     });
+    delete o.versions; /* earlier versions are read only by history() */
     return o;
   }
   function cache(items) { try { localStorage.setItem(CACHE_KEY, JSON.stringify({ at: new Date().toISOString(), items: items })); } catch (e) {} }
@@ -144,31 +150,47 @@
       else { var pd = prev.data(); data.createdAt = pd.createdAt || ts; data.createdBy = pd.createdBy || email; data.createdByUid = pd.createdByUid || uid; }
       if (extra && typeof extra.restoredFromVersion === "number") data.restoredFrom = extra.restoredFromVersion;
       var act = action || (version === 1 ? "create" : "update");
-      var log = { area: "screen", action: "screenItem." + act, collection: col, itemId: ref.id, itemType: data.type, version: version,
-        snapshot: clean(data), who: email, whoUid: uid, when: ts };
-      if (extra && typeof extra.restoredFromVersion === "number") log.restoredFromVersion = extra.restoredFromVersion;
-      var b = d.batch();
-      b.set(ref, data);
-      b.set(d.collection("activityLog").doc(), log);
-      await b.commit();
-      return { saved: true, id: ref.id, version: version, col: col };
+      data.savedAction = act;
+      /* the version being replaced goes to the front of versions (last 10 kept) */
+      if (version > 1) {
+        var pv = prev.data() || {}, pAt = pv.updatedAt;
+        var old = { version: pv.version || version - 1, action: pv.savedAction || (pv.version > 1 ? "update" : "create"), snapshot: clean(pv),
+          savedAt: pAt && typeof pAt.toDate === "function" ? pAt.toDate().toISOString() : String(pAt || "") };
+        if (typeof pv.restoredFrom === "number") old.restoredFromVersion = pv.restoredFrom;
+        data.versions = [old].concat(Array.isArray(pv.versions) ? pv.versions : []).slice(0, MAX_VERSIONS);
+      }
+      await ref.set(data);
+      /* one activity log line, after the save; its failure never undoes the save */
+      var logged = false;
+      if (f.logActivity) {
+        var title = data.titleHe || (data.yahrzeit && data.yahrzeit.nameHe) || data.titleEn || "";
+        var lr = await f.logActivity((ACT_HE[act] || "עודכן פריט במסך") + (title ? ": " + title : ""), "", { area: "screen", code: "screenItem." + act,
+          target: title, targetId: ref.id, collection: col, itemId: ref.id, version: version });
+        logged = !!(lr && lr.saved);
+      }
+      return { saved: true, id: ref.id, version: version, col: col, logged: logged };
     } catch (e) { return { saved: false, reason: (e && e.code) || String(e && e.message ? e.message : e) }; }
   }
   async function setStatus(item, status) {
     var copy = Object.assign({}, item, { status: status });
     return save(copy, status === "published" ? "publish" : (status === "archived" ? "archive" : "unpublish"));
   }
-  /* Versions of one item, newest first, from its activityLog lines. */
-  async function history(itemId) {
+  /* Versions of one item, newest first: the item itself (the current
+     version) and the earlier ones kept in its versions list. The activity
+     log is not read (only the super admin may read it). */
+  async function history(itemId, col) {
     var d = db(); if (!d) return { ok: false, reason: "not-ready" };
     try {
-      var snap = await d.collection("activityLog").where("itemId", "==", itemId).get();
-      var out = [];
-      snap.forEach(function (doc) {
-        var a = toItem(doc);
-        if (a.area !== "screen" || typeof a.version !== "number" || !a.snapshot) return;
-        out.push({ id: a.id, itemId: a.itemId, version: a.version, action: String(a.action || "").replace(/^screenItem\./, ""),
-          snapshot: a.snapshot, savedAt: a.when, savedBy: a.who, restoredFromVersion: a.restoredFromVersion });
+      var cols = col ? [col] : COLLECTIONS, doc = null;
+      for (var i = 0; i < cols.length && !doc; i++) { var g = await d.collection(cols[i]).doc(itemId).get(); if (g.exists) doc = g; }
+      if (!doc) return { ok: true, versions: [] };
+      var x = doc.data() || {}, at = x.updatedAt;
+      var out = [{ itemId: itemId, version: x.version || 1, action: x.savedAction || ((x.version || 1) > 1 ? "update" : "create"), snapshot: clean(x),
+        savedAt: at && typeof at.toDate === "function" ? at.toDate().toISOString() : (at || ""), savedBy: x.updatedBy || "",
+        restoredFromVersion: typeof x.restoredFrom === "number" ? x.restoredFrom : undefined }];
+      (Array.isArray(x.versions) ? x.versions : []).forEach(function (v) {
+        if (!v || typeof v.version !== "number" || !v.snapshot) return;
+        out.push({ itemId: itemId, version: v.version, action: v.action || "update", snapshot: v.snapshot, savedAt: v.savedAt || "", savedBy: "", restoredFromVersion: v.restoredFromVersion });
       });
       out.sort(function (a, b) { return b.version - a.version; });
       return { ok: true, versions: out };
