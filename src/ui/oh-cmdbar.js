@@ -155,7 +155,8 @@
   function denied(r) { return r && /permission|PERMISSION_DENIED|no-screen-permission/i.test(String(r.code || "") + " " + String(r.reason || "")); }
   async function log(action, detail, extra) {
     var f = fb(); if (!f || !f.logActivity) return false;
-    var r = await f.logActivity(action, detail, extra); return !!(r && r.saved);
+    /* Nov 5: a Hebrew sentence in the shared activity log, area "times" */
+    var r = await f.logActivity(String(detail || "").replace(/^הוספה: /, "נוסף זמן: ").replace(/^שינוי: /, "עודכן זמן: ").replace(/^מחיקה: /, "נמחק זמן: ").replace(/^ביטול: /, "בוטל שינוי בזמנים: "), "", Object.assign({ area: "times", code: action }, extra)); return !!(r && r.saved);
   }
 
   async function confirmPlan() {
@@ -202,7 +203,7 @@
         var it2 = Object.assign({}, p.item, { status: st.choice.publish ? "published" : "draft" });
         var endEl = st.el.querySelector("#ohCmdEnd"); if (endEl && endEl.value) it2.endDate = endEl.value;
         res = await SC.save(it2, "create");
-        if (res && res.saved) { undo = { kind: "sc-archive", id: res.id, col: res.col, item: it2 }; if (!st.choice.publish) okText = L("cmdSavedDraft"); logged = true; /* screen-content writes its own history line */ }
+        if (res && res.saved) { undo = { kind: "sc-archive", id: res.id, col: res.col, item: it2 }; if (!st.choice.publish) okText = L("cmdSavedDraft"); logged = !!res.logged; /* screen-content writes its own log line */ }
         label = (p.action === "sponsor" ? "חסות: " : "הכרזה: ") + it2.titleHe;
       }
     } catch (e) { res = { saved: false, reason: String(e) }; }
@@ -243,7 +244,7 @@
     } catch (e) { r = { saved: false, reason: String(e) }; }
     if (!r || !r.saved) { st.undo.push(u); saveUndo(); out(msg("warn", "<b>" + esc(denied(r) ? L("cmdDenied") : L("cmdFailed")) + "</b>")); return; }
     saveUndo();
-    var logged = u.kind === "sc-archive" ? true : await log("commandBar.undo", "ביטול: " + u.label, { collection: "prayerTimes", itemId: u.id });
+    var logged = u.kind === "sc-archive" ? !!r.logged : await log("commandBar.undo", "ביטול: " + u.label, { collection: "prayerTimes", itemId: u.id });
     out(msg("ok", "<b>" + esc(L("cmdUndone")) + "</b><div>" + escT(u.label) + '</div><div style="font-size:14px;opacity:.85">' + esc(logged ? L("cmdLogged") : L("cmdNotLogged")) + "</div>"));
     changed();
   }
