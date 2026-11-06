@@ -511,6 +511,13 @@ annual report):
   description starts with `ביטול [<operationId>]`, operationId
   `void-<operationId>` (one cancellation per entry, ever). The
   original stays in the history, marked "בוטל". No rules change.
+- **Edit details** (2026-11-06): "עריכת פרטים" on the member card
+  lets a finance gabbai or the super admin fix the member's name and
+  phone (a Google account name is not always the real name).
+  `OH_FIREBASE.updateCongregantDetails` writes only `name` and
+  `phone`; the email is shown but never changes there (the rules
+  already let finance edit name and phone and lock an existing
+  email; tested). One activity-log line, old → new.
 - **More** (`#more`): add member, tax letters, annual report,
   backup, unchanged.
 

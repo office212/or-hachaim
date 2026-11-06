@@ -90,7 +90,7 @@
     return "home";
   }
   function go(hash) { if (("#" + hash) === location.hash) { route(); return; } location.hash = hash; }
-  function route() { st.view = viewFromHash(); render(); window.scrollTo(0, 0); if (location.hash === "#reports") { var r = document.getElementById("reports"); if (r) r.scrollIntoView(); } }
+  function route() { st.view = viewFromHash(); st.editing = null; st.editDraft = null; st.editErr = ""; render(); window.scrollTo(0, 0); if (location.hash === "#reports") { var r = document.getElementById("reports"); if (r) r.scrollIntoView(); } }
   function newPay(kind, m) { return { kind: kind, m: m || null, amount: "", how: "", why: "", note: "", date: today(), showDate: false, q: "", op: op("entry"), err: "" }; }
 
   /* ---------- views ---------- */
@@ -262,7 +262,19 @@
     var b = bal(c), v = voidedIds(c);
     var rows = (c.ledger || []).filter(function (e) { return !(e.type === "correction" && VOID_RE.test(e.description || "")); })
       .slice().sort(function (a, z) { return a.date < z.date ? 1 : a.date > z.date ? -1 : (z._new || 0) - (a._new || 0); });
-    var h = back("home") + "<h1>" + esc(c.name) + '</h1><p class="fn-sub"><span class="fn-num">' + esc(c.phone || "") + "</span>" + (c.email ? ' · <span class="fn-num">' + esc(c.email) + "</span>" : "") + "</p>";
+    var h = back("home");
+    /* Hanoch Nov 6: the gabbai fixes the name and phone; the email stays as it is */
+    if (st.editing === c.id) {
+      var e = st.editDraft || { name: c.name || "", phone: c.phone || "" };
+      h += "<h1>" + T("עריכת פרטים", "Edit details") + '</h1><div class="fn-field"><label for="fnEdName">' + T("שם", "Name") + '</label><input class="fn-input" id="fnEdName" maxlength="80" autocomplete="off" value="' + esc(e.name) + '"></div>' +
+        '<div class="fn-field"><label for="fnEdPhone">' + T("טלפון", "Phone") + '</label><input class="fn-input fn-num" id="fnEdPhone" type="tel" maxlength="30" autocomplete="off" dir="ltr" value="' + esc(e.phone) + '"></div>' +
+        '<div class="fn-field"><span class="lab">' + T("מייל", "Email") + '</span><div class="fn-num" style="text-align:right">' + esc(c.email || T("אין", "none")) + '</div><p class="fn-note">' + T("המייל הוא החשבון שהמתפלל נכנס איתו לאתר, ולכן הוא לא משתנה כאן.", "The email is the account the member signs in with, so it does not change here.") + "</p></div>" +
+        (st.editErr ? '<div class="fn-msg fn-err" role="alert">' + esc(st.editErr) + "</div>" : "") +
+        '<div class="fn-two"><button type="button" class="fn-btn fn-primary" id="fnEdSave"' + (st.busy ? " disabled" : "") + ">" + (st.busy ? T("שומר...", "Saving...") : T("שמור", "Save")) + '</button><button type="button" class="fn-btn" data-edcancel="1">' + T("ביטול", "Cancel") + "</button></div>";
+      return h;
+    }
+    h += "<h1>" + esc(c.name) + '</h1><p class="fn-sub"><span class="fn-num">' + esc(c.phone || "") + "</span>" + (c.email ? ' · <span class="fn-num">' + esc(c.email) + "</span>" : "") +
+      ' <button type="button" class="fn-btn fn-ghost fn-sm" data-edit="' + esc(c.id) + '">' + T("עריכת פרטים", "Edit details") + "</button></p>";
     h += '<div class="fn-balance"><div class="fn-k">' + T("יתרה לתשלום", "Balance owed") + '</div><div class="fn-v">' + balWord(b) + "</div></div>";
     h += '<div class="fn-two"><button type="button" class="fn-btn fn-primary" data-new="payment">+ ' + T("תשלום", "Payment") + '</button><button type="button" class="fn-btn" data-new="charge">+ ' + T("חיוב", "Charge") + "</button></div>";
     if (M()) h += M().cardExtras(c);
@@ -344,6 +356,23 @@
     }
     return { ok: ok, live: !!r.saved, r: r };
   }
+  async function saveDetails() {
+    var c = con(st.editing); if (!c || st.busy) return;
+    var name = String(($("#fnEdName") || {}).value || "").replace(/\s+/g, " ").trim(), phone = String(($("#fnEdPhone") || {}).value || "").trim();
+    st.editDraft = { name: name, phone: phone };
+    if (name.length < 2) { st.editErr = T("כתבו שם (לפחות 2 אותיות).", "Write a name (at least 2 letters)."); render("#fnEdName"); return; }
+    if (name === (c.name || "") && phone === (c.phone || "")) { st.editing = null; st.editDraft = null; st.editErr = ""; render(); return; }
+    var f = fb();
+    st.busy = true; st.editErr = ""; render();
+    var r = (f && f.updateCongregantDetails) ? await f.updateCongregantDetails(c.id, { name: name, phone: phone }) : { saved: false, reason: "test-only" };
+    st.busy = false;
+    if (!r.saved && r.reason !== "test-only") { st.editErr = T("לא נשמר: ", "Not saved: ") + reason(r) + T(". נסו שוב.", ". Try again."); render(); return; }
+    var was = (c.name || "") + (c.phone ? " (" + c.phone + ")" : "");
+    c.name = r.name || name; c.phone = r.phone != null ? r.phone : phone;
+    if (r.saved) log("עודכנו פרטי מתפלל: " + was + " ← " + c.name + (c.phone ? " (" + c.phone + ")" : ""), { code: "member.details", target: c.name, targetId: c.id });
+    st.editing = null; st.editDraft = null; render();
+    toast(T("הפרטים עודכנו ✓", "Details updated ✓") + (r.saved ? "" : " (" + T("תצוגה מקומית, לא נשמר", "local preview, not saved") + ")"));
+  }
   function log(sentence, extra) { if (typeof window.logLine === "function") window.logLine("finance", sentence, extra); }
   async function savePay() {
     var p = st.pay, c = p && con(p.m); if (!c || st.busy) return;
@@ -415,6 +444,9 @@
     if (d.showdate) { st.pay.showDate = true; render("#fnDate"); return; }
     if (t.id === "fnSave") { savePay(); return; }
     if (d.void) { var c = con(d.cid), e = c && (c.ledger || []).filter(function (x) { return x.operationId === d.void; })[0]; voidEntry(c, e, false); return; }
+    if (d.edit) { st.editing = d.edit; st.editDraft = null; st.editErr = ""; render("#fnEdName"); return; }
+    if (d.edcancel) { st.editing = null; st.editDraft = null; st.editErr = ""; render(); return; }
+    if (t.id === "fnEdSave") { saveDetails(); return; }
     if (d.statement) { var c2 = con(d.statement); if (c2) printStatement(c2); return; }
     if (d.csv) { if (typeof window.exportCSV === "function") window.exportCSV(d.csv); return; }
     if (d.addrow) { st.ned.rows.push({ al: "", name: "", amount: "", custom: true, op: op("neder") }); render('[data-ni="' + (st.ned.rows.length - 1) + '"][data-k="al"]'); return; }
