@@ -42,8 +42,8 @@
 <!-- the older tools, unchanged, shown under "עוד" (#more; #reports scrolls to the annual report) -->
 <section id="fnMore" hidden>
 <h2>הוספת מתפלל</h2>
-<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מייל לא חובה. בלי מייל אין כניסה לאתר.</p>
-<label>שם</label><input id="newName"><label>טלפון</label><input id="newPhone"><label>מייל (לא חובה)</label><input id="newEmail">
+<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מייל חובה. בלי מייל אין כניסה לאתר.</p>
+<label>שם</label><input id="newName"><label>טלפון</label><input id="newPhone"><label>מייל (חובה)</label><input id="newEmail">
 <button class="btn" id="addCongBtn" onclick="addCong()">הוסף מתפלל</button><p id="addMsg"></p></div>
 <h2 hidden>חיובים קבועים</h2><!-- hidden (Hanoch Nov 5 7:57 AM: no recurring charges planned for now) -->
 <div class="gold-frame no-print" style="padding:1rem" hidden><p class="oh-help">דמי חבר נרשמים לבד, כל חודש או כל שנה.</p>
@@ -132,8 +132,31 @@ async function addCong(){
   var email = document.getElementById("newEmail").value.trim().toLowerCase();
   if(_loadFailed){ addMsg("קודם צריך לטעון את רשימת המתפללים. לחץ נסה שוב.", "Load the members list first. Tap Try again."); return; }
   if(!n){ addMsg("הזן שם.", "Enter a name."); return; }
-  if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ addMsg("המייל לא תקין.", "The email is not valid."); return; }
-  if(email && cons.some(function(c){ return String(c.email || "").toLowerCase() === email; })){ addMsg("כבר קיים מתפלל עם המייל הזה.", "A member with this email already exists."); return; }
+  /* Email-required (Hanoch 2026-11-05): a congregant without an email can
+     never sign in, and a second record for the same person becomes a
+     duplicate account. */
+  if(!email){ addMsg("המייל חובה. בלי מייל אין כניסה לאתר.", "Email is required. Without an email there is no sign-in."); return; }
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ addMsg("המייל לא תקין.", "The email is not valid."); return; }
+  if(cons.some(function(c){ return String(c.email || "").toLowerCase() === email; })){
+    /* same email: the member already exists, so nothing is saved. The
+       popup explains why a second record is a duplicate account. */
+    await OH_UI.tell(L("המתפלל הזה כבר קיים", "This member already exists") + "\n" +
+      L("כבר יש רשומה עם המייל הזה. הוספת רשומה שנייה תיצור חשבון כפול: לאותו אדם יהיו שני חשבונות, והיתרה וההיסטוריה שלו יתפצלו ביניהם.", "A record with this email already exists. Adding a second record would create a duplicate account: the same person would have two accounts, and their balance and history would split between them.") + "\n" +
+      L("אפשר לעדכן את הרשומה הקיימת במקום להוסיף חדשה.", "Update the existing record instead of adding a new one."));
+    addMsg("כבר קיים מתפלל עם המייל הזה.", "A member with this email already exists.");
+    return;
+  }
+  /* same name and phone, different email: probably the same person with a
+     new email. Warn before creating a second record; confirming saves it. */
+  var digits = phone.replace(/\D/g, "");
+  var samePerson = digits ? cons.find(function(c){ return String(c.name || "").trim().toLowerCase() === n.toLowerCase() && String(c.phone || "").replace(/\D/g, "") === digits; }) : null;
+  if(samePerson){
+    var go = await OH_UI.ask(L("יכול להיות שזה אותו מתפלל", "This may be the same member") + "\n" +
+      L("כבר יש רשומה עם אותו שם ואותו טלפון, אבל עם מייל אחר. הוספת רשומה שנייה תיצור חשבון כפול: לאותו אדם יהיו שני חשבונות, והיתרה וההיסטוריה שלו יתפצלו ביניהם.", "A record already exists with the same name and phone, but a different email. Adding a second record would create a duplicate account: the same person would have two accounts, and their balance and history would split between them.") + "\n" +
+      L("אם המייל השתנה, עדיף להוסיף אותו לרשומה הקיימת. להוסיף בכל זאת?", "If the email changed, add it to the existing record instead. Add anyway?"),
+      { ok: L("הוסף בכל זאת", "Add anyway") });
+    if(!go){ addMsg("בוטל. אפשר לעדכן את המייל ברשומה הקיימת.", "Cancelled. You can update the email on the existing record instead."); return; }
+  }
   var fb = window.OH_FIREBASE;
   if(!pendingCongId && fb && fb.newCongregantId) pendingCongId = fb.newCongregantId();
   btn.disabled = true; addMsg("שומר...", "Saving...");
@@ -150,7 +173,7 @@ async function addCong(){
   } else if(r.reason === "duplicate-email"){
     addMsg("כבר קיים מתפלל עם המייל הזה.", "A member with this email already exists.");
   } else {
-    var why = { "permission-denied": ["אין הרשאה", "No permission"], "unavailable": ["אין חיבור", "No connection"], "not-signed-in": ["לא מחובר", "Not signed in"] }[r.reason] || [r.reason, r.reason];
+    var why = { "permission-denied": ["אין הרשאה", "No permission"], "unavailable": ["אין חיבור", "No connection"], "not-signed-in": ["לא מחובר", "Not signed in"], "missing-email": ["המייל חובה", "Email is required"], "invalid-email": ["המייל לא תקין", "The email is not valid"] }[r.reason] || [r.reason, r.reason];
     addMsg("לא נשמר (" + why[0] + "). לחץ שוב.", "Not saved (" + why[1] + "). Tap again.");
   }
 }
