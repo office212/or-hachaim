@@ -648,6 +648,7 @@ window.OH_TERMS_EN = {
     alRecLate: "{n} already late", alRecNot: "not charged yet", alPledgeOld: "{n} over 30 days",
     alDataT: "The daily zmanim on the screen run out in {n} days", alDataT1: "The daily zmanim on the screen run out tomorrow", alDataT0: "The daily zmanim on the screen have run out",
     alDataD: "Last day in the files: {date}. Upload the file {file} before then, or the screen will have no daily zmanim.",
+    alYzReqT: "Yahrzeit requests from members ({n})", alYzReqD: "Waiting for approval before they show on the TV", alYzReqGo: "Review",
     spTitle: T.shabbat + " package",
     spSub: "A printable bulletin and a screen draft",
     spPrint: "Print or save as a file",

@@ -122,6 +122,65 @@
     return h;
   }
 
+  /* ---------- "שבת שלום לקהילה" (Hanoch Nov 7): bell + email to every member ----------
+     Built from the Shabbat sheet exactly as it is printed now (this week's changes
+     included: OH_SHEET.lines), plus the Kiddush sponsors and this week's yahrzeits.
+     Sent by functions/notifications sendBroadcast (super admin only, checked there):
+     the bell gets a short line, the email the full text. */
+  function shalomMessage() {
+    var ed = window.OH_SHEET_EDITOR && window.OH_SHEET_EDITOR._state, m = ed && ed.model, S = window.OH_SHEET, g = st.data || {};
+    var parasha = (m && m.title && m.title.he) || g.parashaHe || "";
+    var title = "שבת שלום" + (parasha ? " | " + parasha : "");
+    var GN = { erev: "ערב שבת", morning: "שבת בבוקר", afternoon: "שבת אחר הצהריים" };
+    var full = [], short = [];
+    if (m && S && S.lines) {
+      S.lines(m, "he").forEach(function (grp) {
+        full.push(""); full.push(GN[grp.group] || "");
+        grp.rows.forEach(function (r) { var t = r.line ? r.line : r.label + " " + r.time; full.push(t); short.push(t); });
+      });
+      if (m.mev && !m.mev.hidden && m.mev.he) { full.push(""); full.push(m.mev.he); }
+    }
+    var kid = (g.sponsors || []).map(function (x) { return x.text; }).filter(Boolean);
+    if (kid.length) { full.push(""); full.push("תרומות השבת: " + kid.join(" | ")); }
+    var yz = (g.yahrzeits || []).map(function (y) { return y.name; }).filter(Boolean);
+    if (yz.length) { full.push(""); full.push("יארצייט השבוע: " + yz.join(", ")); }
+    while (full.length && !full[0]) full.shift();
+    var bell = short.join(" · ");
+    if (bell.length > 480) bell = bell.slice(0, 477) + "...";
+    return { title: title, bell: bell, email: full.join("\n") };
+  }
+  function shalomBox() {
+    if (!st.isSA) return "";
+    var sent = st.shalomSent || "";
+    return '<div class="x-card sh-ctl no-print" id="ohShShalomBox" style="margin-top:12px"><div class="sh-ctl-row" style="flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between">' +
+      '<div style="flex:1 1 240px;min-width:0"><b style="font-size:18px;color:#0e2c4c">שבת שלום לקהילה</b><div class="oh-help" style="font-size:14px">זמני השבת מהדף, תרומות ויארצייטים, לפעמון ובמייל של כל המתפללים.</div></div>' +
+      '<button type="button" class="x-btn primary" id="ohShShalom"' + (st.busy ? " disabled" : "") + ">" + (sent ? "שלח שוב" : "שלח לקהילה") + "</button></div>" +
+      (st.shalomMsg ? '<div class="cb-msg ' + (st.shalomKind || "ok") + '" style="margin-top:12px"><div class="grow"><b>' + esc(st.shalomMsg) + "</b></div></div>" : "") + "</div>";
+  }
+  async function sendShalom() {
+    var f = fb(); if (!f || !f.sendBroadcastNotification || st.busy) return;
+    var msg = shalomMessage();
+    if (!msg.bell) { st.shalomMsg = "אין עדיין זמנים בדף לשלוח"; st.shalomKind = "warn"; render(); return; }
+    var key = "ohShalomSent:" + (st.data && st.data.shabbat);
+    var before = ""; try { before = localStorage.getItem(key) || ""; } catch (e) {}
+    var ok = await window.OH_UI.ask((before ? "כבר נשלח השבוע (" + before + "). לשלוח שוב?\n\n" : "לשלוח לכל המתפללים, בפעמון ובמייל?\n\n") + msg.title + "\n" + msg.email, { ok: "שלח", cancel: "ביטול" });
+    if (!ok) return;
+    st.busy = true; st.shalomMsg = "שולח..."; st.shalomKind = "ok"; render();
+    var r = await f.sendBroadcastNotification(msg.title, msg.bell, "members", { email: true, emailBody: msg.email });
+    st.busy = false;
+    if (r && r.ok) {
+      var when = new Date().toLocaleString("en-US", { timeZone: "America/New_York", weekday: "short", hour: "numeric", minute: "2-digit" });
+      try { localStorage.setItem(key, when); } catch (e) {}
+      st.shalomSent = when;
+      st.shalomMsg = "נשלח ✓ לפעמון של " + (r.sentTo || 0) + " מתפללים" + (r.emailError ? ". המיילים לא נשלחו, נסו שוב" : " ובמייל ל־" + (r.emailedTo || 0));
+      st.shalomKind = r.emailError ? "warn" : "ok";
+      try { if (f.logActivity) f.logActivity("נשלח שבת שלום לקהילה (" + st.data.shabbat + ")", "", { area: "shabbat", code: "shabbat.shalom" }); } catch (e) {}
+    } else {
+      st.shalomMsg = "לא נשלח: " + ((r && r.reason) || "?"); st.shalomKind = "warn";
+    }
+    render();
+  }
+
   /* ---------- page ---------- */
   function targetShabbat() {
     var t = T(), q = (location.search.match(/[?&]date=(\d{4}-\d{2}-\d{2})/) || [])[1];
@@ -148,7 +207,7 @@
     document.getElementById("ohShTop").innerHTML = '<div class="page-head no-print"><div><h1>' + esc(L("spTitle")) + '</h1><p class="lead oh-help">' + esc(L("spSub")) + "</p></div>" + nav(st.data.shabbat) + "</div>";
     var more = '<div class="sh-more no-print"><button type="button" class="x-btn ghost" id="ohShMore" aria-expanded="' + !!st.showBulletin + '">' + esc(L(st.showBulletin ? "spLess" : "spMore")) + "</button>" +
       (st.showBulletin ? ' <button type="button" class="x-btn" id="ohShPrint">' + esc(L("spPrint")) + "</button>" : "") + "</div>";
-    document.getElementById("ohShRest").innerHTML = controls() + more + (st.showBulletin ? sheetHtml(st.data) : "");
+    document.getElementById("ohShRest").innerHTML = shalomBox() + controls() + more + (st.showBulletin ? sheetHtml(st.data) : "");
   }
   async function findDraft(g) {
     var SC = window.OH_SCREEN_CONTENT; if (!SC) return null;
@@ -210,14 +269,15 @@
     if (el.getAttribute("data-state") === key) return;
     el.setAttribute("data-state", key);
     if (!can) { location.replace("../"); return; } /* not theirs: home, no message (Hanoch 5:46 AM) */
-    st.el = el; load(role);
+    st.el = el; st.isSA = !!(role && role.isSuperAdmin); try { st.shalomSent = localStorage.getItem("ohShalomSent:" + targetShabbat()) || ""; } catch (e) {} load(role);
   }
   document.addEventListener("click", function (e) {
     var b = e.target.closest("button"); if (!b) return;
     if (b.id === "ohShSignIn") { var f = fb(); if (f && f.signIn) { var r = f.signIn(); if (r && r.catch) r.catch(function () {}); } return; }
     if (b.id === "ohShMore") { st.showBulletin = !st.showBulletin; render(); return; }
+    if (b.id === "ohShShalom") { sendShalom(); return; }
     if (/^ohSh(Print|Draft|Publish|Archive)$/.test(b.id)) act(b.id);
   });
-  window.OH_SHABBAT = { gather: gather, draftItem: draftItem, sheetHtml: sheetHtml, _state: st };
+  window.OH_SHABBAT = { gather: gather, draftItem: draftItem, sheetHtml: sheetHtml, shalomMessage: shalomMessage, _state: st };
   setInterval(tick, 1000); tick();
 })();

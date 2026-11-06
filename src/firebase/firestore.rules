@@ -448,6 +448,41 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    /* Member yahrzeits (Hanoch 2026-11-07): a member asks to have a family
+    yahrzeit shown on the TV in its week; a content gabbai (or the super admin)
+    approves it, and only then the gabbai's own browser saves the public
+    yahrzeit item (yahrzeits/{id}, the existing screen-content path). A member
+    creates a request only for themself (their uid, their verified email) and
+    only for their own member record (the congregant whose email is theirs),
+    always "pending", in exactly this shape. They read and cancel (while still
+    pending) only their own. The gabbai changes only the status (approved or
+    declined, once), who decided, when, and the item it became. */
+    match /yahrzeitRequests/{id} {
+      allow read: if hasScreen() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.resource.data.keys().hasOnly(['congregantId', 'memberName', 'uid', 'email', 'nameHe', 'relation', 'hDay', 'hMonth', 'hYear', 'status', 'createdAt'])
+        && request.resource.data.keys().hasAll(['congregantId', 'uid', 'email', 'nameHe', 'hDay', 'hMonth', 'status', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == 'pending'
+        && isServerNow('createdAt')
+        && request.resource.data.nameHe is string && request.resource.data.nameHe.size() >= 2 && request.resource.data.nameHe.size() <= 80
+        && (!('memberName' in request.resource.data) || (request.resource.data.memberName is string && request.resource.data.memberName.size() <= 80))
+        && (!('relation' in request.resource.data) || (request.resource.data.relation is string && request.resource.data.relation.size() <= 40))
+        && request.resource.data.hDay is int && request.resource.data.hDay >= 1 && request.resource.data.hDay <= 30
+        && request.resource.data.hMonth in ['tishrei', 'cheshvan', 'kislev', 'tevet', 'shevat', 'adar', 'adar1', 'adar2', 'nisan', 'iyar', 'sivan', 'tamuz', 'av', 'elul']
+        && (!('hYear' in request.resource.data) || (request.resource.data.hYear is int && request.resource.data.hYear >= 5500 && request.resource.data.hYear <= 6000))
+        && request.resource.data.congregantId is string && request.resource.data.congregantId.size() > 0
+        && get(/databases/$(database)/documents/congregants/$(request.resource.data.congregantId)).data.get('email', '') == request.auth.token.email;
+      allow update: if hasScreen()
+        && resource.data.status == 'pending'
+        && request.resource.data.status in ['approved', 'declined']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedBy', 'decidedAt', 'itemId'])
+        && (!('decidedBy' in request.resource.data) || request.resource.data.decidedBy == request.auth.token.email);
+      allow delete: if isSignedIn() && resource.data.uid == request.auth.uid && resource.data.status == 'pending';
+    }
+
     /* Notifications (combined package, 2026-11-05, Hanoch approved): web push
        (Firebase Cloud Messaging) for signed-in users only, never read or
        written by anyone but the person it belongs to, except that the
