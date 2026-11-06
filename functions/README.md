@@ -31,7 +31,7 @@ in the old design text inside `dailybackup/README.md`).
   Node 22. There is no function named "notifications": that is only this
   folder's name, so a deploy names the function itself
   (`--only functions:sendBroadcast`). On 2026-11-06 at 07:17 (New York
-  time) `sendBroadcast` was redeployed through Cloud Shell with its
+  time) Hanoch redeployed `sendBroadcast` through Cloud Shell with its
   optional `email: true` (one `mail/broadcast-<id>-<member>` per active
   member with an email, used by "שבת שלום לקהילה" on gabbai/shabbat/),
   and checked in the console. `onLedgerPayment`, `onJoinRequestWrite`
