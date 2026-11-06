@@ -197,6 +197,10 @@
       var v = tp === "s" ? q.s : (tp === "j" ? (q.s ? q.p + " / " + q.s : q.p) : q.p);
       if (el.getAttribute("data-tt-once") === "1" && el.getAttribute("data-tt-done") === "0") continue; /* replaced by the screen already */
       if (el.textContent !== v) el.textContent = v;
+      /* Nov 6 (repo review): words still at their "PLACEHOLDER" default (not yet
+         written by a gabbai) are never shown on the public screen */
+      var ph = /^\s*PLACEHOLDER/i.test(v);
+      if (ph !== (el.getAttribute("data-ph") === "1")) { el.setAttribute("data-ph", ph ? "1" : "0"); el.style.visibility = ph ? "hidden" : ""; }
     }
   }
   function repaintAll() {

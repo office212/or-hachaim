@@ -17,7 +17,8 @@
 <script>function L(he, en){ return window.OH_LANG === "en" ? en : he; } /* text cleanup (Nov 5): only the active language */</script>
 
 <div class="page">
-<div class="gold-frame tool-card">
+<p id="pgGate" class="oh-help" hidden></p>
+<div class="gold-frame tool-card" hidden>
 <h2>גיבוי נתונים</h2>
 <p class="oh-help">מוריד קובץ גיבוי של כל הנתונים. לא מוחק ולא משנה דבר.</p>
 <button class="btn" onclick="runBackup()">הורדת קובץ גיבוי</button>
@@ -33,7 +34,7 @@ async function runBackup(){
   var out = { exportedAt: new Date().toISOString(), exportedBy: fb.user.email, collections: {}, denied: [] };
   /* Every collection the rules define, not only five: pledges, recurring
      schedules, the activity log and the screen content were missing. */
-  var cols = ['congregants','ledgerEntries','operationIds','pledges','recurringSchedules','activityLog','prayerTimes','announcements','dedications','sponsors','flyers','yahrzeits','backups','users'];
+  var cols = ['congregants','ledgerEntries','operationIds','pledges','recurringSchedules','nedarim','activityLog','prayerTimes','announcements','dedications','sponsors','flyers','yahrzeits','yahrzeitRequests','settings','backups','users'];
   for(var i=0;i<cols.length;i++){
     var col = cols[i];
     try {
@@ -53,4 +54,24 @@ async function runBackup(){
   if(fb.logActivity) fb.logActivity('הורד גיבוי מלא של האתר', '', { area: 'backup', code: 'backup.full' }); /* activity log (Nov 5) */
 }
 </script>
-</div></body></html>
+</div><script>
+/* Nov 6 (repo review): only the people this page is for see its controls
+   (the rules already refuse everyone else; this only spares them a page
+   that cannot work for them): signed out -> "כניסה נדרשת", no permission -> home. */
+(function(){
+  var done = false;
+  function tick(){
+    var fb = window.OH_FIREBASE, card = document.querySelector(".tool-card"), gate = document.getElementById("pgGate");
+    if(!card || !gate) return;
+    if(!fb || !fb.ready){ return; }
+    if(!fb.user){ card.hidden = true; gate.hidden = false; gate.textContent = L("כניסה נדרשת. לגבאי כספים ולמנהל הראשי.", "Sign-in required."); return; }
+    Promise.resolve(fb.resolveRole ? fb.resolveRole() : null).then(function(role){
+      if(!role) return;
+      if(!(role.isSuperAdmin || role.canFinance)){ if(!done){ done = true; location.replace(role.authorized ? "../gabbai/" : "../"); } return; }
+      card.hidden = false; gate.hidden = true;
+    }, function(){});
+  }
+  setInterval(tick, 1000); tick();
+})();
+</script>
+</body></html>

@@ -11,9 +11,17 @@ admin.initializeApp();
 const db = admin.firestore();
 const storage = new Storage();
 
+/* Fix (2026-11-06, after the repo review): the list said "recurringCharges",
+   a collection that does not exist (the site writes recurringSchedules), and
+   left out the screen content, the settings documents (Shabbat sheet, TV
+   texts, landing texts, the Shabbat times on the TV) and members' yahrzeit
+   requests. Now the same collections as the manual backup page (backup/),
+   so a nightly file holds everything the restore page (restore/) can bring
+   back. Each document keeps its id as "id" (restore/ reads "id" or "_id"). */
 const COLLECTIONS = [
-  "congregants", "ledgerEntries", "prayerTimes", "operationIds", "users",
-  "pledges", "recurringCharges", "activityLog", "nedarim", "backups",
+  "congregants", "ledgerEntries", "operationIds", "pledges", "recurringSchedules",
+  "nedarim", "activityLog", "prayerTimes", "announcements", "dedications",
+  "sponsors", "flyers", "yahrzeits", "yahrzeitRequests", "settings", "backups", "users",
 ];
 
 async function exportCollections() {

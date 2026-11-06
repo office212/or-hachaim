@@ -517,7 +517,9 @@ function currentBoards() {
   var all = live.concat(cal);
   if (all.length) return all;
   if (window.OH_BOARDS && window.OH_BOARDS.isPreview()) return [];
-  return visibleBoards().map(boardWords).map(function (b) { return { he: b.he, en: b.en, html: '<p class="board-body">' + escBoard(b.body) + "</p>", cls: "" }; });
+  /* Nov 6 (repo review): a board still at its "PLACEHOLDER" words is never
+     shown on the public screen; one whose text a gabbai wrote (TV texts) is */
+  return visibleBoards().map(boardWords).filter(function (b) { return !/^\s*PLACEHOLDER/i.test(b.body || ""); }).map(function (b) { return { he: b.he, en: b.en, html: '<p class="board-body">' + escBoard(b.body) + "</p>", cls: "" }; });
 }
 function renderZone() {
   if (isScreenGated()) return;

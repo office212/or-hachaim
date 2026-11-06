@@ -205,13 +205,26 @@ async function handleCongregantWrite(deps, event) {
   const after = event.data && event.data.after && event.data.after.exists ? event.data.after.data() : null;
   if (!after) return;
   const wasPending = before && before.status === "pending";
+  /* Fix (2026-11-06, after the repo review): only the super admin approves
+     join requests, so only the super admin is told about a new one (it went
+     to every finance gabbai too); and the person who asked now hears the
+     answer, on their own bell (the document id is "join_" + their uid). */
   if (after.status === "pending" && !wasPending) {
-    const uids = await resolveGabbaiUids(deps, { finance: true, screen: false });
-    await deliverToMany(deps, uids, {
-      title: "בקשת הצטרפות חדשה",
-      body: after.name ? ("מאת " + after.name) : "",
-      kind: "joinRequest"
-    });
+    try {
+      const sa = await deps.auth.getUserByEmail(SUPER_ADMIN_EMAIL);
+      await deliver(deps, sa.uid, { title: "בקשת הצטרפות חדשה", body: after.name ? ("מאת " + after.name) : "", kind: "joinRequest" });
+    } catch (e) { /* the super admin has never signed in: nothing to notify */ }
+    return;
+  }
+  if (wasPending && after.status !== "pending") {
+    const uid = id.slice(5);
+    if (!uid) return;
+    const approved = after.status === "active" || after.status === "linked";
+    const declined = after.status === "declined";
+    if (!approved && !declined) return;
+    await deliver(deps, uid, approved
+      ? { title: "בקשת ההצטרפות אושרה ✓", body: "אפשר להיכנס לאתר ולראות את החשבון שלך.", kind: "joinAnswer" }
+      : { title: "בקשת ההצטרפות לא אושרה", body: "לשאלות: orhachaimcong@gmail.com", kind: "joinAnswer" });
   }
 }
 

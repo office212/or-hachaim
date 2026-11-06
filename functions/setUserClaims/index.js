@@ -131,7 +131,11 @@ async function setUserClaims(req, res) {
       return res.status(401).json({ ok: false, error: "unauthenticated" });
     }
     const callerEmail = String(decoded.email || "").toLowerCase();
-    if (callerEmail !== SUPER_ADMIN_EMAIL) {
+    /* Fix (2026-11-06, after the repo review): a verified email too, like
+       firestore.rules (isSuperAdmin) and sendBroadcast. Without it, an
+       unverified account created with this address (for example if
+       email/password sign-in were ever turned on) could grant roles. */
+    if (callerEmail !== SUPER_ADMIN_EMAIL || decoded.email_verified !== true) {
       return res.status(403).json({ ok: false, error: "not-super-admin" });
     }
 

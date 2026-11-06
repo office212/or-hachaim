@@ -167,8 +167,7 @@
         '<div class="mtv live" id="ohMtv"></div></div>';
     }
     h += "</section>";
-    /* 2040 phase 1: the command bar (content gabbaim, super admin), optional, below the greeting; src/ui/oh-cmdbar.js */
-    if (role.isSuperAdmin || role.canScreen) h += '<div id="ohCmdMount" hidden></div>';
+    /* (Nov 6, repo review: a second #ohCmdMount here was never used, the bar takes the first one above) */
 
     if (gabbai) {
       h += '<section class="stats">';

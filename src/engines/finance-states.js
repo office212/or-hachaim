@@ -41,13 +41,29 @@
       paymentsByMethod: byMethod
     };
   }
+  /* Fix (2026-11-06): "ביטול" on the finance screens writes a correction of
+     the opposite sign whose description starts with "ביטול [<operationId>]".
+     The balance was right (the correction offsets it), but sums that look at
+     one type only (payments in the tax letters and the annual report, charges
+     in the report) still counted the cancelled entry. liveEntries drops every
+     cancelled entry together with its cancellation; nothing else changes. */
+  var VOID_RE = /^ביטול \[([^\]]+)\]/;
+  function liveEntries(ledger) {
+    var voided = {}, list = ledger || [];
+    list.forEach(function (e) { if (e && e.type === "correction") { var m = VOID_RE.exec(e.description || ""); if (m) voided[m[1]] = true; } });
+    return list.filter(function (e) {
+      if (!e) return false;
+      if (e.type === "correction" && VOID_RE.test(e.description || "")) return false;
+      return !voided[e.operationId];
+    });
+  }
   function annualReport(congregants, pledges, year) {
     var income = 0, charges = 0, byMethod = {}, open = 0, unpaid = 0;
     congregants.forEach(function (c) {
       var t = totals(c, pledges);
       open += cents(t.openBalance);
       unpaid += cents(t.unpaidPledgesTotal);
-      (c.ledger || []).forEach(function (e) {
+      liveEntries(c.ledger).forEach(function (e) {
         if (String(e.date).indexOf(String(year)) !== 0) return;
         if (e.type === "payment") {
           income += cents(e.amount);
@@ -67,7 +83,7 @@
       unpaidCommitments: unpaid / 100
     };
   }
-  var api = { totals: totals, annualReport: annualReport };
+  var api = { totals: totals, annualReport: annualReport, liveEntries: liveEntries };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   global.FinanceStates = api;
 })(typeof window !== "undefined" ? window : globalThis);
