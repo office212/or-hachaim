@@ -233,6 +233,10 @@ await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firest
 const jr = env.authenticatedContext("ujr", { email: "jr@x.com", email_verified: true }).firestore();
 await t("declined person sends again although the old welcome flag is on the record", updateDoc(doc(jr, "congregants/join_ujr"), { name: "New Name", phone: "7185550001", status: "pending", createdAt: "2026-11-06" }), true);
 await t("they still cannot set the welcome flag themself", updateDoc(doc(jr, "congregants/join_ujr"), { welcomeEmailSent: false }), false);
+console.log("--- 10. yahrzeitRequests restore (Nov 6) ---");
+await t("super admin restores a yahrzeit request, marked restored", setDoc(doc(sa, "yahrzeitRequests/r1"), { ...yz({ uid: "someone" }), restored: true, restoredAt: serverTimestamp(), restoredBy: "usa" }), true);
+await t("super admin cannot create one without the restored mark", setDoc(doc(sa, "yahrzeitRequests/r2"), yz({ uid: "someone" })), false);
+await t("a content gabbai cannot use the restore path", setDoc(doc(scr, "yahrzeitRequests/r3"), { ...yz({ uid: "someone" }), restored: true, restoredAt: serverTimestamp(), restoredBy: "uscr" }), false);
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

@@ -481,6 +481,9 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'decidedBy', 'decidedAt', 'itemId'])
         && (!('decidedBy' in request.resource.data) || request.resource.data.decidedBy == request.auth.token.email);
       allow delete: if isSignedIn() && resource.data.uid == request.auth.uid && resource.data.status == 'pending';
+      /* Restore (Nov 6): the super admin brings back a request from a backup
+         file, marked restored (isRestore: who, when), as for ledger entries */
+      allow create: if isRestore();
     }
 
     /* Notifications (combined package, 2026-11-05, Hanoch approved): web push

@@ -43,7 +43,7 @@ async function dryRun(){
   if(!fb || !fb.ready || !fb.user){ document.getElementById('restoreMsg').textContent = L('קודם צריך להתחבר.', 'Sign in first.'); return; }
   try { _backup = await readFile(); } catch(e){ document.getElementById('restoreMsg').textContent = L('בעיה בקובץ: ', 'File problem: ') + e.message; return; }
   _missing = []; var lines = [];
-  var cols = ['congregants','ledgerEntries','operationIds','pledges','recurringSchedules','nedarim','activityLog','prayerTimes','announcements','dedications','sponsors','flyers','yahrzeits','settings','backups','users']; /* same list as the backup page */
+  var cols = ['congregants','ledgerEntries','operationIds','pledges','recurringSchedules','nedarim','activityLog','prayerTimes','announcements','dedications','sponsors','flyers','yahrzeits','yahrzeitRequests','settings','backups','users']; /* same list as the backup page */
   for(var i=0;i<cols.length;i++){
     var col = cols[i]; var docs = (_backup.collections && _backup.collections[col]) || [];
     for(var j=0;j<docs.length;j++){
@@ -72,7 +72,7 @@ async function doImport(){
        and are marked as restored, with the server time and the uid of
        who restored them. firestore.rules allows this path for the
        super admin only, so a restore never looks like a new entry. */
-    if (m.col === 'ledgerEntries' || m.col === 'pledges' || m.col === 'activityLog') { doc.restored = true; doc.restoredAt = window.firebase.firestore.FieldValue.serverTimestamp(); doc.restoredBy = fb.user.uid; }
+    if (m.col === 'ledgerEntries' || m.col === 'pledges' || m.col === 'activityLog' || m.col === 'yahrzeitRequests') { doc.restored = true; doc.restoredAt = window.firebase.firestore.FieldValue.serverTimestamp(); doc.restoredBy = fb.user.uid; }
     try { await fb._db().collection(m.col).doc(m.id).set(doc); created++; lines.push('CREATED: ' + m.col + '/' + m.id); }
     catch(e){ failed.push(m.col + '/' + m.id + ' (' + (e.code || e.message) + ')'); lines.push('FAILED: ' + m.col + '/' + m.id + ' ' + (e.code || e.message)); }
   }

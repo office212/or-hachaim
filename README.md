@@ -834,7 +834,9 @@ function name (there is no function called "notifications"):
 1. **Publish `firestore.rules`.** Adds `welcomeEmailSent` to the keys a
    declined person may carry when sending a join request again (the
    welcome function used to write it on requests, which then blocked
-   the resend). Rules tests: 158 pass.
+   the resend), and a restore path for `yahrzeitRequests` (super admin
+   only, marked restored, as for ledger entries), so `/restore/` brings
+   back all 17 collections the backups hold. Rules tests: 161 pass.
 2. **`sendMail`** (folder `functions/sendMail`): no more endless loop.
    It wrote its own delivery status back to the mail document and that
    write fired it again, so a failed send (or a bad address) ran without
