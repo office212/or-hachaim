@@ -274,20 +274,28 @@
     var ctx = { zdays: zdays() || {}, sunsetRaw: st.sunset || {}, isYomTov: isYomTovIso };
     var p = DS.nyParts(now);
     var shabbatStarted = !!(ds && ds.key === "shabbat" && p.wd === 5);
+    var friday = p.wd === 5, grouped = friday || shabbatStarted; /* Hanoch Nov 7: the full Shabbat schedule all Friday */
     var nextIso = DS.addDays(p.iso, 1);
-    ctx.shabbatStarted = shabbatStarted; ctx.nextIso = nextIso;
+    ctx.shabbatStarted = shabbatStarted; ctx.friday = friday; ctx.nextIso = nextIso;
     ctx.sheet = sheetFor(p.iso) || sheetFor(nextIso);
     var rows = PR.resolve(docs, p.iso, ctx);
     var tomorrowRows = PR.resolve(docs, nextIso, { zdays: ctx.zdays, sunsetRaw: ctx.sunsetRaw, isYomTov: isYomTovIso, sheet: ctx.sheet });
-    var nx = PR.nextMinyan(rows, p.iso, p.minExact, shabbatStarted ? null : tomorrowRows);
+    var nx = PR.nextMinyan(rows, p.iso, p.minExact, grouped ? null : tomorrowRows);
     if (nx && nx.row && nx.row.min != null) nx.minutes = Math.max(0, DS.minutesUntil(now, nx.tomorrow && !nx.row.iso ? nextIso : (nx.row.iso || p.iso), nx.row.min));
+    /* Hanoch Nov 7: a prayer of today leaves the screen an hour after its time
+       (Mincha at 3:00 is gone at 4:00). Tomorrow's rows (Shabbat, on Friday) stay.
+       When today has nothing left, tomorrow's rows show under "מחר". */
+    var GONE_AFTER_MIN = 60;
+    var shown = rows.filter(function (r) { return !(r.min != null && (r.iso || p.iso) === p.iso && p.minExact >= r.min + GONE_AFTER_MIN); });
+    var showTomorrow = !shown.length && rows.length > 0 && tomorrowRows.length > 0;
     var html;
-    if (!rows.length) html = "<p>" + esc(T("noPrayerTimes")) + "</p>";
+    if (showTomorrow) html = '<div class="pt-group">' + esc(T("nextMinyanTomorrow")) + "</div>" + tomorrowRows.map(function (r) { return rowHtml(r, !!(nx && nx.row === r)); }).join("");
+    else if (!shown.length) html = "<p>" + esc(T("noPrayerTimes")) + "</p>";
     else {
       var lastGroup = null, parts = [];
-      rows.forEach(function (r) {
-        if (shabbatStarted && r.group !== lastGroup) { parts.push('<div class="pt-group">' + esc(T(r.group === "shabbat" ? "groupShabbat" : "groupFridayNight")) + "</div>"); lastGroup = r.group; }
-        parts.push(rowHtml(r, !!(nx && !nx.tomorrow && nx.row === r) || !!(nx && shabbatStarted && nx.row === r)));
+      shown.forEach(function (r) {
+        if (grouped && r.group !== lastGroup) { parts.push('<div class="pt-group">' + esc(T(r.group === "shabbat" ? "groupShabbat" : "groupFridayNight")) + "</div>"); lastGroup = r.group; }
+        parts.push(rowHtml(r, !!(nx && !nx.tomorrow && nx.row === r) || !!(nx && grouped && nx.row === r)));
       });
       html = parts.join("");
     }

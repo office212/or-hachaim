@@ -122,11 +122,14 @@
      shabbatStarted: bool (Friday from candle lighting), nextIso } */
   function resolve(docs, iso, ctx) {
     ctx = ctx || {};
-    if (ctx.shabbatStarted && ctx.nextIso) {
-      /* Friday from candle lighting: tonight's rows, then tomorrow's (Shabbat).
+    if ((ctx.shabbatStarted || ctx.friday) && ctx.nextIso) {
+      /* Friday: today's rows, then tomorrow's (Shabbat), so the whole Shabbat
+         schedule is on the screen all Friday (Hanoch Nov 7: people check the
+         Shabbat times on Friday, they have no phone on Shabbat). Before Nov 7
+         this was from candle lighting only, with Friday's morning rows left out.
          A document without a rule (shown every day, as before) is shown
-         once: evening times tonight, morning times under Shabbat. */
-      var fri = rowsFor(docs, iso, ctx, "fri").filter(function (r) { return r.min == null || r.min >= 12 * 60; });
+         once under Shabbat: its morning times there, its evening times tonight. */
+      var fri = rowsFor(docs, iso, ctx, "fri").filter(function (r) { return ctx.friday || r.min == null || r.min >= 12 * 60; });
       var sat = rowsFor(docs, ctx.nextIso, ctx, "shabbat").filter(function (r) { return !r.legacy || r.min == null || r.min < 12 * 60; });
       return fri.concat(sat);
     }

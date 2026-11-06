@@ -376,6 +376,15 @@ enters real content; that is by design, not a bug. A signed-in
 check of the TV preview exists in `/gabbai/tv/content/` (exact TV preview
 before publishing).
 
+**Davening times on the TV (2026-11-07).** All Friday the list shows
+Friday's rows under "ערב שבת" and then the whole Shabbat schedule under
+"שבת" (people check the Shabbat times on Friday; before, Shabbat's
+rows appeared only from candle lighting). A prayer of today leaves the
+list one hour after its time (Mincha at 3:00 is gone at 4:00;
+`GONE_AFTER_MIN` in `tv-live.js`); Shabbat's rows shown on Friday stay.
+When nothing is left today, tomorrow's rows show under "מחר". Times
+show without AM/PM.
+
 ### Davening times editor (`/gabbai/tv/`)
 
 Community davening times are Firestore documents (`prayerTimes`:
