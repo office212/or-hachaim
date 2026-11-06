@@ -447,9 +447,10 @@ and the full text by email to every active member with an email. A
 confirm box shows the whole message first; a second send in the same week
 asks again. It calls `sendBroadcast` (functions/notifications) with
 `email: true`: the function writes one `mail/broadcast-<id>-<member>`
-document per member, which `functions/sendMail` sends. Live: the
-notifications function with this option was redeployed by Hanoch on
-2026-11-06; the first real send is the live proof of the email part.
+document per member, which `functions/sendMail` sends. Live:
+`sendBroadcast` with the email option was redeployed on 2026-11-06 at
+07:17 (New York time) through Cloud Shell and checked in the console;
+the first real send is the live proof of the email part.
 
 **On the TV (2026-11-06).** "הצג בזמני התפילות במסך" puts this
 sheet's davening, learning and added rows (shown rows with a time;
@@ -467,9 +468,9 @@ past weeks are pruned on the next write (at most 12 weeks kept).
 The document is public read (the TV has no sign-in) and written by
 content gabbaim and the super admin only, exactly these keys
 (`firestore.rules`, `match /settings/shabbatScreen`; tested in
-`src/firebase/rules-tests/test.mjs`, section 7). Published by Hanoch
-2026-11-06: a signed-out read of the document answers 200, as the
-rule says.
+`src/firebase/rules-tests/test.mjs`, section 7). The rules were
+published on 2026-11-06 at 07:08 (New York time); a signed-out read of
+the document answers 200, as the rule says.
 
 ### Finance (`/finance/`)
 
@@ -586,7 +587,9 @@ for their own record, read by them and by content gabbaim. On
 `yzreq-<request id>` through the usual screen-content path (shown on the
 TV in its week, every year, like one added by hand), then marks the
 request approved. Nothing reaches the TV without that approval.
-The rule was published by Hanoch on 2026-11-06.
+The rule is live since 2026-11-06, 07:08 (New York time), when the
+rules file with all three new rules (`shabbatScreen`, `tvDisplay`,
+`yahrzeitRequests`) was published.
 
 ### Backup and restore (`/backup/`, `/restore/`)
 

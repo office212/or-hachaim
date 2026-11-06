@@ -28,9 +28,16 @@ in the old design text inside `dailybackup/README.md`).
 
 - `notifications/` — 5 functions (`onLedgerPayment`, `onJoinRequestWrite`,
   `onPrayerTimeWrite`, `onAnnouncementWrite`, `sendBroadcast`), us-east1,
-  Node 22. Redeployed by Hanoch on 2026-11-06 with `sendBroadcast`'s
+  Node 22. There is no function named "notifications": that is only this
+  folder's name, so a deploy names the function itself
+  (`--only functions:sendBroadcast`). On 2026-11-06 at 07:17 (New York
+  time) `sendBroadcast` was redeployed through Cloud Shell with its
   optional `email: true` (one `mail/broadcast-<id>-<member>` per active
-  member with an email), used by "שבת שלום לקהילה" on gabbai/shabbat/.
+  member with an email, used by "שבת שלום לקהילה" on gabbai/shabbat/),
+  and checked in the console. `onLedgerPayment`, `onJoinRequestWrite`
+  and `onAnnouncementWrite` were redeployed with it, their code
+  unchanged. `onPrayerTimeWrite` was not redeployed: its code has not
+  changed since 2026-11-05, so the live copy matches this folder.
 - `sendWelcomeEmail/` and `sendMail/` — Hanoch, 2026-11-06: the welcome
   email writes `mail/welcome-<congregant>`, and `sendMail` sends every
   `mail/` document by Gmail SMTP (see each folder's README for the
