@@ -1,9 +1,15 @@
-// Or Hachaim cloud scheduled backup. DRAFT v2, not deployed yet in this form.
-// Destination changed 2026-11-02 by owner decision: Cloud Storage bucket,
-// NOT Google Drive, because a service account has no Drive storage quota.
-// Runs in Firebase Cloud Functions with default credentials (Admin SDK).
-// No API key, no secret, no bucket name hard-coded here.
-const { onSchedule } = require("firebase-functions/v2/scheduler");
+// Or Hachaim cloud backup, called by the Cloud Scheduler job
+// "dailybackup-daily" (03:00 America/New_York). The live function is an
+// HTTP function named "dailybackup" (lowercase). The repo once held an
+// onSchedule DRAFT named "dailyBackup" that was never deployed, and
+// deploying it fails with 409 because the Cloud Run service name is
+// already taken by the live function. So this file matches the live
+// function: onRequest, lowercase name, same handler.
+// Destination: Cloud Storage bucket, NOT Google Drive, because a service
+// account has no Drive storage quota. Runs in Firebase Cloud Functions
+// with default credentials (Admin SDK). No API key, no secret, no bucket
+// name hard-coded here.
+const { onRequest } = require("firebase-functions/v2/https");
 const admin = require("firebase-admin");
 const { Storage } = require("@google-cloud/storage");
 
@@ -45,9 +51,9 @@ async function uploadToBucket(fileName, jsonText) {
   return `${bucketName}/${fileName}`;
 }
 
-exports.dailyBackup = onSchedule(
-  { schedule: "0 3 * * *", timeZone: "America/New_York", region: "us-east1" },
-  async () => {
+exports.dailybackup = onRequest(
+  { region: "us-east1" },
+  async (req, res) => {
     const date = new Date().toISOString().slice(0, 10);
     const fileName = `or-hachaim-backup-${date}.json`;
     try {
@@ -64,12 +70,16 @@ exports.dailyBackup = onSchedule(
         date, status: "ok", fileName, bucketPath, counts,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       });
+      res.status(200).json({ ok: true, fileName, bucketPath, counts });
     } catch (err) {
-      await db.collection("backupRuns").add({
-        date, status: "failed", fileName, error: String(err && err.message ? err.message : err),
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-      throw err;
+      const message = String(err && err.message ? err.message : err);
+      try {
+        await db.collection("backupRuns").add({
+          date, status: "failed", fileName, error: message,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      } catch (e) { /* recording the failure must not hide the response */ }
+      res.status(500).json({ ok: false, error: message });
     }
   }
 );
