@@ -17,15 +17,15 @@
 <script>function L(he, en){ return window.OH_LANG === "en" ? en : he; } /* text cleanup (Nov 5): only the active language */</script>
 
 <div class="page">
-<p id="pgGate" class="oh-help" hidden></p>
+<p id="pgGate" style="text-align:center;padding:2rem 1rem;font-size:1.1rem" hidden></p>
 <div class="gold-frame tool-card" hidden>
 <h2>שחזור נתונים</h2>
 <p class="oh-help">מחזיר מקובץ גיבוי רק מה שחסר. לא מוחק ולא דורס דבר.</p>
 <input type="file" id="backupFile" accept="application/json">
-<button class="btn" onclick="dryRun()">שלב 1: בדיקה (בלי שינוי)</button>
+<button class="btn" onclick="dryRun()" id="dryRunBtn">שלב 1: בדיקה (בלי שינוי)</button>
 <button class="btn" onclick="doImport()" id="importBtn" disabled>שלב 2: החזרת מה שחסר</button>
-<p id="restoreMsg"></p>
-<pre id="restoreOut" style="white-space:pre-wrap"></pre>
+<p id="restoreMsg" role="status" aria-live="polite"></p>
+<pre id="restoreOut" data-no-i18n dir="ltr" style="white-space:pre-wrap;text-align:left"></pre>
 </div>
 <script>
 var _backup = null; var _missing = [];
@@ -38,28 +38,82 @@ function readFile(){
     r.onerror = reject; r.readAsText(f);
   });
 }
+/* Nov 6 (production audit): step 1 used to read the 70+ documents one after
+   another and say nothing until the very end, so on a phone it looked as if
+   the button did nothing. Now: a message right away, reads in parallel (at
+   most 8 at a time, each with a time limit), progress per collection, and
+   every error shown here on the page. Step 1 only reads (.get), never writes. */
+var RESTORE_COLS = ['congregants','ledgerEntries','operationIds','pledges','recurringSchedules','nedarim','activityLog','prayerTimes','announcements','dedications','sponsors','flyers','yahrzeits','yahrzeitRequests','settings','backups','users']; /* same list as the backup page */
+var _dryRunBusy = false;
+function restoreSay(t){ document.getElementById('restoreMsg').textContent = t; }
+function withTimeout(p, ms){
+  return new Promise(function(resolve, reject){
+    var t = setTimeout(function(){ var e = new Error(L('אין תשובה מהשרת', 'no answer from the server')); e.code = 'timeout'; reject(e); }, ms);
+    p.then(function(v){ clearTimeout(t); resolve(v); }, function(e){ clearTimeout(t); reject(e); });
+  });
+}
 async function dryRun(){
-  var fb = window.OH_FIREBASE;
-  if(!fb || !fb.ready || !fb.user){ document.getElementById('restoreMsg').textContent = L('קודם צריך להתחבר.', 'Sign in first.'); return; }
-  try { _backup = await readFile(); } catch(e){ document.getElementById('restoreMsg').textContent = L('בעיה בקובץ: ', 'File problem: ') + e.message; return; }
-  _missing = []; var lines = [];
-  var cols = ['congregants','ledgerEntries','operationIds','pledges','recurringSchedules','nedarim','activityLog','prayerTimes','announcements','dedications','sponsors','flyers','yahrzeits','yahrzeitRequests','settings','backups','users']; /* same list as the backup page */
-  for(var i=0;i<cols.length;i++){
-    var col = cols[i]; var docs = (_backup.collections && _backup.collections[col]) || [];
-    for(var j=0;j<docs.length;j++){
-      /* Nov 6: the manual backup (backup/) keeps each document id as _id, the
-         nightly cloud backup (functions/dailybackup) as id: both are read */
-      var d = docs[j]; var id = d._id || d.id; if(!id) continue;
-      try {
-        var snap = await fb._db().collection(col).doc(id).get();
-        if(!snap.exists){ _missing.push({col: col, id: id, doc: d}); lines.push('MISSING: ' + col + '/' + id); }
-        else { lines.push('SKIP (exists): ' + col + '/' + id); }
-      } catch(e){ lines.push('ERROR checking ' + col + '/' + id + ': ' + (e.code || e.message)); }
+  if(_dryRunBusy) return;
+  var btn = document.getElementById('dryRunBtn'), out = document.getElementById('restoreOut');
+  _dryRunBusy = true; if(btn) btn.disabled = true;
+  document.getElementById('importBtn').disabled = true; _missing = [];
+  out.textContent = ''; restoreSay(L('בודק…', 'Checking…'));
+  try {
+    var fb = window.OH_FIREBASE;
+    if(!fb || !fb.ready || !fb.user){ restoreSay(L('קודם צריך להתחבר.', 'Sign in first.')); return; }
+    var db = fb._db && fb._db();
+    if(!db){ restoreSay(L('אין חיבור למסד הנתונים. לרענן את הדף ולנסות שוב.', 'No database connection. Reload the page and try again.')); return; }
+    try { _backup = await readFile(); } catch(e){ restoreSay(L('בעיה בקובץ: ', 'File problem: ') + (e && e.message || e)); return; }
+    if(!_backup || typeof _backup.collections !== 'object' || !_backup.collections){ restoreSay(L('זה לא קובץ גיבוי (אין בו collections).', 'This is not a backup file (no collections in it).')); return; }
+    /* the list of reads, and progress per collection */
+    var jobs = [], prog = {}, order = [];
+    RESTORE_COLS.forEach(function(col){
+      var docs = _backup.collections[col]; if(!Array.isArray(docs) || !docs.length) return;
+      prog[col] = { total: 0, done: 0, missing: 0, errors: 0 }; order.push(col);
+      docs.forEach(function(d){
+        /* Nov 6: the manual backup (backup/) keeps each document id as _id, the
+           nightly cloud backup (functions/dailybackup) as id: both are read */
+        var id = d && (d._id || d.id); if(!id) return;
+        prog[col].total++; jobs.push({ col: col, id: String(id), doc: d });
+      });
+    });
+    if(!jobs.length){ restoreSay(L('אין בקובץ מסמכים לבדיקה.', 'The file has no documents to check.')); return; }
+    var results = new Array(jobs.length), next = 0, doneCount = 0;
+    function render(){
+      out.textContent = order.map(function(col){ var p = prog[col];
+        return col + ': ' + p.done + '/' + p.total + L(' נבדקו', ' checked') + (p.missing ? L(', חסרים ', ', missing ') + p.missing : '') + (p.errors ? L(', שגיאות ', ', errors ') + p.errors : ''); }).join('\n');
+      restoreSay(L('בודק… ', 'Checking… ') + doneCount + '/' + jobs.length);
     }
+    render();
+    async function worker(){
+      while(next < jobs.length){
+        var k = next++, j = jobs[k], p = prog[j.col];
+        try {
+          var snap = await withTimeout(db.collection(j.col).doc(j.id).get(), 20000);
+          results[k] = snap.exists ? 'skip' : 'missing';
+          if(!snap.exists) p.missing++;
+        } catch(e){ results[k] = 'error'; j.err = (e && (e.code || e.message)) || String(e); p.errors++; }
+        p.done++; doneCount++; render();
+      }
+    }
+    var workers = []; for(var w = 0; w < Math.min(8, jobs.length); w++) workers.push(worker());
+    await Promise.all(workers);
+    var lines = [], errors = [];
+    jobs.forEach(function(j, k){
+      if(results[k] === 'missing'){ _missing.push({col: j.col, id: j.id, doc: j.doc}); lines.push('MISSING: ' + j.col + '/' + j.id); }
+      else if(results[k] === 'skip'){ lines.push('SKIP (exists): ' + j.col + '/' + j.id); }
+      else { errors.push(j.col + '/' + j.id + ' (' + j.err + ')'); lines.push('ERROR checking ' + j.col + '/' + j.id + ': ' + j.err); }
+    });
+    var summary = order.map(function(col){ var p = prog[col]; return col + ': ' + p.total + L(' נבדקו', ' checked') + ', ' + L('חסרים ', 'missing ') + p.missing + (p.errors ? ', ' + L('שגיאות ', 'errors ') + p.errors : ''); });
+    out.textContent = summary.join('\n') + '\n\n' + lines.join('\n');
+    restoreSay(L('הבדיקה הסתיימה. נבדקו ', 'Check done. Checked ') + jobs.length + L('. חסרים: ', '. Missing: ') + _missing.length + '.' +
+      (errors.length ? ' ' + L('לא נבדקו (שגיאה): ', 'Could not check (error): ') + errors.length + ' — ' + errors.slice(0, 5).join(', ') + (errors.length > 5 ? ' …' : '') : ''));
+    document.getElementById('importBtn').disabled = false;
+  } catch(e){
+    restoreSay(L('שגיאה בבדיקה: ', 'Check failed: ') + ((e && (e.code || e.message)) || String(e)));
+  } finally {
+    _dryRunBusy = false; if(btn) btn.disabled = false;
   }
-  document.getElementById('restoreMsg').textContent = L('הבדיקה הסתיימה. חסרים: ', 'Check done. Missing: ') + _missing.length + '.';
-  document.getElementById('restoreOut').textContent = lines.join('\n');
-  document.getElementById('importBtn').disabled = false;
 }
 async function doImport(){
   var fb = window.OH_FIREBASE;
