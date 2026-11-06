@@ -9,7 +9,8 @@ in the old design text inside `dailybackup/README.md`).
 
 ## What is deployed
 
-- `setUserClaims/` — HTTP, us-east1, Node 20. Deployed 2026-11-02 21:34.
+- `setUserClaims/` — HTTP, us-east1, Node 20 as deployed (its `package.json`
+  moved to Node 22 on 2026-11-06; live only after a redeploy). Deployed 2026-11-02 21:34.
   Caller must be exactly hanochhason@gmail.com with a valid Firebase ID
   token. Never creates an Auth user, never grants super admin, never
   changes the caller's own claims. Sets ohFinance / ohScreen /
@@ -18,7 +19,8 @@ in the old design text inside `dailybackup/README.md`).
   origins in the code (the two old orhachaimcong.org origins are still
   in it; removing them is a separate approved step).
 - `dailybackup/` — scheduled `0 3 * * *` America/New_York, us-east1,
-  Node 20. Deployed 2026-11-02 15:31. Runs verified 2026-11-03 and
+  Node 20 as deployed (its `package.json` moved to Node 22 on 2026-11-06;
+  live only after a redeploy). Deployed 2026-11-02 15:31. Runs verified 2026-11-03 and
   2026-11-04 03:00. Exports 10 collections to
   `or-hachaim-backup-YYYY-MM-DD.json` in the bucket from env
   `BACKUP_BUCKET`, and writes one `backupRuns` doc per run (status ok /

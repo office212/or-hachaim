@@ -605,10 +605,12 @@ backup/  restore/           Manual backup export / restore import
 screen/                     Shared screen files loaded by /tv/
                             (the gated screen page itself is deleted)
 functions/                  Cloud Functions source (see functions/README.md)
-  setUserClaims/            Role grants, HTTP, Node 20 (needs Node 22
-                            before its next redeploy; runs fine as is)
-  dailybackup/              Nightly Cloud Storage backup, scheduled, Node 20
-                            (same Node 22 note)
+  setUserClaims/            Role grants, HTTP. package.json: Node 22
+                            (2026-11-06); the live service stays Node 20
+                            until it is redeployed
+  dailybackup/              Nightly Cloud Storage backup, scheduled.
+                            Same: package.json Node 22, live Node 20
+                            until redeployed
   notifications/            Web push + in-app bell, 5 functions, Node 22
 src/firebase/               firebase-app.js (role resolver, all Firestore calls)
                             firestore.rules, storage.rules (repo copies)
@@ -684,13 +686,16 @@ deploy separately, from the Firebase console or the Firebase CLI,
 project `or-hachaim`, region `us-east1`. `functions/README.md` is
 the source of truth for what is actually deployed, and each
 function folder's own `package.json` states its Node version.
-`setUserClaims` and `dailybackup` are still on Node 20; Google
-stopped accepting new Node 20 deploys on 2026-10-30. Both keep
-running exactly as already deployed - nothing about them breaks on
-its own - but a future redeploy of either needs its `package.json`
-moved to Node 22 first, and may need `firebase-functions` and
-`firebase-admin` bumped if the deploy then complains about their
-versions. `notifications` (the five push functions) is already on
+`setUserClaims` and `dailybackup` are deployed on Node 20; Google
+stopped accepting new Node 20 deploys on 2026-10-30 and is retiring
+the runtime. Their `package.json` files were moved to Node 22 on
+2026-11-06 (the same dependency versions `notifications` already
+deploys with on Node 22), but **the live services change only when
+each is redeployed** from its folder. Until then they still run on
+Node 20. After a redeploy: check that `setUserClaims` still grants a
+role, and that the next 03:00 run writes a `backupRuns` document with
+status ok. If the deploy complains about `firebase-functions` or
+`firebase-admin` versions, bump those too. `notifications` (the five push functions) is already on
 Node 22 and is not affected.
 
 ### Rollback
@@ -883,10 +888,11 @@ re-sign-in verified.
 - **Final setUserClaims CORS cleanup.** Removing the two old-domain
   origins from the function allowlist is a separate, approval-gated
   step.
-- **`setUserClaims` and `dailybackup` need a Node 22 switch before
-  their next redeploy** (Google closed new Node 20 deploys
-  2026-10-30). Both run fine as already deployed; see "Cloud
-  Functions deploys" above.
+- **`setUserClaims` and `dailybackup` must be redeployed on Node 22.**
+  Their `package.json` files say Node 22 since 2026-11-06, but the live
+  services are still the Node 20 deploys of 2026-11-02 until each is
+  redeployed (Google closed new Node 20 deploys 2026-10-30 and is
+  retiring the runtime). See "Cloud Functions deploys" above.
 - **Privacy page is not linked from the site.** `/privacy/` exists
   and works but no page points to it yet.
 - **Web push notifications are not yet confirmed received** on a
