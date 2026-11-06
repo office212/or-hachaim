@@ -894,10 +894,12 @@ window.OH_PAGE_TEXT_HE = {
   };
 })();
 
-/* Language: Hebrew is the default. The top bar button stores "en" or "he". */
+/* Language: English is the default since 2026-11-06 (Hanoch: the site opens in
+   English, Hebrew is one tap on the language button). The top bar button stores
+   "en" or "he"; a device that already chose Hebrew stays in Hebrew. */
 (function () {
-  var lang = "he";
-  try { lang = localStorage.getItem("ohLang") === "en" ? "en" : "he"; } catch (e) {}
+  var lang = "en";
+  try { lang = localStorage.getItem("ohLang") === "he" ? "he" : "en"; } catch (e) {}
   window.OH_LANG = lang;
   if (lang !== "en") return;
   var H = window.OH_LABELS, E = window.OH_LABELS_EN || {};

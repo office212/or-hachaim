@@ -6,7 +6,8 @@
   --shadow:0 1px 2px rgba(60,45,25,.05),0 14px 34px -22px rgba(60,45,25,.4);
   max-width:620px;margin:0 auto;color:var(--ink);font-size:17px;line-height:1.5;direction:rtl;text-align:right}
 .fn *{box-sizing:border-box}
-.fn button,.fn input,.fn select{font:inherit;color:inherit}
+/* Nov 6: :where() keeps these at the lowest weight, so buttons that bring their own colours (OH_MEMBERS .ohm-btn, the page's .btn in the add form) keep their white text */
+:where(.fn) button,:where(.fn) input,:where(.fn) select{font:inherit;color:inherit}
 .fn button{cursor:pointer}
 .fn :focus-visible{outline:3px solid rgba(180,142,86,.6);outline-offset:2px}
 .fn .fn-num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}

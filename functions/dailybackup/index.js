@@ -41,12 +41,33 @@ async function exportCollections() {
   return { collections, counts };
 }
 
+/* Fix (2026-11-06): the run failed with 500 because the upload could call
+   delete, and the backup's own service account (or-hachaim-backup) has only
+   roles/storage.objectCreator on the bucket, no delete. In
+   @google-cloud/storage 7.x, file.save() is createWriteStream() plus end();
+   the one delete on that path is the after-upload checksum check
+   (File#validateIntegrity: on a mismatch it deletes the object "as a
+   precaution"), which runs only when validation (crc32c or md5) is on, and
+   crc32c is on by default. Here: a direct createWriteStream with
+   validation: false, so the client never calls delete. A plain, single-request
+   (non-resumable) upload; same file name, same content type.
+   Note: Cloud Storage itself asks for storage.objects.delete to REPLACE an
+   object that already exists. The 03:00 run writes a new name each day, so it
+   only needs create; a second run on the same day (a manual re-run) still
+   needs delete on the bucket to overwrite that day's file. */
 async function uploadToBucket(fileName, jsonText) {
   const bucketName = process.env.BACKUP_BUCKET;
   if (!bucketName) throw new Error("BACKUP_BUCKET is not set");
-  await storage.bucket(bucketName).file(fileName).save(jsonText, {
-    contentType: "application/json",
-    resumable: false,
+  const file = storage.bucket(bucketName).file(fileName);
+  await new Promise((resolve, reject) => {
+    const stream = file.createWriteStream({
+      resumable: false,
+      validation: false,
+      contentType: "application/json",
+    });
+    stream.on("error", reject);
+    stream.on("finish", resolve);
+    stream.end(jsonText);
   });
   return `${bucketName}/${fileName}`;
 }
