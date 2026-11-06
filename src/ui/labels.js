@@ -844,8 +844,8 @@ window.OH_PAGE_TEXT_HE = {
     /* ---- text cleanup (Nov 5): finance, admin, account, join and member list ---- */
     "כספים": "Finance", "כניסה נדרשת": "Sign-in required", "התחברות עם Google": "Sign in with Google",
     "חיפוש מתפללים": "Search members", "חפש מתפלל": "Search member", "הוספת מתפלל": "Add member", "הוסף מתפלל": "Add member",
-    "מייל לא חובה. בלי מייל אין כניסה לאתר.": "Email optional. Without email, no sign-in.",
-    "שם": "Name", "טלפון": "Phone", "מייל": "Email", "מייל (לא חובה)": "Email (optional)", "מתפלל": "Member", "סכום": "Amount", "עלייה": "Aliyah", "שנה": "Year",
+    "מייל חובה. בלי מייל אין כניסה לאתר.": "Email required. Without email, no sign-in.",
+    "שם": "Name", "טלפון": "Phone", "מייל": "Email", "מייל (חובה)": "Email (required)", "מתפלל": "Member", "סכום": "Amount", "עלייה": "Aliyah", "שנה": "Year",
     "נדרים": T.nedarim, "לכל נדר: שם, סכום ועלייה.": "Each neder: name, amount and aliyah.", "למשל כהן, לוי, ישראל": "e.g. Cohen, Levi, Yisrael", "הוסף נדר": "Add neder",
     "חיובים קבועים": "Recurring charges", "דמי חבר נרשמים לבד, כל חודש או כל שנה.": "Membership fees post by themselves, monthly or yearly.",
     "חייב עכשיו את מה שהגיע זמנו": "Charge what is due now",

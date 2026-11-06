@@ -14,6 +14,7 @@
   function esc(s) { return window.OH_UI ? OH_UI.esc(s) : String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function arg(v) { return window.OH_UI ? OH_UI.jsArg(v) : esc(JSON.stringify(String(v))); }
   function fb() { return window.OH_FIREBASE; }
+  function T(he, en) { return window.OH_LANG === "en" ? en : he; }
   function isSA() { var f = fb(); return !!(f && f.isSuperAdminClient && f.isSuperAdminClient()); }
   function statusOf(c) { return (c && c.status) || "active"; }
   /* US format (2026-11-05): month first. */
@@ -26,7 +27,8 @@
 
   function listed(c) {
     var st = statusOf(c);
-    if (st === "pending" || st === "declined") return false;
+    /* a "linked" request is not a member record of its own (Nov 6) */
+    if (st === "pending" || st === "declined" || st === "linked") return false;
     if (st === "inactive") return S.showInactive;
     return true;
   }
@@ -134,19 +136,37 @@
         if (kind === "approve") {
           var req = S.requests.find(function (x) { return x.id === id; });
           if (!req) return;
+          /* Email-required (Nov 6): if this email already has a member
+             record, approving would create a duplicate account for the
+             same person (two accounts, balance and history split). Warn
+             first; on confirm the approval LINKS to the existing record
+             instead of creating a second one. */
+          var em = String(req.email || "").toLowerCase();
+          var dup = em ? (S.cons || []).find(function (x) { return x.id !== id && String(x.email || "").toLowerCase() === em && (statusOf(x) === "active" || statusOf(x) === "inactive"); }) : null;
+          if (dup) {
+            var askFn = window.OH_UI && window.OH_UI.ask ? window.OH_UI.ask : null;
+            if (!askFn) { S.open = null; S.msg.req = T("לא ניתן להציג את האזהרה. נסה שוב.", "Could not show the warning. Try again."); return; }
+            var dupText = T("הבקשה הזו כבר רשומה", "This request is already a member") + "\n" +
+              T("כבר יש רשומה של " + req.name + " עם אותו מייל. אישור הבקשה כרשומה חדשה ייצור חשבון כפול: לאותו אדם יהיו שני חשבונות, והיתרה וההיסטוריה שלו יתפצלו ביניהם.", req.name + " already has a record with this email. Approving the request as a new record would create a duplicate account: the same person would have two accounts, and their balance and history would split between them.") + "\n" +
+              T("לאשר ולקשר לרשומה הקיימת?", "Approve and link to the existing record?");
+            var ok = await askFn(dupText, { ok: T("אשר וקשר", "Approve and link") });
+            if (!ok) { S.open = null; S.msg.req = T("בוטל. הבקשה נשארת ממתינה.", "Cancelled. The request stays pending."); return; }
+          }
           var r = await f.setMemberStatus(id, "approve");
           if (!r.saved) { S.msg.req = "לא אושר (" + why(r) + "). אפשר לנסות שוב."; return; }
           var line = req.name + " אושר/ה כ" + ROLE_HE[role];
+          if (r.linked) line = req.name + " אושר/ה וקושר/ה לרשומה הקיימת";
           if (role !== "member") {
             var g = await f.setMemberRole(req.email, role);
             if (!g.saved) line = req.name + " אושר/ה כמתפלל. התפקיד לא נשמר (" + why(g) + "), אפשר לבחור שוב ברשימה.";
             else line += ". שיתנתק ויתחבר שוב.";
           }
-          log("join", "אושרה בקשת הצטרפות: " + req.name + " (" + (g && !g.saved ? ROLE_HE.member : ROLE_HE[role]) + ")", "join.approve", req.name, id);
+          log("join", (r.linked ? "אושרה בקשת הצטרפות וקושרה לרשומה קיימת: " : "אושרה בקשת הצטרפות: ") + req.name + " (" + (g && !g.saved ? ROLE_HE.member : ROLE_HE[role]) + ")", "join.approve", req.name, id);
           S.requests = S.requests.filter(function (x) { return x.id !== id; });
           var cons = S.cons || [];
           var c = cons.find(function (x) { return x.id === id; });
-          if (c) c.status = "active";
+          if (r.linked) { if (c) c.status = "linked"; /* the existing record is already in the list; no new member is added */ }
+          else if (c) c.status = "active";
           else cons.push({ id: id, name: req.name, phone: req.phone, email: req.email, status: "active", ledger: [] });
           S.open = null; S.msg.req = line;
           var m = await f.loadMemberRoles(); S.roles = m.roles || S.roles;
