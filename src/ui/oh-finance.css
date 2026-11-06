@@ -1,0 +1,130 @@
+/* Or Hachaim | finance screens (Hanoch Nov 6, from the approved demo).
+   src/ui/oh-fin.js draws into #fn. Tokens match src/ui/oh-design.css:
+   navy, thin gold, stone; no red. Every tap target is at least 44px. */
+.fn{--ink:#26231e;--ink2:#4a4338;--muted:#7a6f61;--navy:#0e2c4c;--gold:#b48e56;--gold-text:#7a5c32;--surface:#fffdf9;--surface2:#f8f2e7;
+  --hair:rgba(180,142,86,.42);--hair-soft:rgba(180,142,86,.22);--ok:#2f7a5a;--ok-soft:#e3f1ea;--warn:#6b4f22;--warn-soft:#fbf1dc;--owe:#8a4b14;
+  --shadow:0 1px 2px rgba(60,45,25,.05),0 14px 34px -22px rgba(60,45,25,.4);
+  max-width:620px;margin:0 auto;color:var(--ink);font-size:17px;line-height:1.5;direction:rtl;text-align:right}
+.fn *{box-sizing:border-box}
+.fn button,.fn input,.fn select{font:inherit;color:inherit}
+.fn button{cursor:pointer}
+.fn :focus-visible{outline:3px solid rgba(180,142,86,.6);outline-offset:2px}
+.fn .fn-num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.fn h1{font-size:26px;font-weight:800;color:var(--navy);margin:8px 0 2px;text-wrap:balance}
+.fn h2{font-size:15px;font-weight:700;color:var(--muted);margin:22px 0 8px;letter-spacing:.02em}
+.fn .fn-sub{color:var(--muted);margin:0 0 12px;font-size:15px}
+.fn .fn-note{font-size:14px;color:var(--muted);margin:8px 0 0}
+.fn .fn-warnline{color:var(--warn)}
+
+/* tabs */
+.fn-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;border:1px solid var(--hair);border-radius:16px;background:var(--surface);margin:4px 0 14px}
+.fn-tabs button{border:0;background:none;border-radius:12px;min-height:44px;font-weight:700;font-size:15px;color:var(--muted);padding:0 4px}
+.fn-tabs button[aria-current="page"]{background:var(--navy);color:#f6ecd6}
+
+/* search */
+.fn-search{position:relative}
+.fn-search input{width:100%;min-height:54px;border:1.5px solid var(--gold);border-radius:16px;background:var(--surface);padding:0 46px 0 14px;font-size:18px;font-weight:600}
+.fn-search svg{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:22px;height:22px;color:var(--gold-text)}
+
+/* big actions */
+.fn-acts{display:grid;gap:10px;margin-top:14px}
+.fn-act{display:flex;align-items:center;gap:14px;width:100%;text-align:right;border:1px solid var(--hair);background:var(--surface);border-radius:18px;padding:14px 16px;box-shadow:var(--shadow)}
+.fn-act .fn-ic{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--surface2);color:var(--gold-text);flex:none}
+.fn-act .fn-ic svg{width:26px;height:26px}
+.fn-act b{display:block;font-size:19px;color:var(--navy)}
+.fn-act span span{font-size:14px;color:var(--muted)}
+.fn-act.fn-primary{background:var(--navy);border-color:transparent}
+.fn-act.fn-primary b,.fn-act.fn-primary span span{color:#f6ecd6}
+.fn-act.fn-primary .fn-ic{background:rgba(255,255,255,.12);color:#f6ecd6}
+
+.fn-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:14px}
+.fn-stat{background:var(--surface);border:1px solid var(--hair-soft);border-radius:14px;padding:10px}
+.fn-stat .fn-v{font-size:20px;font-weight:800;color:var(--navy)}
+.fn-stat .fn-k{font-size:13px;color:var(--muted);line-height:1.3}
+
+/* lists */
+.fn-list{background:var(--surface);border:1px solid var(--hair-soft);border-radius:16px;overflow:hidden}
+.fn-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--hair-soft);min-height:58px}
+.fn-list>.fn-row:first-child,.fn-list>button:first-child .fn-row{border-top:0}
+.fn-row .fn-grow{flex:1;min-width:0}
+.fn-row .fn-t{font-weight:700;overflow-wrap:anywhere}
+.fn-row .fn-d{font-size:14px;color:var(--muted);overflow-wrap:anywhere}
+.fn-row.fn-void .fn-t,.fn-row.fn-void .fn-amt{text-decoration:line-through;opacity:.55}
+.fn-rowbtn{display:block;width:100%;text-align:right;background:none;border:0;padding:0}
+.fn-rowbtn+.fn-rowbtn .fn-row{border-top:1px solid var(--hair-soft)}
+.fn .fn-amt{font-weight:800;white-space:nowrap}
+.fn .fn-amt.fn-pay{color:var(--ok)} .fn .fn-amt.fn-owe{color:var(--owe)}
+.fn-pill{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);white-space:nowrap}
+.fn-pill.fn-ok{background:var(--ok-soft);color:var(--ok)}
+.fn-empty{padding:16px;color:var(--muted);text-align:center}
+
+/* buttons, fields */
+.fn-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:14px;border:1px solid var(--hair);background:var(--surface);font-weight:700;font-size:16px;color:var(--navy);text-decoration:none}
+.fn-btn.fn-primary{background:var(--navy);color:#f6ecd6;border-color:transparent}
+.fn-btn.fn-ghost{background:none;border-color:transparent;color:var(--gold-text)}
+.fn-btn.fn-sm{min-height:42px;padding:0 12px;font-size:15px}
+.fn-btn.fn-block{width:100%;min-height:56px;font-size:18px}
+.fn-btn:disabled{opacity:.45;cursor:default}
+.fn-back{display:inline-flex;align-items:center;gap:6px;background:none;border:0;color:var(--gold-text);font-weight:700;padding:6px 0;min-height:44px;font-size:16px}
+.fn-field{margin-top:16px}
+.fn-field>label,.fn-field>.fn-lab{display:block;font-weight:700;margin-bottom:6px}
+.fn-input{width:100%;min-height:52px;border:1px solid var(--hair);border-radius:14px;background:var(--surface);padding:0 14px;font-size:18px}
+.fn-money{position:relative}
+.fn-money .fn-input{font-size:28px;font-weight:800;min-height:64px;padding-left:44px;direction:ltr;text-align:left}
+.fn-money .fn-cur{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:24px;font-weight:800;color:var(--muted)}
+.fn-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.fn-chip{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--hair);background:var(--surface);font-weight:700;font-size:16px}
+.fn-chip[aria-pressed="true"]{background:var(--navy);color:#f6ecd6;border-color:transparent}
+.fn-picked{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1.5px solid var(--gold);border-radius:14px;background:var(--surface);padding:8px 14px}
+.fn-picked b{font-size:18px}
+.fn-preview{margin-top:18px;border-radius:16px;background:var(--surface2);border:1px solid var(--hair-soft);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.fn-preview .fn-k{font-size:14px;color:var(--muted)}
+.fn-preview .fn-v{font-size:20px;font-weight:800}
+.fn-preview .fn-arrow{color:var(--gold-text);font-size:22px}
+.fn-datebar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;font-size:15px;color:var(--muted)}
+.fn-datebar input{min-height:44px;border:1px solid var(--hair);border-radius:12px;background:var(--surface);padding:0 10px}
+.fn-msg{margin-top:12px;padding:12px 14px;border-radius:14px;font-weight:600}
+.fn-msg.fn-err{background:var(--warn-soft);color:var(--warn);border:1px solid var(--gold)}
+
+/* nedarim table */
+.fn-ned{display:grid;grid-template-columns:96px minmax(0,1fr) 96px;gap:8px;align-items:center;padding:8px 10px;border-top:1px solid var(--hair-soft)}
+.fn-ned:first-child{border-top:0}
+.fn-ned .fn-al{font-weight:700;font-size:15px;color:var(--gold-text)}
+.fn-ned input,.fn-pl input{min-height:46px;border:1px solid var(--hair-soft);border-radius:12px;background:var(--surface2);padding:0 10px;font-size:16px;width:100%;min-width:0}
+.fn-ned input.fn-a,.fn-pl input.fn-a{direction:ltr;text-align:left;font-weight:700}
+.fn-ned input.fn-lab{font-weight:700;color:var(--gold-text);padding:0 8px;font-size:15px}
+.fn-ned.fn-filled input,.fn-pl.fn-filled input{background:var(--surface);border-color:var(--hair)}
+.fn-ned.fn-saved,.fn-pl.fn-saved{opacity:.6}
+.fn-box{margin-top:18px;border:1px solid var(--hair);border-radius:18px;background:var(--surface);overflow:hidden}
+.fn-box-h{padding:12px 14px 4px}
+.fn-box-h b{font-size:18px;color:var(--navy)}
+.fn-box-h p{margin:2px 0 0;font-size:14px;color:var(--muted)}
+.fn-pl{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:8px;padding:10px;border-top:1px solid var(--hair-soft)}
+.fn-pl input.fn-what{grid-column:1 / -1;font-weight:700;color:var(--gold-text)}
+.fn-pl .fn-kinds{grid-column:1 / -1;display:flex;flex-wrap:wrap;gap:6px}
+.fn-pl .fn-kinds .fn-chip{min-height:36px;padding:0 12px;font-size:14px}
+.fn-total{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-weight:700}
+.fn-total .fn-v{font-size:22px;color:var(--navy)}
+
+/* member card */
+.fn-balance{margin-top:6px;padding:16px 18px;border-radius:18px;background:var(--surface);border:1px solid var(--hair);box-shadow:var(--shadow)}
+.fn-balance .fn-v{font-size:34px;font-weight:800;line-height:1.1}
+.fn-balance .fn-k{font-size:14px;color:var(--muted)}
+.fn-two{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+
+/* toast and receipt sheet */
+.fn-toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + env(safe-area-inset-bottom,0px));width:min(560px,calc(100% - 32px));background:#0e2c4c;color:#f6ecd6;border-radius:16px;padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 18px 40px -16px rgba(0,0,0,.5);z-index:60;font-size:16px}
+.fn-toast .fn-grow{flex:1;min-width:0;font-weight:600}
+.fn-toast button{background:transparent;border:1px solid currentColor;color:inherit;border-radius:10px;min-height:40px;padding:0 12px;font-weight:700;font:inherit;cursor:pointer}
+dialog.fn-sheet{border:1px solid #b48e56;border-radius:18px;padding:20px;max-width:min(520px,calc(100vw - 32px));width:100%;background:#fffdf9;color:#26231e;font:inherit;font-size:17px}
+dialog.fn-sheet::backdrop{background:rgba(8,27,48,.45)}
+dialog.fn-sheet h3{margin:0 0 10px;color:#0e2c4c;font-size:22px}
+.fn-rcpt{border:1px solid rgba(180,142,86,.42);border-radius:14px;padding:14px;background:#f8f2e7;line-height:1.7}
+.fn-rcpt .fn-num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+.fn-sheet .fn-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+
+/* the older tools, under "עוד" */
+#fnMore[hidden]{display:none!important}
+@media screen{#printArea{display:none}}
+@media (max-width:420px){.fn-ned{grid-template-columns:78px minmax(0,1fr) 82px;gap:6px;padding:8px}.fn-tabs button{font-size:14px}}
+@media print{.fn,.fn-toast{display:none!important}}

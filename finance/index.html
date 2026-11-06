@@ -12,6 +12,8 @@
 <script src="../src/engines/idempotency.js"></script>
 <script src="../src/engines/finance-states.js"></script>
 <script src="../src/ui/oh-ui.js"></script>
+<link rel="stylesheet" href="../src/ui/oh-finance.css">
+<script src="../src/ui/oh-fin.js"></script>
 <style>
 @media print { .page > :not(#printArea) { display: none !important; } #printArea .tax-letter { page-break-after: always; box-shadow: none; } }
 .ledger-summary { display: flex; flex-wrap: wrap; gap: 10px 26px; font-variant-numeric: tabular-nums; }
@@ -33,31 +35,29 @@
 <div class="page">
 <div class="gate-card" id="signInGate"><h2>כניסה נדרשת</h2><button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>התחברות עם Google</span></button><p class="hint" id="gateMsg"></p></div>
 <div id="ohJoinReqs" hidden></div>
-<p id="dataSource" class="oh-help">כניסה נדרשת</p><label>חיפוש מתפללים</label><input id="search" placeholder="חפש מתפלל" oninput="renderList()">
-<div id="ohInactiveToggle" hidden></div>
-<div id="list"></div>
+<p id="dataSource" class="oh-help">כניסה נדרשת</p>
+<!-- Nov 6 (Hanoch, approved demo): the finance screens, drawn by src/ui/oh-fin.js -->
+<div id="fn" class="fn ohx"></div>
+<div id="fnPark" hidden><div id="ohInactiveToggle" hidden></div></div>
+<!-- the older tools, unchanged, shown under "עוד" (#more; #reports scrolls to the annual report) -->
+<section id="fnMore" hidden>
 <h2>הוספת מתפלל</h2>
 <div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מייל לא חובה. בלי מייל אין כניסה לאתר.</p>
 <label>שם</label><input id="newName"><label>טלפון</label><input id="newPhone"><label>מייל (לא חובה)</label><input id="newEmail">
 <button class="btn" id="addCongBtn" onclick="addCong()">הוסף מתפלל</button><p id="addMsg"></p></div>
-<div id="printArea"></div>
-<h2 id="nedarim">נדרים</h2>
-<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">לכל נדר: שם, סכום ועלייה.</p>
-<label>מתפלל</label><select id="nederCong"></select><label>סכום</label><input id="nederAmt" type="number" step="0.01"><label>עלייה</label><input id="nederAliyah" placeholder="למשל כהן, לוי, ישראל">
-<button class="btn btn-gold" onclick="addNeder()">הוסף נדר</button><p id="nederMsg"></p><div id="nederList"></div></div>
 <h2 hidden>חיובים קבועים</h2><!-- hidden (Hanoch Nov 5 7:57 AM: no recurring charges planned for now) -->
 <div class="gold-frame no-print" style="padding:1rem" hidden><p class="oh-help">דמי חבר נרשמים לבד, כל חודש או כל שנה.</p>
 <div id="recList"></div><button class="btn" onclick="applyRecurring()">חייב עכשיו את מה שהגיע זמנו</button><p id="recMsg"></p></div>
 <h2>קבלות מס שנתיות</h2>
 <div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מכתב 501c3 לכל מתפלל. הגבאי מאשר את הסכום המוכר.</p>
 <label>שנה</label><input id="taxYear" value="2026"><button class="btn btn-gold" onclick="taxLetters()">צור מכתבים לכל המתפללים</button><div id="taxArea"></div></div>
-<h2>התחייבויות</h2>
-<div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">התחייבות נכנסת ליתרה רק אחרי שהופכים אותה לחיוב.</p><div id="pledgeList"></div></div>
 <h2 id="reports">דוח שנתי</h2>
 <div class="gold-frame no-print" style="padding:1rem"><label>שנה</label><input id="annualYear" value="2026"><button class="btn btn-gold" onclick="annualReport()">צור דוח שנתי</button><div id="annualArea"></div></div>
 <h2>גיבוי</h2>
 <div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מוריד קובץ עם כל נתוני הכספים.</p>
 <button class="btn btn-gold" onclick="backupExport()">ייצוא גיבוי מלא</button><p id="backupMsg"></p></div>
+</section>
+<div id="printArea"></div>
 <script>
 /* Finance page logic. Changed 2026-11-03 (see design_suggestions file):
    every Firestore value is escaped (OH_UI.esc / OH_UI.jsArg); amounts are
@@ -95,87 +95,13 @@ function bal$(n, owedHe, owedEn){
    "no members yet"; one line and a "נסה שוב" button that loads again. */
 var _loadFailed = false;
 function loadErrHtml(){ return '<div class="oh-loaderr" role="alert"><span>' + L("לא הצלחנו לטעון את רשימת המתפללים.", "Couldn't load the members list.") + '</span><button class="btn secondary" onclick="retryLoad()">' + L("נסה שוב", "Try again") + '</button></div>'; }
-function retryLoad(){ _loadFailed = false; _lastUserEmail = null; document.getElementById("list").innerHTML = '<p class="oh-help">' + L("טוען...", "Loading...") + '</p>'; refreshFromFirestore(); }
+function retryLoad(){ _loadFailed = false; _lastUserEmail = null; var el = document.getElementById("fn"); if(el) el.innerHTML = '<p class="oh-help">' + L("טוען...", "Loading...") + '</p>'; refreshFromFirestore(); }
 function renderList(){
-  if(_loadFailed){ document.getElementById("list").innerHTML = loadErrHtml(); return; }
-  var q = (document.getElementById("search").value || "").toLowerCase();
-  /* Stage D: join requests and declined ones are never on this list; inactive
-     members only with "הצג לא פעילים". Totals and reports keep every record. */
-  var M = window.OH_MEMBERS;
-  document.getElementById("list").innerHTML = cons.filter(function(c){ return (!M || M.listed(c)) && String(c.name || "").toLowerCase().includes(q); }).map(function(c){
-    var t = totals(c);
-    return '<div class="gold-frame cong-card" style="margin:1rem 0"><h3>' + esc(c.name) + '</h3><p class="hint">' + L("טלפון: ", "Phone: ") + esc(c.phone) + ' | ' + L("מייל: ", "Email: ") + (c.email ? esc(c.email) : L("אין", "none")) + '</p>' +
-    '<p class="ledger-summary"><span>' + L("חיובים: ", "Charges: ") + amt$(t.charges) + '</span><span>' + L("תשלומים: ", "Payments: ") + amt$(t.payments) + '</span>' + bal$(t.balance, "יתרה: ", "Balance: ") + '</p>' +
-    '<button class="btn secondary" style="width:auto" onclick="showCard(' + jsArg(c.id) + ')">' + L("פתח כרטיס", "Open card") + '</button>' + (M ? M.cardExtras(c) : "") + '</div>';
-  }).join("") || "<p>" + L("אין מתפללים עדיין", "No members yet") + "</p>";
-}
-/* One pending operationId per open card. It is created when the card
-   opens and replaced only after a confirmed save, so pressing the
-   button twice, or again after a network error, reuses the same id. */
-var pendingOp = {};
-function showCard(id){
-  var c = cons.find(function(x){ return x.id === id; }); if(!c) return;
-  var t = totals(c);
-  if(!pendingOp[id]) pendingOp[id] = newOp("entry");
-  var rows = c.ledger.map(function(e){ return "<tr><td>" + esc(OH_UI.usDate(e.date)) + "</td><td>" + word(e.type) + (e.type === "payment" && e.method ? " | " + mword(e.method) : "") + "</td><td>" + amt$(e.amount) + "</td><td>" + esc(e.description) + "</td><td>" + esc(e.enteredBy) + "</td></tr>"; }).join("");
-  document.getElementById("printArea").innerHTML =
-    '<div class="gold-frame"><h2>' + L("כרטיס מתפלל: ", "Member card: ") + esc(c.name) + '</h2>' +
-    '<p>' + L("טלפון: ", "Phone: ") + esc(c.phone) + ' | ' + L("מייל: ", "Email: ") + (c.email ? esc(c.email) : L("אין", "none")) + ' | ' + L("תאריך הדפסה: ", "Print date: ") + esc(today()) + '</p>' +
-    '<p class="ledger-summary"><span>' + L("סך חיובים: ", "Total charges: ") + amt$(t.charges) + '</span><span>' + L("סך תשלומים: ", "Total payments: ") + amt$(t.payments) + '</span>' + bal$(t.balance, "יתרה לתשלום: ", "Balance owed: ") + '</p>' +
-    '<table><tr><th>' + L("תאריך", "Date") + '</th><th>' + L("סוג", "Type") + '</th><th>' + L("סכום", "Amount") + '</th><th>' + L("תיאור", "Description") + '</th><th>' + L("הוזן ע״י", "Entered by") + '</th></tr>' + rows + '</table>' +
-    '<div class="no-print" style="margin-top:1rem;display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-gold" style="width:auto" onclick="window.print()">' + L("הדפס יתרה", "Print balance") + '</button>' +
-    '<button class="btn secondary" style="width:auto" onclick="exportCSV(' + jsArg(c.id) + ')">' + L("ייצוא ל-CSV", "Export to CSV") + '</button></div>' +
-    '<div class="no-print" style="margin-top:1rem"><label>' + L("הוסף רשומה", "Add entry") + '</label>' +
-    '<select id="eType" onchange="syncMethod()"><option value="charge">' + L("חיוב", "Charge") + '</option><option value="payment">' + L("תשלום", "Payment") + '</option><option value="correction">' + L("תיקון", "Correction") + '</option></select>' +
-    '<div id="eMethodWrap" hidden><label for="eMethod">' + L("אמצעי תשלום", "Payment method") + '</label><select id="eMethod"><option value="">' + mword("unspecified") + '</option>' + PAY_METHODS.map(function(k){ return '<option value="' + k + '">' + mword(k) + '</option>'; }).join("") + '</select></div>' +
-    '<label for="eDate">' + L("תאריך", "Date") + '</label><input id="eDate" class="oh-entry-date" type="date" lang="en-US" value="' + esc(today()) + '" max="' + esc(today()) + '">' +
-    '<label>' + L("סכום (בתיקון: מינוס מוריד יתרה)", "Amount (correction: minus lowers it)") + '</label><input id="eAmt" type="number" step="0.01" inputmode="decimal"><label>' + L("תיאור", "Description") + '</label><input id="eDesc">' +
-    '<button class="btn" id="eBtn" onclick="addEntry(' + jsArg(c.id) + ')">' + L("הוסף רשומה", "Add entry") + '</button><p id="eMsg" class="hint"></p></div></div>';
-}
-async function addEntry(id){
-  var c = cons.find(function(x){ return x.id === id; }); if(!c) return;
-  var type = document.getElementById("eType").value;
-  var amt = Number(document.getElementById("eAmt").value);
-  var desc = document.getElementById("eDesc").value.trim();
-  var msg = document.getElementById("eMsg"), btn = document.getElementById("eBtn");
-  /* Validation: a number, not zero; charge and payment are positive;
-     only a correction may be negative. */
-  if(!isFinite(amt) || amt === 0){ msg.textContent = L("הזן סכום (לא אפס).", "Enter an amount (not zero)."); return; }
-  if(type !== "correction" && amt < 0){ msg.textContent = L("חיוב ותשלום רק בפלוס. להורדה: תיקון.", "Charges and payments are plus only. To lower: correction."); return; }
-  /* Retroactive payments (2026-11-05, Hanoch): a date field, default today,
-     past dates allowed (for a payment made a while ago and only now entered),
-     future dates never. The live Firestore rules do not block a future date
-     by themselves (only the YYYY-MM-DD shape), so this check at the UI is
-     the actual gate today; see firestore.rules for the new rules-side check
-     added alongside it. */
-  var dateEl = document.getElementById("eDate");
-  var entryDate = (dateEl && dateEl.value) ? dateEl.value : today();
-  if(!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(entryDate)){ msg.textContent = L("תאריך לא תקין.", "Invalid date."); return; }
-  if(entryDate > today()){ msg.textContent = L("לא ניתן לבחור תאריך עתידי.", "A future date is not allowed."); return; }
-  var opId = pendingOp[id] || (pendingOp[id] = newOp("entry"));
-  if(btn.disabled) return; /* a save with this id is already running */
-  var entry = { congregantId: id, date: entryDate, type: type, amount: Math.round(amt * 100) / 100, description: desc, operationId: opId, source: "manual" };
-  /* payment method (Nov 5): only on a payment; none chosen = no method = "לא צוין" in the report.
-     Card for now only records the method. Later, when card processing (Sola) exists,
-     choosing card will open the payment page for the gabbai to enter the card. */
-  var mEl = document.getElementById("eMethod");
-  var method = (type === "payment" && mEl) ? mEl.value : "";
-  if(method) entry.method = method;
-  var fb = window.OH_FIREBASE;
-  btn.disabled = true; msg.textContent = L("שומר...", "Saving...");
-  var r = (fb && fb.saveLedgerEntry) ? await fb.saveLedgerEntry(entry) : { saved: false, reason: "test-only" };
-  btn.disabled = false;
-  if (r.saved || r.reason === "duplicate-operationId" || r.reason === "test-only") {
-    if (r.reason !== "duplicate-operationId") c.ledger.push({ date: entry.date, operationId: opId, type: type, amount: entry.amount, description: desc, enteredBy: who(), method: method });
-    delete pendingOp[id]; /* the next entry gets a new id */
-    if (r.saved) logLine("finance", "נרשם " + TYPE_HE[type] + " של " + money(entry.amount) + (method ? " (" + MW[method][0] + ")" : "") + " ל" + c.name + (entry.date !== today() ? " (תאריך רטרואקטיבי: " + OH_UI.usDate(entry.date) + ")" : ""), { code: "ledger." + type, target: c.name, targetId: id, amount: entry.amount });
-    showCard(id); renderList();
-    document.getElementById("eMsg").textContent = r.saved ? L("נשמר.", "Saved.") : (r.reason === "test-only" ? L("תצוגה מקומית בלבד, לא נשמר.", "Local preview only, not saved.") : L("כבר נשמר.", "Already saved."));
-  } else {
-    /* Not saved: nothing is added on screen, and the same operationId
-       is kept, so pressing again cannot create a second entry. */
-    msg.textContent = L("לא נשמר: ", "Not saved: ") + r.reason + L(". לחץ שוב.", ". Tap again.");
-  }
+  /* Nov 6: the finance screens are drawn by src/ui/oh-fin.js (home, payment,
+     nedarim, who owes, member card); this keeps the old name every caller uses. */
+  var el = document.getElementById("fn");
+  if(_loadFailed){ if(el) el.innerHTML = loadErrHtml(); return; }
+  if(window.OH_FIN) OH_FIN.render();
 }
 function csvCell(v){
   var s = String(v == null ? "" : v);
@@ -237,49 +163,9 @@ function logLine(area, sentence, extra){
 }
 var TYPE_HE = { charge: "חיוב", payment: "תשלום", correction: "תיקון" };
 var pledges = [];
-function renderNederCong(){
-  /* Stage D: only active members are offered for a new neder */
-  document.getElementById("nederCong").innerHTML = cons.filter(function(c){ return !window.OH_MEMBERS || window.OH_MEMBERS.isActive(c); }).map(function(c){ return '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>'; }).join("");
-  document.getElementById("nederList").innerHTML = pledges.map(function(n){
-    return "<p>" + esc(OH_UI.usDate(n.date)) + " | " + esc(n.name) + " | " + amt$(n.amount) + " | " + L("עלייה: ", "Aliyah: ") + esc(n.aliyah) + "</p>";
-  }).join("") || "<p>" + L("אין נדרים עדיין", "No nedarim yet") + "</p>";
-}
-/* One operationId for the neder form, kept until a confirmed save. */
-var nederOp = null;
-async function addNeder(){
-  var id = document.getElementById("nederCong").value;
-  var c = cons.find(function(x){ return x.id === id; });
-  /* Hardening (2026-11-05, Hanoch: "the name field is redundant, the member is already chosen"):
-     the name on the neder is always the selected member's own name, never a
-     separately typed field, so the two can never disagree. */
-  var name = c ? c.name : "", amt = Number(document.getElementById("nederAmt").value), aliyah = document.getElementById("nederAliyah").value.trim();
-  var msg = document.getElementById("nederMsg");
-  if(!c || !isFinite(amt) || amt <= 0){ msg.textContent = L("בחר מתפלל וסכום בפלוס.", "Choose a member and a plus amount."); return; }
-  /* Foundation: a neder first creates a pledge, not a payment.
-     Converting it creates a ledger charge with a unique operationId,
-     so a double click records one charge only. */
-  var opId = nederOp || (nederOp = newOp("neder"));
-  var btn = document.querySelector('button[onclick="addNeder()"]');
-  if (btn && btn.disabled) return;
-  if (btn) btn.disabled = true;
-  var entry = { congregantId: id, date: today(), type: "charge", amount: Math.round(amt * 100) / 100, description: "Neder converted to charge: " + name + ", Aliyah: " + aliyah, operationId: opId, source: "neder", aliyah: aliyah };
-  var fb = window.OH_FIREBASE;
-  var r = (fb && fb.saveLedgerEntry) ? await fb.saveLedgerEntry(entry) : { saved: false, reason: "test-only" };
-  if (btn) btn.disabled = false;
-  if (!(r.saved || r.reason === "duplicate-operationId" || r.reason === "test-only")) {
-    msg.textContent = L("הנדר לא נשמר: ", "Neder not saved: ") + r.reason + L(". לחץ שוב.", ". Tap again.");
-    return;
-  }
-  if (r.reason !== "duplicate-operationId") {
-    pledges.push({ id: "pledge-local-" + Date.now(), congregantId: id, name: name, amount: entry.amount, aliyah: aliyah, date: entry.date, status: "converted" });
-    c.ledger.push({ date: entry.date, operationId: opId, type: "charge", amount: entry.amount, description: entry.description, enteredBy: who() });
-    if (r.saved) logLine("finance", "נרשם נדר של " + money(entry.amount) + " ל" + c.name + (aliyah ? " (עלייה: " + aliyah + ")" : ""), { code: "ledger.neder", target: c.name, targetId: id, amount: entry.amount });
-  }
-  nederOp = null;
-  document.getElementById("nederAmt").value = ""; document.getElementById("nederAliyah").value = "";
-  msg.textContent = (r.saved ? L("נשמר: ", "Saved: ") : (r.reason === "test-only" ? L("תצוגה מקומית: ", "Local preview: ") : L("כבר נשמר: ", "Already saved: "))) + L("נדר של ", "neder for ") + c.name + ".";
-  renderList(); renderNederCong();
-}
+/* Nov 6: nedarim are entered on the Shabbat nedarim screen (src/ui/oh-fin.js),
+   every aliyah in one table plus pledges, one save; the old one-neder form is gone. */
+function renderNederCong(){ if(window.OH_FIN) OH_FIN.render(); }
 var recs = [];
 function renderRec(){
   document.getElementById("recList").innerHTML = recs.map(function(r){

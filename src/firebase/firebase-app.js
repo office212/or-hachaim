@@ -334,7 +334,7 @@
         led.forEach(function (doc) {
           var d = doc.data() || {};
           var c = out.find(function (x) { return x.id === d.congregantId; });
-          if (c) c.ledger.push({ date: d.date || "", operationId: d.operationId || doc.id, type: d.type || "charge", amount: d.amount || 0, description: d.description || "", enteredBy: d.enteredBy || "", method: d.method || "" }); /* 6c: method rides along */
+          if (c) c.ledger.push({ date: d.date || "", operationId: d.operationId || doc.id, type: d.type || "charge", amount: d.amount || 0, description: d.description || "", enteredBy: d.enteredBy || "", method: d.method || "", source: d.source || "manual", aliyah: d.aliyah || "" }); /* 6c: method rides along; Nov 6: source and aliyah too (finance screens) */
         });
         return out;
       } catch (e) { state.loadError = { fn: "loadCongregants", code: String((e && (e.code || e.message)) || e) }; return null; }

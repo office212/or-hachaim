@@ -432,6 +432,47 @@ every week.
 
 ### Finance (`/finance/`)
 
+Since 2026-11-06 the page opens on the simpler finance screens
+(`src/ui/oh-fin.js`, `src/ui/oh-finance.css`, from the demo Hanoch
+approved). Four tabs: home, payment, nedarim, who owes. Each view
+has its own address (`#pay`, `#charge`, `#nedarim`, `#owes`,
+`#members`, `#m-<member id>`, `#more`; `#reports` opens "more" at the
+annual report):
+
+- **Home**: search by name or phone, three big buttons (record a
+  payment, Shabbat nedarim, who owes), this month's collected
+  total, the open balance, and the last entries.
+- **Payment / charge**: one screen. Pick the member, the amount
+  (quick amounts, and "full balance" for a payment), how they paid
+  (cash, check, Zelle, card, transfer) or what the charge is for,
+  an optional note, today's date or an earlier one. The balance
+  before and after shows before saving. After saving, "בטל" undoes
+  it and "קבלה" shows a receipt to print. The member's bell gets
+  the payment notice on its own (`functions/notifications`,
+  `onLedgerPayment`) when the member has an account.
+- **Shabbat nedarim**: every aliyah in one table (פתיחת ההיכל to
+  מפטיר), extra rows with their own name (הגבהה, גלילה, מי שברך...),
+  and a separate box for pledges that are not aliyot (קידוש, סעודה
+  שלישית, אירוע בבית הכנסת, or free text). A check screen, then one
+  save. Each line is its own ledger charge with its own operationId:
+  a neder carries `source: "neder"` and the aliyah, a pledge carries
+  its details in the description. If some lines fail, the rest stay
+  saved and pressing again saves only what is missing. The date is
+  the last Shabbat on or before today (never a future date).
+- **Who owes**: members with a balance, largest first, with the
+  phone and the last payment date.
+- **Member card**: balance, "+ תשלום" / "+ חיוב", the full history,
+  print statement, CSV, and (super admin) role and inactive
+  controls. **"ביטול"** never edits or deletes (the ledger is
+  append-only): it writes a `correction` of the opposite sign whose
+  description starts with `ביטול [<operationId>]`, operationId
+  `void-<operationId>` (one cancellation per entry, ever). The
+  original stays in the history, marked "בוטל". No rules change.
+- **More** (`#more`): add member, tax letters, annual report,
+  backup, unchanged.
+
+The details below still hold:
+
 - Member list with search, member card, balance computed
   from the full ledger, printable balance statement and CSV
   export. A credit shows as "זכות: $X" in green; a zero balance
@@ -452,8 +493,8 @@ every week.
   it does not yet take a card (see "Donations and balance payment"
   below). Amounts are stored as dollars with 2 decimals and summed in
   whole cents; dates are New York dates.
-- Neder fast entry for Motzei Shabbat: name, amount, aliyah, one
-  click per neder, idempotent.
+- Neder fast entry for Motzei Shabbat: now the Shabbat nedarim
+  screen above (all aliyot and pledges, one save), idempotent.
 - Recurring charges: monthly or annual membership fees posted
   automatically on schedule with deterministic ids, so a schedule
   never double-charges. Pausing or cancelling stops future charges
