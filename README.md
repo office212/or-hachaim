@@ -430,6 +430,25 @@ and logo are part of the sheet assets (`src/shabbat-sheet/`).
 Changes made here apply to this Shabbat only unless marked for
 every week.
 
+**On the TV (2026-11-07).** "הצג בזמני התפילות במסך" puts this
+sheet's davening, learning and added rows (shown rows with a time;
+candle lighting, Shkiah, Shema and Shabbat ends stay out, since the
+TV computes those) into `settings/shabbatScreen.weeks[<shabbat>]`
+as `{ friday, rows: [{ he, en, time, min, day: "fri" | "sat" }] }`
+(`OH_SHEET.screenRows`). The TV (`tv-live.js` →
+`prayer-rules.js` `ctx.sheet`) then shows them **instead of** the
+regular davening times: on that Friday the regular morning rows
+(before noon) and then the sheet's Erev Shabbat rows; on that
+Shabbat only the sheet's rows. Once it is on, every saved change to
+the sheet updates the TV as well; "הפסק להציג במסך" takes it off.
+After that Shabbat the TV is back to the regular times by itself;
+past weeks are pruned on the next write (at most 12 weeks kept).
+The document is public read (the TV has no sign-in) and written by
+content gabbaim and the super admin only, exactly these keys
+(`firestore.rules`, `match /settings/shabbatScreen`; tested in
+`src/firebase/rules-tests/test.mjs`, section 7). **The rule must
+be published in the Firebase console before the button works.**
+
 ### Finance (`/finance/`)
 
 Since 2026-11-06 the page opens on the simpler finance screens

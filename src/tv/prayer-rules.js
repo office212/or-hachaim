@@ -93,8 +93,23 @@
     return { min: sm, time: fmtAmPm(sm) };
   }
 
+  /* Hanoch Nov 7: the Shabbat package's own times for one Shabbat
+     (settings/shabbatScreen, written by gabbai/shabbat/), INSTEAD of the
+     regular times: on that Shabbat only its rows; on that Friday the regular
+     morning rows (before noon) and then the package's Erev Shabbat rows.
+     ctx.sheet: { friday: iso, shabbat: iso, rows: [{ he, en, min, day: "fri" | "sat" }] } */
+  function sheetRows(sheet, iso, group, day) {
+    return (sheet.rows || []).filter(function (r) { return r && r.day === day && typeof r.min === "number" && r.min >= 0 && r.min < 1440; }).map(function (r, i) {
+      return { id: "sheet:" + day + ":" + i, nameHe: r.he || r.en || "", nameEn: r.en || "", time: fmtAmPm(r.min), min: r.min, iso: iso, group: group || "", legacy: false, rule: { kind: "fixed" }, fromSheet: true };
+    });
+  }
   function rowsFor(docs, iso, ctx, group) {
-    var rows = [];
+    var rows = [], sheet = ctx && ctx.sheet;
+    if (sheet && iso === sheet.shabbat) return sheetRows(sheet, iso, group, "sat").sort(function (a, b) { return a.min - b.min; });
+    if (sheet && iso === sheet.friday) {
+      rows = rowsFor(docs, iso, Object.assign({}, ctx, { sheet: null }), group).filter(function (r) { return r.min != null && r.min < 12 * 60; }).concat(sheetRows(sheet, iso, group, "fri"));
+      return rows.sort(function (a, b) { return a.min - b.min; });
+    }
     (docs || []).forEach(function (doc) {
       var t = timeFor(doc, iso, ctx); if (!t) return;
       rows.push({ id: doc.id, nameHe: doc.nameHe || doc.nameEn || "", nameEn: doc.nameEn || "", time: t.time, min: t.min, iso: iso, group: group || "", legacy: !!t.legacy, rule: normRule(doc.rule) });

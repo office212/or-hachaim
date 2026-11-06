@@ -22,10 +22,11 @@
   var params = new URLSearchParams(location.search);
   var EMBED = params.get("embed") === "preview";
   var IN_FRAME = (function () { try { return W.self !== W.top; } catch (e) { return true; } })();
-  var PT_CACHE = "orHachaimTvPrayerDocs", SUN_CACHE = "orHachaimTvSunset", RELOAD_KEY = "orHachaimTvReloadedOn", TX_CACHE = "orHachaimTvScreenTexts", SDK_RETRY_KEY = "orHachaimTvSdkRetryAt", DISP_CACHE = "orHachaimTvDisplay";
+  var PT_CACHE = "orHachaimTvPrayerDocs", SUN_CACHE = "orHachaimTvSunset", RELOAD_KEY = "orHachaimTvReloadedOn", TX_CACHE = "orHachaimTvScreenTexts", SDK_RETRY_KEY = "orHachaimTvSdkRetryAt", DISP_CACHE = "orHachaimTvDisplay", SHEET_CACHE = "orHachaimTvShabbatScreen";
   var st = { cal: null, docs: null, docsFrom: "none", sunset: null, live: false, fromCache: true, lastServerAt: 0, unsub: null, lastSig: "", ds: null, reg: null, offlineSince: 0,
     settings: null, settingsFrom: "none", setUnsub: null, setDeniedAt: 0, settingsError: null, layout: null, textSig: "",
-    tvDisplay: { nightDim: false }, tvDispUnsub: null, tvDispDeniedAt: 0 };
+    tvDisplay: { nightDim: false }, tvDispUnsub: null, tvDispDeniedAt: 0,
+    sheetWeeks: null, sheetUnsub: null, sheetDeniedAt: 0 };
   W.OH_TV = st; /* read-only view for diagnostics and tests */
   W.OH_TV_DISPLAY = st.tvDisplay; /* screen.js reads this: night dim is on only when nightDim is true */
 
@@ -123,6 +124,37 @@
         st.setUnsub = null; st.setDeniedAt = Date.now(); st.settingsError = (err && err.code) || "error";
       });
     } catch (e) { st.setUnsub = null; st.setDeniedAt = Date.now(); }
+  }
+  /* ---------- the Shabbat package's times: settings/shabbatScreen (LIVE) ----------
+     Hanoch Nov 7: { weeks: { "<shabbat iso>": { friday, rows: [{ he, en, time, min, day }] } } },
+     written by gabbai/shabbat/ ("הצג בזמני התפילות במסך"). On that Friday afternoon
+     and Shabbat the TV shows these rows INSTEAD of the regular davening times
+     (prayer-rules.js ctx.sheet). Public read; kept on this TV for an offline start. */
+  st.sheetWeeks = lsGet(SHEET_CACHE);
+  function startSheet() {
+    if (st.sheetUnsub) return;
+    if (st.sheetDeniedAt && Date.now() - st.sheetDeniedAt < 120000) return;
+    var fb = W.OH_FIREBASE; if (!fb || !fb.ready || !fb._db) return;
+    var db = fb._db(); if (!db) return;
+    try {
+      st.sheetUnsub = db.doc("settings/shabbatScreen").onSnapshot({ includeMetadataChanges: false }, function (snap) {
+        var fromCache = !!(snap.metadata && snap.metadata.fromCache);
+        var d = snap.exists ? snap.data() : null;
+        if (!d && fromCache) return;
+        st.sheetWeeks = d && d.weeks && typeof d.weeks === "object" ? d.weeks : {};
+        if (!fromCache) lsSet(SHEET_CACHE, st.sheetWeeks);
+        paint(true);
+      }, function () { st.sheetUnsub = null; st.sheetDeniedAt = Date.now(); });
+    } catch (e) { st.sheetUnsub = null; st.sheetDeniedAt = Date.now(); }
+  }
+  /* this Shabbat's package times, if the gabbai put them on the screen: iso is today (New York) */
+  function sheetFor(iso) {
+    var w = st.sheetWeeks; if (!w) return null;
+    for (var k in w) {
+      var e = w[k]; if (!e || !Array.isArray(e.rows) || typeof e.friday !== "string") continue;
+      if (iso >= e.friday && iso <= k) return { friday: e.friday, shabbat: k, rows: e.rows };
+    }
+    return null;
   }
   /* ---------- night dim: settings/tvDisplay (LIVE) ----------
      { nightDim: true/false, updatedBy, updatedAt }, super admin only.
@@ -233,7 +265,7 @@
   /* the gabbai's own name of a prayer, in the screen language */
   function nameMain(r) { return r.nameHe || r.nameEn || ""; }
   function rowHtml(r, isNext) {
-    return '<div class="zman-row' + (isNext ? " next" : "") + (r.rule ? " has-rule" : "") + '" data-id="' + esc(r.id) + '"><span class="zn"><span class="he">' + esc(r.nameHe) + '</span><span class="en">' + esc(r.nameEn) + '</span></span><span class="zt" dir="ltr">' + esc(r.time) + "</span></div>";
+    return '<div class="zman-row' + (isNext ? " next" : "") + (r.rule ? " has-rule" : "") + '" data-id="' + esc(r.id) + '"><span class="zn"><span class="he">' + esc(r.nameHe) + '</span><span class="en">' + esc(r.nameEn) + '</span></span><span class="zt" dir="ltr">' + esc(String(r.time || "").replace(/\s*[AaPp]\.?[Mm]\.?$/, "")) + "</span></div>"; /* Hanoch Nov 7: no AM/PM, like every other time on the screen */
   }
   function paintPrayers(now, ds) {
     var el = $("prayerList"); if (!el) return;
@@ -244,8 +276,9 @@
     var shabbatStarted = !!(ds && ds.key === "shabbat" && p.wd === 5);
     var nextIso = DS.addDays(p.iso, 1);
     ctx.shabbatStarted = shabbatStarted; ctx.nextIso = nextIso;
+    ctx.sheet = sheetFor(p.iso) || sheetFor(nextIso);
     var rows = PR.resolve(docs, p.iso, ctx);
-    var tomorrowRows = PR.resolve(docs, nextIso, { zdays: ctx.zdays, sunsetRaw: ctx.sunsetRaw, isYomTov: isYomTovIso });
+    var tomorrowRows = PR.resolve(docs, nextIso, { zdays: ctx.zdays, sunsetRaw: ctx.sunsetRaw, isYomTov: isYomTovIso, sheet: ctx.sheet });
     var nx = PR.nextMinyan(rows, p.iso, p.minExact, shabbatStarted ? null : tomorrowRows);
     if (nx && nx.row && nx.row.min != null) nx.minutes = Math.max(0, DS.minutesUntil(now, nx.tomorrow && !nx.row.iso ? nextIso : (nx.row.iso || p.iso), nx.row.min));
     var html;
@@ -403,7 +436,7 @@
     ensureCal(); loadSunset(); registerSW();
     applySettings(st.settings || {}); /* the static words and the layout, now that the page is there */
     paint(true);
-    setInterval(function () { ensureCal(); startLive(); startSettings(); startTvDisplay(); paint(false); }, 1000);
+    setInterval(function () { ensureCal(); startLive(); startSettings(); startTvDisplay(); startSheet(); paint(false); }, 1000);
     setInterval(function () { maybeDailyReload(); sdkWatch(); }, 30000);
     W.addEventListener("online", function () { setTimeout(sdkWatch, 3000); });
   }

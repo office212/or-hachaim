@@ -24,7 +24,10 @@
     making: "מכין קובץ...", done: "הקובץ מוכן ✓", ptLink: "קבוע לכל שבוע: זמני תפילה",
     help1: "↑ ↓ משנים סדר. שעה באפור היא הצעה. בשבוע הבא הכל חוזר לרגיל.",
     help2: "הזמנים באים מהמערכת, כמו במסך. שתיהן = PDF אחד עם 2 עמודים.",
-    emptyHelp: "אין זמן בזמני תפילה לשורה הזאת. מזינים כאן לשבת הזאת, או קובעים בזמני תפילה"
+    emptyHelp: "אין זמן בזמני תפילה לשורה הזאת. מזינים כאן לשבת הזאת, או קובעים בזמני תפילה",
+    tvOffT: "להציג בזמני התפילות במסך", tvOffD: "הזמנים מהדף הזה יוצגו במסך בשישי ובשבת האלה, במקום זמני התפילה הקבועים.", tvOn: "הצג במסך",
+    tvOnT: "מוצג בזמני התפילות במסך ✓", tvOnD: "כל שינוי כאן מתעדכן במסך לבד. אחרי השבת המסך חוזר לזמנים הקבועים.", tvOff: "הפסק להציג במסך",
+    tvSaving: "מעדכן את המסך...", tvFailed: "המסך לא עודכן. נסו שוב", tvNone: "אין בדף זמני תפילה להציג"
   };
   var EN = {
     edTitle: "Shabbat sheet", edNote: "Changes here apply to this Shabbat only", edSaved: "Saved ✓", edSaving: "Saving...",
@@ -39,14 +42,17 @@
     making: "Making the file...", done: "File ready ✓", ptLink: "Every week: Davening Times",
     help1: "↑ ↓ change the order. A grey time is a suggestion. Next week resets.",
     help2: "Times come from the system, as on the screen. Both = one 2-page PDF.",
-    emptyHelp: "No time in Davening Times for this row. Enter it here for this Shabbat, or set it in Davening Times"
+    emptyHelp: "No time in Davening Times for this row. Enter it here for this Shabbat, or set it in Davening Times",
+    tvOffT: "Show in the TV's davening times", tvOffD: "The times on this sheet show on the TV this Friday and Shabbat, instead of the regular davening times.", tvOn: "Show on the TV",
+    tvOnT: "Shown in the TV's davening times ✓", tvOnD: "Every change here updates the TV by itself. After Shabbat the TV goes back to the regular times.", tvOff: "Stop showing on the TV",
+    tvSaving: "Updating the TV...", tvFailed: "The TV was not updated. Try again", tvNone: "No davening times on this sheet to show"
   };
   function isEn() { return window.OH_LANG === "en"; }
   function L(k) { var d = isEn() ? EN : HE, o = window.OH_LABELS || {}; var key = "sheet_" + k; return (o[key] !== undefined && o[key] !== null && o[key] !== "") ? o[key] : d[k]; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   var SV = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.5 5.2 5.7.8-4.1 4 1 5.7L12 16.6l-5.1 2.7 1-5.7-4.1-4 5.7-.8z" fill="currentColor"/></svg>';
   var C = function () { return window.OH_SHEET; }, D = function () { return window.OH_SHEET_DRAW; };
-  var st = { el: null, inp: null, settings: {}, model: null, addOpen: "", busy: false, msg: "", msgKind: "", fmt: "pdf", lang: "he", look: "bg", pvLang: "", pvTimer: 0 };
+  var st = { el: null, inp: null, settings: {}, screen: {}, tvBusy: false, tvMsg: "", model: null, addOpen: "", busy: false, msg: "", msgKind: "", fmt: "pdf", lang: "he", look: "bg", pvLang: "", pvTimer: 0 };
 
   function rebuild() { var i = st.inp; st.model = C().build({ shabbat: i.shabbat, sb: i.sb, days: i.days, docs: i.docs, timeOf: i.timeOf, settings: st.settings, rt: window.OH_RABBEINU_TAM }); }
   function tag(r) {
@@ -114,7 +120,7 @@
     var weekEdited = !!(st.settings.weeks && st.settings.weeks[m.shabbat]);
     h += '<section class="x-card se-card" id="ohSheetCard"><div class="se-head"><h2>' + esc(L("edTitle")) + ' <span class="se-sub" data-no-i18n>' + esc(en ? (m.title.en || m.title.he) : m.title.he) + "</span></h2>" +
       '<p class="se-note"><span>' + esc(L("edNote")) + '</span> <b class="se-saved" id="ohSheetSaved" role="status" aria-live="polite">' + esc(st.msg) + "</b></p>" +
-      '<p class="oh-help se-help">' + esc(L("help1")) + "</p></div>";
+      '<p class="oh-help se-help">' + esc(L("help1")) + "</p></div>" + tvBox();
     h += '<div class="se-cols"><div class="se-rows">';
     if (m.mev) h += '<div class="se-row se-mev' + (m.mev.hidden ? " is-off" : "") + '" data-se-row="mev"><div class="se-name"><b data-no-i18n>' + esc(en ? m.mev.en : m.mev.he) + '</b><span class="se-tags"><span class="se-tag se-auto">' + esc(L("tAuto")) + '</span></span></div><div class="se-times"></div><div class="se-acts"><button type="button" class="se-sw" role="switch" aria-checked="' + (!m.mev.hidden) + '" data-se-hide="mev" aria-label="' + esc(L("mevRow") + ": " + (m.mev.hidden ? L("hidden") : L("shown"))) + '"><span class="se-knob"></span><span class="se-swl">' + esc(m.mev.hidden ? L("hidden") : L("shown")) + "</span></button></div></div>";
     [["erev", "gErev"], ["morning", "gMorning"], ["afternoon", "gAfternoon"]].forEach(function (g) {
@@ -191,6 +197,45 @@
     }, 60);
   }
   function setMsg(t, kind) { st.msg = t || ""; st.msgKind = kind || ""; var e = document.getElementById("ohSheetSaved"); if (e) { e.textContent = st.msg; e.className = "se-saved " + (kind || ""); } }
+  /* ---------- Hanoch Nov 7: this sheet's davening times on the TV ----------
+     settings/shabbatScreen.weeks[<shabbat>] = { friday, rows } (OH_SHEET.screenRows),
+     read by the TV (tv-live.js) and shown there INSTEAD of the regular times on that
+     Friday afternoon and Shabbat. Once on, every saved change here updates it. */
+  function tvOn() { return !!(st.screen && st.screen.weeks && st.screen.weeks[st.model.shabbat]); }
+  function tvBox() {
+    var on = tvOn();
+    return '<div class="se-tv' + (on ? " is-on" : "") + '" id="ohSheetTv"><div class="se-tv-t"><b>' + esc(L(on ? "tvOnT" : "tvOffT")) + "</b><span>" + esc(L(on ? "tvOnD" : "tvOffD")) + "</span>" +
+      (st.tvMsg ? '<span class="se-tv-msg" role="status">' + esc(st.tvMsg) + "</span>" : "") + "</div>" +
+      '<button type="button" class="x-btn' + (on ? " ghost" : " primary") + '" id="ohSheetTvBtn" data-se-tv="' + (on ? "off" : "on") + '"' + (st.tvBusy ? " disabled" : "") + ">" + esc(L(st.tvBusy ? "tvSaving" : (on ? "tvOff" : "tvOn"))) + "</button></div>";
+  }
+  function sameRows(a, b) { return JSON.stringify(a || null) === JSON.stringify(b || null); }
+  function publishTv(on, quiet) {
+    var fb = window.OH_FIREBASE, db = fb && fb._db && fb._db();
+    var sh = st.model.shabbat, data = C().screenRows(st.model);
+    var entry = { friday: data.friday, rows: data.rows };
+    if (on && !data.rows.length) { st.tvMsg = L("tvNone"); paint(); return Promise.resolve(false); }
+    if (on && quiet && tvOn() && sameRows(st.screen.weeks[sh].rows, entry.rows) && st.screen.weeks[sh].friday === entry.friday) return Promise.resolve(true);
+    if (!db || !fb.user) { st.tvMsg = L("tvFailed"); paint(); return Promise.resolve(false); }
+    var ref = db.collection("settings").doc("shabbatScreen"), email = (fb.user && fb.user.email) || "";
+    var today = window.OH_UI && window.OH_UI.nyDate ? window.OH_UI.nyDate() : new Date().toISOString().slice(0, 10);
+    st.tvBusy = true; if (!quiet) { st.tvMsg = ""; paint(); }
+    return db.runTransaction(function (tx) {
+      return tx.get(ref).then(function (snap) {
+        var cur = snap.exists ? (snap.data() || {}) : {}, weeks = {};
+        /* keep only Shabbatot that are today or later (old ones are of no use to the TV), at most 12 */
+        Object.keys(cur.weeks || {}).sort().forEach(function (k) { if (k >= today && k !== sh) weeks[k] = cur.weeks[k]; });
+        if (on) weeks[sh] = entry;
+        var keys = Object.keys(weeks).sort(); while (keys.length > 12) { delete weeks[keys.pop()]; }
+        tx.set(ref, { weeks: weeks, updatedBy: email, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() });
+        return weeks;
+      });
+    }).then(function (weeks) {
+      st.tvBusy = false; st.screen = { weeks: weeks }; st.tvMsg = ""; paint();
+      if (!quiet) { try { if (fb.logActivity) fb.logActivity(on ? "זמני דף השבת הוצגו במסך (" + sh + ")" : "זמני דף השבת הוסרו מהמסך (" + sh + ")", "", { area: "shabbat", code: on ? "shabbatScreen.on" : "shabbatScreen.off", collection: "settings", itemId: "shabbatScreen" }); } catch (e) {} }
+      return true;
+    }).catch(function () { st.tvBusy = false; st.tvMsg = L("tvFailed"); paint(); return false; });
+  }
+
   /* one change: saved in one transaction on settings/shabbatSheet (the op is
      re-applied to the newest document, so two gabbaim never erase each other) */
   function save(op) {
@@ -210,6 +255,7 @@
       });
     }).then(function (next) {
       st.settings = { weeks: next.weeks, regular: next.regular }; rebuild(); paint(); setMsg(L("edSaved"), "ok");
+      if (tvOn()) publishTv(true, true); /* the TV follows the sheet */
       try { if (fb.logActivity) fb.logActivity("עודכן דף השבת (" + sh + ")", op.type + (op.id ? " " + op.id : op.key ? " " + op.key : ""), { area: "shabbat", code: "shabbatSheet." + op.type, collection: "settings", itemId: "shabbatSheet" }); } catch (e) {} /* Nov 5: Hebrew sentence, area "shabbat" */
       return true;
     }).catch(function () { st.settings = prev; rebuild(); paint(); setMsg(L("edFailed"), "warn"); return false; });
@@ -278,6 +324,7 @@
       st.addOpen = ""; save(op); return;
     }
     if (b.id === "ohSheetReset") { save({ type: "reset" }); return; }
+    if ((a = b.getAttribute("data-se-tv"))) { publishTv(a === "on", false); return; }
     if ((a = b.getAttribute("data-se-opt"))) {
       var p = a.split(":"); if (p[0] === "pv") st.pvLang = p[1]; else st[p[0]] = p[1];
       if (p[0] === "lang") st.pvLang = p[1] === "both" ? st.pvLang : p[1];
@@ -289,9 +336,10 @@
   document.addEventListener("change", function (e) { var t = e.target; if (st.el && st.el.contains(t) && t.hasAttribute("data-se-time")) onTime(t); });
   document.addEventListener("keydown", function (e) { var t = e.target; if (e.key === "Enter" && st.el && st.el.contains(t) && t.hasAttribute && t.hasAttribute("data-se-time")) { e.preventDefault(); t.blur(); } });
 
-  /* inp: { shabbat, sb, days, docs, timeOf, settings, ptHref } */
+  /* inp: { shabbat, sb, days, docs, timeOf, settings, screen, ptHref } */
   function mount(el, inp) {
     st.el = el; st.inp = inp; st.settings = { weeks: (inp.settings && inp.settings.weeks) || {}, regular: (inp.settings && inp.settings.regular) || [] };
+    st.screen = { weeks: (inp.screen && inp.screen.weeks) || {} }; st.tvMsg = ""; st.tvBusy = false;
     st.lang = isEn() ? "en" : "he"; st.pvLang = ""; st.msg = ""; rebuild(); paint();
   }
   window.OH_SHEET_EDITOR = { mount: mount, _state: st, exportNow: exportNow };

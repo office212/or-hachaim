@@ -22,7 +22,7 @@
     if (sb.candleLighting) h += sb.candleLighting.time ? row(sb.candleLighting.label, sb.candleLighting.time) : missingRow(sb.candleLighting.label);
     if (sb.end) {
       h += sb.end.time ? row(sb.end.label, sb.end.time) : missingRow(sb.end.label);
-      if (sb.end.rabbeinuTam) h += row("רבינו תם (המוקדם)", sb.end.rabbeinuTam);
+      if (sb.end.rabbeinuTam) h += row("רבינו תם", sb.end.rabbeinuTam);
     } else if (sb.candleLightingSaturdayNight) {
       h += row(sb.candleLightingSaturdayNight.label, sb.candleLightingSaturdayNight.time);
     }
