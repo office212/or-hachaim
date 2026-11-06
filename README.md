@@ -452,7 +452,9 @@ the sheet prints them (this week's changes included), the Kiddush
 sponsors and this week's yahrzeits: a short line to every member's bell
 and the full text by email to every active member with an email. A
 confirm box shows the whole message first; a second send in the same week
-asks again. It calls `sendBroadcast` (functions/notifications) with
+asks again. The Kiddush and dedication lines are this Shabbat's
+own: a permanent dedication (the TV's running ticker, usually with no end
+date) stays on the ticker and is not part of them (2026-11-06). It calls `sendBroadcast` (functions/notifications) with
 `email: true`: the function writes one `mail/broadcast-<id>-<member>`
 document per member, which `functions/sendMail` sends. Live:
 `sendBroadcast` with the email option was redeployed by Hanoch on

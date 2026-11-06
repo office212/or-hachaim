@@ -70,6 +70,12 @@
         if (it.type === "yahrzeit") { var y = E.yahrzeitActive(it.yahrzeit || {}, sh); if (y) g.yahrzeits.push({ name: (it.yahrzeit && it.yahrzeit.nameHe) || "", date: E.hebrewDayMonthLabel ? E.hebrewDayMonthLabel(+it.yahrzeit.hDay, it.yahrzeit.hMonth) : "" }); return; }
         var on = (!it.startDate || it.startDate <= sh) && (!it.endDate || it.endDate >= fri);
         if (!on) return;
+        /* Nov 6 (Hanoch): a permanent dedication is the TV's running ticker
+           (screen/content-board.js: type "dedication" + permanent), usually
+           with no end date, so it was "active" every week and landed in this
+           Shabbat's donations ("שבת שלום לקהילה", the bulletin). It stays on
+           the ticker, it is not this Shabbat's donation. */
+        if (it.type === "dedication" && it.permanent) return;
         if (it.type === "sponsor" || it.type === "dedication" || it.type === "parnas") g.sponsors.push({ text: it.titleHe || it.bodyHe || "", sub: it.subtype || "" });
         else if (it.type === "announcement" || it.type === "rabbi" || it.type === "mazaltov" || it.type === "hazkara") g.notices.push({ text: it.titleHe || it.bodyHe || "" });
       });
