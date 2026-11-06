@@ -524,7 +524,8 @@ annual report):
   add form (`addCong`: email required, the duplicate-email and
   same-person warnings) right in the tab; join requests with
   approve/decline for the super admin (`OH_MEMBERS`; the gabbai home's
-  link `finance/#ohJoinReqs` opens this tab, and the finance home shows
+  join alert and its own "ניהול מתפללים" tile open this tab
+  (`finance/#members`; the older `finance/#ohJoinReqs` too), and the finance home shows
   a "בקשות הצטרפות (N)" line); "הצג לא פעילים"; each row shows "לא
   פעיל" or "אין מייל" and opens the member card. These page parts keep
   their own state and are parked in `#fnPark` while another view is

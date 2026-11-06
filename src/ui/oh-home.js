@@ -33,6 +33,7 @@
     lock: ic('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/>'),
     arrow: ic('<path d="M14.5 6l-6 6 6 6"/>'),
     person: ic('<circle cx="12" cy="8" r="4"/><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"/>'),
+    people: ic('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.8"/><path d="M15.5 14.2A5.5 5.5 0 0 1 21.5 20"/>'),
     signin: ic('<path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/><path d="M15 8l4 4-4 4M19 12H9"/>'),
     edit: ic('<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>')
   };
@@ -43,6 +44,7 @@
     { k: "screen", icon: I.tv, href: "gabbai/tv/content/", can: function (r) { return r.canScreen; }, count: true },
     { k: "times", icon: I.clock, href: "gabbai/tv/#ptSection", can: function (r) { return r.canScreen; } },
     { k: "finance", icon: I.wallet, href: "finance/", can: function (r) { return r.canFinance; } },
+    { k: "members", icon: I.people, href: "finance/#members", can: function (r) { return r.canFinance || r.isSuperAdmin; } }, /* Nov 6: the Members tab */
     { k: "nedarim", icon: I.book, href: "finance/#nedarim", can: function (r) { return r.canFinance; } },
     { k: "reports", icon: I.doc, href: "finance/#reports", can: function (r) { return r.canFinance; } },
     { k: "activity", icon: I.list, href: "gabbai/activity/", can: function (r) { return r.isSuperAdmin; } }, /* Nov 5: the log is super admin only */
@@ -179,7 +181,7 @@
     /* 2040 phase 1: "the system notices before you", src/ui/oh-alerts.js */
     if (gabbai) h += '<div id="ohAlerts" hidden></div>';
     /* Stage D: the super admin sees waiting join requests here, one tap to them */
-    if (role.isSuperAdmin) h += '<a class="card noaccess" id="ohJoinAlert" hidden href="' + ROOT + 'finance/#ohJoinReqs" style="min-height:48px;text-decoration:none"></a>';
+    if (role.isSuperAdmin) h += '<a class="card noaccess" id="ohJoinAlert" hidden href="' + ROOT + 'finance/#members" style="min-height:48px;text-decoration:none"></a>';
     var shown = TILES.filter(function (x) { return x.can(role); });
     if (shown.length) {
       h += '<h2 class="sec-title">' + esc(t("sectionTitle")) + " <span>" + esc(t("sectionTitleEn")) + "</span></h2>";
