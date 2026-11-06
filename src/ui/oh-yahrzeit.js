@@ -1,4 +1,4 @@
-/* Or Hachaim | member yahrzeits (src/ui/oh-yahrzeit.js), Hanoch Nov 7 2026.
+/* Or Hachaim | member yahrzeits (src/ui/oh-yahrzeit.js), Hanoch Nov 6 2026.
    A member adds a family yahrzeit on their own page (congregant/); a content
    gabbai (or the super admin) approves it on gabbai/tv/content/, and only then
    it is a public yahrzeit item on the TV, in its week, every year, exactly

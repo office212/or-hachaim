@@ -93,7 +93,7 @@
     return { min: sm, time: fmtAmPm(sm) };
   }
 
-  /* Hanoch Nov 7: the Shabbat package's own times for one Shabbat
+  /* Hanoch Nov 6: the Shabbat package's own times for one Shabbat
      (settings/shabbatScreen, written by gabbai/shabbat/), INSTEAD of the
      regular times: on that Shabbat only its rows; on that Friday the regular
      morning rows (before noon) and then the package's Erev Shabbat rows.
@@ -124,8 +124,8 @@
     ctx = ctx || {};
     if ((ctx.shabbatStarted || ctx.friday) && ctx.nextIso) {
       /* Friday: today's rows, then tomorrow's (Shabbat), so the whole Shabbat
-         schedule is on the screen all Friday (Hanoch Nov 7: people check the
-         Shabbat times on Friday, they have no phone on Shabbat). Before Nov 7
+         schedule is on the screen all Friday (Hanoch Nov 6: people check the
+         Shabbat times on Friday, they have no phone on Shabbat). Before Nov 6
          this was from candle lighting only, with Friday's morning rows left out.
          A document without a rule (shown every day, as before) is shown
          once under Shabbat: its morning times there, its evening times tonight. */

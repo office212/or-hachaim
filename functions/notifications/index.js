@@ -87,7 +87,7 @@ async function resolveMemberUids(deps) {
   return uids;
 }
 
-/* Hanoch Nov 7 ("שבת שלום לקהילה", bell + email): every active member who has
+/* Hanoch Nov 6 ("שבת שלום לקהילה", bell + email): every active member who has
    an email, whether or not they ever signed in (the bell needs a sign-in, an
    email does not). Same filter as resolveMemberUids. */
 async function resolveMemberEmails(deps) {
@@ -272,7 +272,7 @@ async function sendBroadcastHandler(deps, req, res) {
     const body = req.body || {};
     const title = String(body.title || "").trim().slice(0, 120);
     const text = String(body.body || "").trim().slice(0, 500);
-    /* optional (Nov 7): also by email to every active member with an email,
+    /* optional (Nov 6): also by email to every active member with an email,
        with a longer text when given (the bell keeps the short one) */
     const withEmail = body.email === true;
     const mailText = String(body.emailBody || body.body || "").trim().slice(0, 4000);

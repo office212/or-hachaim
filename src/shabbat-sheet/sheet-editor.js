@@ -197,7 +197,7 @@
     }, 60);
   }
   function setMsg(t, kind) { st.msg = t || ""; st.msgKind = kind || ""; var e = document.getElementById("ohSheetSaved"); if (e) { e.textContent = st.msg; e.className = "se-saved " + (kind || ""); } }
-  /* ---------- Hanoch Nov 7: this sheet's davening times on the TV ----------
+  /* ---------- Hanoch Nov 6: this sheet's davening times on the TV ----------
      settings/shabbatScreen.weeks[<shabbat>] = { friday, rows } (OH_SHEET.screenRows),
      read by the TV (tv-live.js) and shown there INSTEAD of the regular times on that
      Friday afternoon and Shabbat. Once on, every saved change here updates it. */

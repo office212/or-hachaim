@@ -122,7 +122,7 @@
     return h;
   }
 
-  /* ---------- "שבת שלום לקהילה" (Hanoch Nov 7): bell + email to every member ----------
+  /* ---------- "שבת שלום לקהילה" (Hanoch Nov 6): bell + email to every member ----------
      Built from the Shabbat sheet exactly as it is printed now (this week's changes
      included: OH_SHEET.lines), plus the Kiddush sponsors and this week's yahrzeits.
      Sent by functions/notifications sendBroadcast (super admin only, checked there):
@@ -233,7 +233,7 @@
     st.data = gather({ shabbat: sh, sb: sb, day: day, daily: daily && daily.days, zman: t.zman, isYomTov: cal && cal.isYomTov ? function (iso) { try { return !!cal.isYomTov(iso); } catch (e) { return false; } } : null, docs: docs, items: items });
     var isYT = cal && cal.isYomTov ? function (iso) { try { return !!cal.isYomTov(iso); } catch (e) { return false; } } : null;
     var sheetSettings = {}; try { var sdb = fb()._db && fb()._db(); if (sdb) { var sd = await sdb.collection("settings").doc("shabbatSheet").get(); if (sd.exists) sheetSettings = sd.data() || {}; } } catch (e) {}
-    /* Hanoch Nov 7: which Shabbatot already show their sheet times on the TV (settings/shabbatScreen) */
+    /* Hanoch Nov 6: which Shabbatot already show their sheet times on the TV (settings/shabbatScreen) */
     var screenDoc = {}; try { var sdb2 = fb()._db && fb()._db(); if (sdb2) { var ss = await sdb2.collection("settings").doc("shabbatScreen").get(); if (ss.exists) screenDoc = ss.data() || {}; } } catch (e) {}
     var want = draftItem(st.data);
     st.draft = (items || []).filter(function (x) { return x.type === "announcement" && x.status !== "archived" && x.titleHe === want.titleHe && x.endDate === sh; })[0] || null;

@@ -376,7 +376,7 @@ enters real content; that is by design, not a bug. A signed-in
 check of the TV preview exists in `/gabbai/tv/content/` (exact TV preview
 before publishing).
 
-**Davening times on the TV (2026-11-07).** All Friday the list shows
+**Davening times on the TV (2026-11-06).** All Friday the list shows
 Friday's rows under "ערב שבת" and then the whole Shabbat schedule under
 "שבת" (people check the Shabbat times on Friday; before, Shabbat's
 rows appeared only from candle lighting). A prayer of today leaves the
@@ -439,7 +439,7 @@ and logo are part of the sheet assets (`src/shabbat-sheet/`).
 Changes made here apply to this Shabbat only unless marked for
 every week.
 
-**"שבת שלום לקהילה" (2026-11-07, super admin only).** A box on the
+**"שבת שלום לקהילה" (2026-11-06, super admin only).** A box on the
 Shabbat package page sends the community this Shabbat's times exactly as
 the sheet prints them (this week's changes included), the Kiddush
 sponsors and this week's yahrzeits: a short line to every member's bell
@@ -447,11 +447,11 @@ and the full text by email to every active member with an email. A
 confirm box shows the whole message first; a second send in the same week
 asks again. It calls `sendBroadcast` (functions/notifications) with
 `email: true`: the function writes one `mail/broadcast-<id>-<member>`
-document per member, which `functions/sendMail` sends. **The
-notifications function must be redeployed for the email part**; until
-then the bell part works and the email part is ignored.
+document per member, which `functions/sendMail` sends. Live: the
+notifications function with this option was redeployed by Hanoch on
+2026-11-06; the first real send is the live proof of the email part.
 
-**On the TV (2026-11-07).** "הצג בזמני התפילות במסך" puts this
+**On the TV (2026-11-06).** "הצג בזמני התפילות במסך" puts this
 sheet's davening, learning and added rows (shown rows with a time;
 candle lighting, Shkiah, Shema and Shabbat ends stay out, since the
 TV computes those) into `settings/shabbatScreen.weeks[<shabbat>]`
@@ -467,8 +467,9 @@ past weeks are pruned on the next write (at most 12 weeks kept).
 The document is public read (the TV has no sign-in) and written by
 content gabbaim and the super admin only, exactly these keys
 (`firestore.rules`, `match /settings/shabbatScreen`; tested in
-`src/firebase/rules-tests/test.mjs`, section 7). **The rule must
-be published in the Firebase console before the button works.**
+`src/firebase/rules-tests/test.mjs`, section 7). Published by Hanoch
+2026-11-06: a signed-out read of the document answers 200, as the
+rule says.
 
 ### Finance (`/finance/`)
 
@@ -571,7 +572,7 @@ Hebrew sentence.
 Own balance, own history, own card only. If no record matches the
 signed-in email, the page says so and shows nothing else.
 
-**Family yahrzeits (2026-11-07).** Under the card, "יארצייטים של
+**Family yahrzeits (2026-11-06).** Under the card, "יארצייטים של
 המשפחה": the member adds a yahrzeit (name, relation, Hebrew day and
 month, optional year; a Gregorian date can be turned into the Hebrew
 date, with "after sunset") and sees each one's status: waiting for the
@@ -585,6 +586,7 @@ for their own record, read by them and by content gabbaim. On
 `yzreq-<request id>` through the usual screen-content path (shown on the
 TV in its week, every year, like one added by hand), then marks the
 request approved. Nothing reaches the TV without that approval.
+The rule was published by Hanoch on 2026-11-06.
 
 ### Backup and restore (`/backup/`, `/restore/`)
 
@@ -707,7 +709,10 @@ functions/                  Cloud Functions source (see functions/README.md)
   dailybackup/              Nightly Cloud Storage backup, scheduled.
                             Same: package.json Node 22, live Node 20
                             until redeployed
-  notifications/            Web push + in-app bell, 5 functions, Node 22
+  notifications/            Web push + in-app bell, 5 functions, Node 22;
+                            sendBroadcast can also queue emails (Nov 6)
+  sendWelcomeEmail/         One welcome email per new member (writes mail/)
+  sendMail/                 Sends every mail/ document by Gmail SMTP
 src/firebase/               firebase-app.js (role resolver, all Firestore calls)
                             firestore.rules, storage.rules (repo copies)
                             firebase-config.js (LIVE config, never push a
@@ -834,7 +839,7 @@ rollback's "before" hashes against the actual live head first.
   hand, and never reinterpret an approved demo generically; copy
   its treatments exactly.
 
-## Current status, 2026-11-05
+## Current status, 2026-11-06
 
 Live HEAD: **`87ad210`** (a Pages-redeploy trigger commit; the last
 content commit is `9350efc`, the Node 22 switch for the
@@ -920,10 +925,40 @@ Stages live, in order:
   user management; fresh `.js` / `.css` / `.json` after every upload
   (`sw-app.js` v3); one unescaped error text in user management
   escaped.
+- **Finance screens** (2026-11-06, PR #4): `/finance/` opens on the
+  simpler screens (home, payment, Shabbat nedarim with pledges, who
+  owes, member card with "ביטול" as a correction). See "Finance".
+- **Members** (2026-11-06, Hanoch): an email is required when a
+  gabbai adds a member, with a duplicate warning and a link on
+  approve; a welcome email goes out once per member
+  (`functions/sendWelcomeEmail` writes to `mail`, `functions/sendMail`
+  sends it through Gmail SMTP; the Trigger Email extension is not
+  used).
+- **TV night dim** (2026-11-06, Hanoch): off by default; the super
+  admin turns it on in `/admin/` ("תצוגת טלוויזיה"), stored in
+  `settings/tvDisplay` (public read, super admin write).
+- **TV and the Shabbat package** (2026-11-06, PRs #6 and #7): the
+  package's times on the TV instead of the regular ones
+  (`settings/shabbatScreen`); "רבינו תם" without "(המוקדם)"; times
+  without AM/PM; the whole Shabbat schedule all Friday; a prayer
+  leaves the list an hour after its time.
+- **Community** (2026-11-06, PR #8): "שבת שלום לקהילה" (bell + email,
+  super admin) and family yahrzeits sent by members and approved by a
+  content gabbai (`yahrzeitRequests`).
+
+Checked from outside on 2026-11-06 after the merges: GitHub Pages
+deployed main (`48318b7`); every signed-out read of the live database
+answers as `firestore.rules` says (open: `prayerTimes`, published
+screen items, `settings/screenTexts`, `homeTexts`, `tvDisplay`,
+`shabbatScreen`; closed: members, ledger, users, activity log, mail,
+notifications, `shabbatSheet`, `yahrzeitRequests`, drafts). The rules
+suite passes in the emulator (156). Write rules and the redeployed
+functions can only be proven with a signed-in use (see "Still open").
 
 Real data entered by the owner himself: the live community davening
-times (Mincha 1:40 PM, Arvit 8:00 PM). Shacharit 7:00 AM was
-removed by the owner, and Mincha 5:00 PM was a one-day entry.
+times, as read from the database on 2026-11-06: Mincha 4:27 PM on
+Friday and Shacharit 8:30 AM on Shabbat (no weekday times yet, so
+after Shabbat the TV shows "אין זמני תפילה עדיין" until there are).
 The final gabbai list is granted and
 re-sign-in verified.
 
@@ -989,7 +1024,15 @@ re-sign-in verified.
   services are still the Node 20 deploys of 2026-11-02 until each is
   redeployed (Google closed new Node 20 deploys 2026-10-30 and is
   retiring the runtime). See "Cloud Functions deploys" above.
-- **TV offline alert** (approved 2026-11-07, waiting until a TV is
+- **First live use of the 2026-11-06 features** (not testable from
+  outside without a real sign-in): record one real payment on the new
+  finance screen and cancel it; a member sends a yahrzeit and a content
+  gabbai approves it; "שבת שלום לקהילה" once (bell items arrive, and
+  the `mail/broadcast-...` documents reach `delivery.state: SUCCESS`);
+  ("הצג במסך" in the Shabbat package is already proven live: on
+  2026-11-06 Hanoch turned it on for Shabbat Chayei Sarah and the
+  document holds that sheet's six rows, Mincha 4:30 to Arvit 6:00).
+- **TV offline alert** (approved 2026-11-06, waiting until a TV is
   in the shul): the TV reports "alive" every few minutes through a
   server function, and the super admin gets a bell item when it has
   been silent for 30 minutes.

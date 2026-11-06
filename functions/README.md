@@ -26,6 +26,16 @@ in the old design text inside `dailybackup/README.md`).
   `BACKUP_BUCKET`, and writes one `backupRuns` doc per run (status ok /
   failed). The collection is `backupRuns`, not `backups`.
 
+- `notifications/` — 5 functions (`onLedgerPayment`, `onJoinRequestWrite`,
+  `onPrayerTimeWrite`, `onAnnouncementWrite`, `sendBroadcast`), us-east1,
+  Node 22. Redeployed by Hanoch on 2026-11-06 with `sendBroadcast`'s
+  optional `email: true` (one `mail/broadcast-<id>-<member>` per active
+  member with an email), used by "שבת שלום לקהילה" on gabbai/shabbat/.
+- `sendWelcomeEmail/` and `sendMail/` — Hanoch, 2026-11-06: the welcome
+  email writes `mail/welcome-<congregant>`, and `sendMail` sends every
+  `mail/` document by Gmail SMTP (see each folder's README for the
+  secret, the deploy and the test steps).
+
 ## Stale text inside these files (do not "fix" by editing the code)
 
 - Both `index.js` headers and `dailybackup/README.md` say "DRAFT, not
