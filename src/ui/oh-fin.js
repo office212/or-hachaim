@@ -34,6 +34,9 @@
   function isActive(c) { return !M() || M().isActive(c); }
   function isMember(c) { return !M() || M().isMember(c); }
   function listed(c) { return !M() || M().listed(c); }
+  /* Hanoch Nov 6: only the super admin edits a member's name and phone (on screen;
+     the rules still allow finance, by Hanoch's choice) */
+  function isSA() { var f = fb(); return !!(f && f.isSuperAdminClient && f.isSuperAdminClient()); }
   function con(id) { return C().filter(function (c) { return c.id === id; })[0]; }
 
   var METHODS = [["cash", "מזומן", "Cash"], ["check", "צ׳ק", "Check"], ["zelle", "Zelle", "Zelle"], ["card", "אשראי", "Card"], ["transfer", "העברה", "Transfer"]];
@@ -277,7 +280,7 @@
       .slice().sort(function (a, z) { return a.date < z.date ? 1 : a.date > z.date ? -1 : (z._new || 0) - (a._new || 0); });
     var h = back("home");
     /* Hanoch Nov 6: the gabbai fixes the name and phone; the email stays as it is */
-    if (st.editing === c.id) {
+    if (st.editing === c.id && isSA()) {
       var e = st.editDraft || { name: c.name || "", phone: c.phone || "" };
       h += "<h1>" + T("עריכת פרטים", "Edit details") + '</h1><div class="fn-field"><label for="fnEdName">' + T("שם", "Name") + '</label><input class="fn-input" id="fnEdName" maxlength="80" autocomplete="off" value="' + esc(e.name) + '"></div>' +
         '<div class="fn-field"><label for="fnEdPhone">' + T("טלפון", "Phone") + '</label><input class="fn-input fn-num" id="fnEdPhone" type="tel" maxlength="30" autocomplete="off" dir="ltr" value="' + esc(e.phone) + '"></div>' +
@@ -287,7 +290,7 @@
       return h;
     }
     h += "<h1>" + esc(c.name) + '</h1><p class="fn-sub"><span class="fn-num">' + esc(c.phone || "") + "</span>" + (c.email ? ' · <span class="fn-num">' + esc(c.email) + "</span>" : "") +
-      ' <button type="button" class="fn-btn fn-ghost fn-sm" data-edit="' + esc(c.id) + '">' + T("עריכת פרטים", "Edit details") + "</button></p>";
+      (isSA() ? ' <button type="button" class="fn-btn fn-ghost fn-sm" data-edit="' + esc(c.id) + '">' + T("עריכת פרטים", "Edit details") + "</button>" : "") + "</p>";
     h += '<div class="fn-balance"><div class="fn-k">' + T("יתרה לתשלום", "Balance owed") + '</div><div class="fn-v">' + balWord(b) + "</div></div>";
     h += '<div class="fn-two"><button type="button" class="fn-btn fn-primary" data-new="payment">+ ' + T("תשלום", "Payment") + '</button><button type="button" class="fn-btn" data-new="charge">+ ' + T("חיוב", "Charge") + "</button></div>";
     if (M()) h += M().cardExtras(c);
@@ -372,7 +375,7 @@
     return { ok: ok, live: !!r.saved, r: r };
   }
   async function saveDetails() {
-    var c = con(st.editing); if (!c || st.busy) return;
+    var c = con(st.editing); if (!c || st.busy || !isSA()) return;
     var name = String(($("#fnEdName") || {}).value || "").replace(/\s+/g, " ").trim(), phone = String(($("#fnEdPhone") || {}).value || "").trim();
     st.editDraft = { name: name, phone: phone };
     if (name.length < 2) { st.editErr = T("כתבו שם (לפחות 2 אותיות).", "Write a name (at least 2 letters)."); render("#fnEdName"); return; }

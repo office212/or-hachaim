@@ -13,7 +13,11 @@
 (function () {
   var L = window.OH_LABELS || {};
   function t(k, d) { return (L[k] != null && L[k] !== "") ? L[k] : (d || ""); }
-  function tile(k) { return (L.tiles && L.tiles[k]) || { title: k, en: "", text: "" }; }
+  /* Nov 6: a tile whose words are missing from labels.js (a phone still holding an
+     older copy of labels.js right after an upload) shows these Hebrew words, never
+     the bare key ("members" read as English on a Hebrew page) */
+  var TILE_DEF = { members: { title: "ניהול מתפללים", en: "Members", text: "הוספת מתפלל, עריכת שם וטלפון, בקשות הצטרפות" } };
+  function tile(k) { return (L.tiles && L.tiles[k]) || TILE_DEF[k] || { title: k, en: "", text: "" }; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   var ROOT = (window.OH_SHELL && window.OH_SHELL.root) || "../";
   var P = '<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">';
