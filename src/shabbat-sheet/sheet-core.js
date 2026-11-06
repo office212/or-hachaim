@@ -351,6 +351,23 @@
     return out;
   }
 
+  /* Hanoch Nov 7: what the TV's davening times show for this Shabbat when the
+     gabbai turns on "הצג בזמני התפילות במסך": the davening, regular and added
+     rows that are shown and have a time (candle lighting, Shkiah, Shema and
+     Shabbat ends stay out: the TV computes those itself). Erev Shabbat rows are
+     Friday, the morning and afternoon rows are Shabbat. min = minutes after
+     midnight, as the sheet reads the typed time for that group. */
+  function screenRows(model) {
+    var out = [];
+    (model.rows || []).forEach(function (r) {
+      if (r.hidden || !(r.kind === "davening" || r.kind === "regular" || r.kind === "extra")) return;
+      if (!r.time || !(r.min >= 0)) return;
+      out.push({ he: clean(r.he || r.en, 80), en: clean(r.en || "", 80), time: show(r.min), min: r.min, day: r.group === "erev" ? "fri" : "sat" });
+    });
+    out.sort(function (a, b) { return (a.day === b.day ? 0 : a.day === "fri" ? -1 : 1) || a.min - b.min; });
+    return { friday: model.friday, shabbat: model.shabbat, rows: out.slice(0, 30) };
+  }
+
   /* ---------- weekly edits (the page saves the result) ---------- */
   function addDays(iso, n) { var p = iso.split("-"), d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]) + n * 864e5); return d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" + pad(d.getUTCDate()); }
   function clone(o) { return JSON.parse(JSON.stringify(o || {})); }
@@ -489,7 +506,7 @@
     return out;
   }
 
-  var api = { applyOrder: applyOrder, SHEET_DEFAULTS: SHEET_DEFAULTS, defTime: defTime, sizeStep: sizeStep, SIZE_MIN: SIZE_MIN, SIZE_MAX: SIZE_MAX, defaultIds: defaultIds, regularOf: regularOf, GROUPS: GROUPS, WORDS: W, SLOTS: SLOTS, KEEP_WEEKS: KEEP_WEEKS, show: show, min24: min24, parseTyped: parseTyped, normTyped: normTyped,
+  var api = { applyOrder: applyOrder, screenRows: screenRows, SHEET_DEFAULTS: SHEET_DEFAULTS, defTime: defTime, sizeStep: sizeStep, SIZE_MIN: SIZE_MIN, SIZE_MAX: SIZE_MAX, defaultIds: defaultIds, regularOf: regularOf, GROUPS: GROUPS, WORDS: W, SLOTS: SLOTS, KEEP_WEEKS: KEEP_WEEKS, show: show, min24: min24, parseTyped: parseTyped, normTyped: normTyped,
     parashaEn: parashaEn, title: title, mevarchin: mevarchin, build: build, lines: lines, edit: edit, weekOf: weekOf, addDays: addDays, pdf: pdf };
   root.OH_SHEET = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;

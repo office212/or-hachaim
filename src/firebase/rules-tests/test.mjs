@@ -195,6 +195,18 @@ await t("signed-in user without a role cannot read the ledger", getDoc(doc(plain
 await t("signed-in user without a role cannot write prayer times", setDoc(doc(plain, "prayerTimes/x"), { time: "7:00 AM" }), false);
 await t("screen gabbai writes a prayer time", setDoc(doc(scr, "prayerTimes/x"), { nameHe: "מנחה", time: "4:20 PM", order: 980 }), true);
 await t("screen gabbai cannot read the ledger", getDoc(doc(scr, "ledgerEntries/seed1")), false);
+console.log("--- 7. settings/shabbatScreen (Shabbat package on the TV, Nov 7) ---");
+const wk = { "2026-11-07": { friday: "2026-11-06", rows: [{ he: "מנחה וקבלת שבת", en: "Mincha", time: "4:30", min: 990, day: "fri" }] } };
+await t("screen gabbai writes this Shabbat's times", setDoc(doc(scr, "settings/shabbatScreen"), { weeks: wk, updatedBy: "scr@x.com", updatedAt: serverTimestamp() }), true);
+await t("anyone (the TV, no sign-in) reads them", getDoc(doc(anon, "settings/shabbatScreen")), true);
+await t("signed-in user without a role cannot write them", setDoc(doc(plain, "settings/shabbatScreen"), { weeks: wk }), false);
+await t("finance gabbai cannot write them", setDoc(doc(fin, "settings/shabbatScreen"), { weeks: wk }), false);
+await t("an extra key is rejected", setDoc(doc(scr, "settings/shabbatScreen"), { weeks: wk, other: 1 }), false);
+await t("weeks must be a map", setDoc(doc(scr, "settings/shabbatScreen"), { weeks: [1] }), false);
+const many = {}; for (let i = 0; i < 13; i++) many["2027-01-" + String(i + 10)] = { friday: "x", rows: [] };
+await t("more than 12 weeks is rejected", setDoc(doc(scr, "settings/shabbatScreen"), { weeks: many }), false);
+await t("nobody deletes it", deleteDoc(doc(sa, "settings/shabbatScreen")), false);
+await t("the Shabbat sheet itself stays signed-in only (unchanged)", getDoc(doc(anon, "settings/shabbatSheet")), false);
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

@@ -416,6 +416,23 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    /* Shabbat package on the TV (Hanoch 2026-11-07): the davening times of a
+    Shabbat as the gabbai prepared them in the Shabbat package, shown on the TV
+    INSTEAD of the regular davening times on that Friday afternoon and Shabbat
+    ("הצג בזמני התפילות במסך" on gabbai/shabbat/). Only prayer names and times,
+    no private data, so the TV reads it with no sign-in. Written by the same
+    people as settings/shabbatSheet (hasScreen()), exactly these keys:
+    weeks: { "<shabbat date>": { friday, rows } }, at most 12 weeks.
+    Firestore ORs the matches: the settings block above is unchanged. */
+    match /settings/shabbatScreen {
+      allow read: if true;
+      allow create, update: if hasScreen()
+        && request.resource.data.keys().hasOnly(['weeks', 'updatedBy', 'updatedAt'])
+        && request.resource.data.weeks is map && request.resource.data.weeks.size() <= 12
+        && (!('updatedBy' in request.resource.data) || (request.resource.data.updatedBy is string && request.resource.data.updatedBy.size() <= 200));
+      allow delete: if false;
+    }
+
     /* Notifications (combined package, 2026-11-05, Hanoch approved): web push
        (Firebase Cloud Messaging) for signed-in users only, never read or
        written by anyone but the person it belongs to, except that the

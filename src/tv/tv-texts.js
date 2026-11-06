@@ -60,7 +60,7 @@
     sbShabbatYomTovEnds: { he: "צאת שבת וחג", en: "Motzei {{termShabbat}} and Yom Tov" },
     sbYomTovEnds: { he: "צאת החג", en: "Yom Tov ends" },
     sbFastEnds: { he: "צאת הצום", en: "Fast ends" },
-    sbRabbeinuTam: { he: "רבינו תם (המוקדם)", en: "Rabbeinu Tam (early)" },
+    sbRabbeinuTam: { he: "רבינו תם", en: "Rabbeinu Tam" },
     sbEruvTavshilin: { he: "עירוב תבשילין", en: "Eruv Tavshilin" },
     sbHaftarah: { he: "הפטרה: {text}", en: "Haftarah: {text}" },
     sbModelNote: { he: "חישוב לפי כללי MyZmanim", en: "Calculated by MyZmanim rules" },

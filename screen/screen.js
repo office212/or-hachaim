@@ -135,7 +135,7 @@ function royZmanimList(day, withShabbat, iso) {
     /* v5.1: 5788 Yom Tov weekdays carry the MyZmanim-rule end (yomTovEndsMyZmanim);
        on a weekday only Yom Kippur also carries Rabbeinu Tam, so that day is "צאת הצום". */
     day.yomTovEndsMyZmanim && yomTovEndsTonight() ? [day.rabbeinuTamMyZmanim ? lbl("yomTovEnds", "sbFastEnds", "צאת הצום", "Fast ends", day.yomTovEndsMyZmanim) : lbl("yomTovEnds", "sbYomTovEnds", "צאת החג", "Yom Tov ends", day.yomTovEndsMyZmanim)] : [],
-    rtOf(day) ? [lbl("rabbeinuTam", "sbRabbeinuTam", "רבינו תם (המוקדם)", "Rabbeinu Tam (early)", rtOf(day))] : []
+    rtOf(day) ? [lbl("rabbeinuTam", "sbRabbeinuTam", "רבינו תם", "Rabbeinu Tam", rtOf(day))] : []
   );
 }
 /* v5.1: today's Yom Tov ends tonight only when tomorrow is not a rest day
@@ -293,7 +293,7 @@ function renderShabbatBlock(nextKey, nextMin) {
     if (sb.candleLighting) cells += sbCell(sb.candleLighting.label || "הדלקת נרות", sb.candleLighting.time, "candle", nextKey);
     if (sb.end) {
       cells += sbCell(sb.end.label || "צאת שבת", sb.end.time, "shabbatEnds", nextKey);
-      if (sb.end.rabbeinuTam || sb.end.rabbeinuTamMissing) cells += sbCell(TXT("sbRabbeinuTam", null, "רבינו תם (המוקדם)"), sb.end.rabbeinuTam, "rabbeinuTam", nextKey);
+      if (sb.end.rabbeinuTam || sb.end.rabbeinuTamMissing) cells += sbCell(TXT("sbRabbeinuTam", null, "רבינו תם"), sb.end.rabbeinuTam, "rabbeinuTam", nextKey);
     } else if (sb.candleLightingSaturdayNight) {
       cells += sbCell(sb.candleLightingSaturdayNight.label || "הדלקת נרות", sb.candleLightingSaturdayNight.time, "candleSat", nextKey);
     }
@@ -316,7 +316,7 @@ function renderShabbatBlock(nextKey, nextMin) {
     else if (wd === 6) { fri = ROY_JSON.days[dateKeyOffset(-1)]; sat = ROY_JSON.days[dateKeyOffset(0)]; }
     if ((fri || sat) && shabbatWindowOpen(sat && sat.shabbatEndsMyZmanim, rtOf(sat))) html = '<div class="sb-head"><span class="sb-kicker">' + escS(TXT("sbShabbatKodesh", null, "שבת קודש")) + '</span></div><div class="sb-times">' +
       sbCell("הדלקת נרות", fri && fri.candle18, "candle", nextKey) + sbCell("צאת שבת", sat && sat.shabbatEndsMyZmanim, "shabbatEnds", nextKey) +
-      sbCell("רבינו תם (המוקדם)", rtOf(sat), "rabbeinuTam", nextKey) + "</div>";
+      sbCell("רבינו תם", rtOf(sat), "rabbeinuTam", nextKey) + "</div>";
   }
   var sig = (yt ? "Y" : "S") + html;
   /* 2040: the layout editor can hide this block; the zmanim column then ignores it */

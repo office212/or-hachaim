@@ -98,7 +98,7 @@
     h += '<article class="sh-sheet" id="ohShSheet" dir="rtl">';
     h += '<header class="sh-head"><img src="' + rootPath() + 'src/assets/logo.svg" alt="אור החיים"><div class="sh-ht"><span class="sh-kicker">' + esc(L("spShul")) + " | " + esc(L("spBulletin")) + '</span><h1>' + esc(g.parashaHe || "שבת קודש") + '</h1><span class="sh-date">' + esc("שבת קודש " + g.hebrewDate) + " | " + esc(t.dateShort(g.shabbat) + "." + g.shabbat.slice(0, 4)) + "</span>" +
       (g.special.length || g.roshChodesh ? '<span class="sh-special">' + esc(g.special.concat(g.roshChodesh && g.special.indexOf("שבת ראש חודש") < 0 ? [g.roshChodesh] : []).join(" | ")) + "</span>" : "") + "</div></header>";
-    h += '<div class="sh-band"><div><span>הדלקת נרות</span><b dir="ltr">' + esc(t12(g.candle) || "--") + '</b><small>יום שישי ' + esc(t.dateShort(g.friday)) + '</small></div><div><span>צאת השבת</span><b dir="ltr">' + esc(t12(g.end) || (g.satNightCandle ? "" : "--")) + "</b>" + (g.rt ? '<small>רבינו תם (המוקדם) <bdi dir="ltr">' + esc(t12(g.rt)) + "</bdi></small>" : "") + "</div>" +
+    h += '<div class="sh-band"><div><span>הדלקת נרות</span><b dir="ltr">' + esc(t12(g.candle) || "--") + '</b><small>יום שישי ' + esc(t.dateShort(g.friday)) + '</small></div><div><span>צאת השבת</span><b dir="ltr">' + esc(t12(g.end) || (g.satNightCandle ? "" : "--")) + "</b>" + (g.rt ? '<small>רבינו תם <bdi dir="ltr">' + esc(t12(g.rt)) + "</bdi></small>" : "") + "</div>" +
       (g.satNightCandle ? '<div><span>' + esc(g.satNightCandle.label) + '</span><b dir="ltr">' + esc(t12(g.satNightCandle.time)) + "</b></div>" : "") + "</div>";
     h += '<div class="sh-cols"><section class="sh-box"><h2>' + esc(L("spPrayers")) + "</h2>";
     var any = false;
@@ -174,13 +174,15 @@
     st.data = gather({ shabbat: sh, sb: sb, day: day, daily: daily && daily.days, zman: t.zman, isYomTov: cal && cal.isYomTov ? function (iso) { try { return !!cal.isYomTov(iso); } catch (e) { return false; } } : null, docs: docs, items: items });
     var isYT = cal && cal.isYomTov ? function (iso) { try { return !!cal.isYomTov(iso); } catch (e) { return false; } } : null;
     var sheetSettings = {}; try { var sdb = fb()._db && fb()._db(); if (sdb) { var sd = await sdb.collection("settings").doc("shabbatSheet").get(); if (sd.exists) sheetSettings = sd.data() || {}; } } catch (e) {}
+    /* Hanoch Nov 7: which Shabbatot already show their sheet times on the TV (settings/shabbatScreen) */
+    var screenDoc = {}; try { var sdb2 = fb()._db && fb()._db(); if (sdb2) { var ss = await sdb2.collection("settings").doc("shabbatScreen").get(); if (ss.exists) screenDoc = ss.data() || {}; } } catch (e) {}
     var want = draftItem(st.data);
     st.draft = (items || []).filter(function (x) { return x.type === "announcement" && x.status !== "archived" && x.titleHe === want.titleHe && x.endDate === sh; })[0] || null;
     if (st.draft) { st.msg = st.draft.status === "published" ? L("spPublished") : L("spDraftExists"); st.msgKind = st.draft.status === "published" ? "ok" : "warn"; }
     render();
     if (window.OH_SHEET_EDITOR) {
       try {
-        window.OH_SHEET_EDITOR.mount(document.getElementById("ohSheetEd"), { shabbat: sh, sb: sb, days: (daily && daily.days) || {}, docs: docs, settings: sheetSettings, ptHref: root + "gabbai/tv/#ptSection",
+        window.OH_SHEET_EDITOR.mount(document.getElementById("ohSheetEd"), { shabbat: sh, sb: sb, days: (daily && daily.days) || {}, docs: docs, settings: sheetSettings, screen: screenDoc, ptHref: root + "gabbai/tv/#ptSection",
           timeOf: function (d, iso) { return t.timeOn(d, iso, t.zman, isYT); } });
       } catch (e) {}
     }
