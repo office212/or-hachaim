@@ -80,7 +80,10 @@
      (every record written before stage D) means active. */
   function memberStatus(d) {
     var st = d && typeof d.status === "string" ? d.status : "";
-    return (st === "pending" || st === "declined" || st === "inactive") ? st : "active";
+    /* Email-required (Nov 6): "linked" is a join request that was approved
+       onto an existing record with the same email, so it is not a member
+       record of its own. It reads as "linked" everywhere, never "active". */
+    return (st === "pending" || st === "declined" || st === "inactive" || st === "linked") ? st : "active";
   }
   function buildRole(user, userDoc, hasCongregant, userDocByEmail, claims) {
     var email = (user.email || "").toLowerCase();
@@ -175,7 +178,9 @@
             s.forEach(function (doc) {
               var st = memberStatus(doc.data());
               if (st === "active" || st === "inactive") hasCong = true;
-              else if (!joinStatus || st === "pending") joinStatus = st;
+              /* a "linked" request is already a member through the record
+                 it links to, so it never surfaces as a join status of its own */
+              else if ((st === "pending" || st === "declined") && (!joinStatus || st === "pending")) joinStatus = st;
             });
           } catch (e) { lookupFailed = true; } /* 6a: a failed lookup is not "not a member" */
         }
@@ -368,8 +373,9 @@
        change). Same house style as saveLedgerEntry: never throws,
        returns { saved: true, id } or { saved: false, reason }.
        - Fields: exactly what loadCongregants / loadOwnCongregant read
-         (name, phone, email lowercased, "" when none) plus createdBy /
-         createdAt, the same as saveUserPermission writes for users.
+         (name, phone, email lowercased and REQUIRED since Nov 6, Hanoch)
+         plus createdBy / createdAt, the same as saveUserPermission
+         writes for users.
        - data.id: a document id made on the client (newCongregantId)
          and kept by the page until a confirmed save, so a retry or a
          double tap writes the SAME document and can never create two.
@@ -385,7 +391,12 @@
       var name = String(data.name || "").trim();
       if (!name) return { saved: false, reason: "missing-name" };
       var email = String(data.email || "").trim().toLowerCase();
-      if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { saved: false, reason: "invalid-email" };
+      /* Email-required (Hanoch 2026-11-05): a congregant without an email
+         can never sign in, and a second record for the same person becomes
+         a duplicate account. The form blocks this first; this refuses it
+         here too, so no path can create a congregant without an email. */
+      if (!email) return { saved: false, reason: "missing-email" };
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return { saved: false, reason: "invalid-email" };
       try {
         var ref = data.id ? state.db.collection("congregants").doc(String(data.id)) : state.db.collection("congregants").doc();
         if (email) {
@@ -489,7 +500,35 @@
       try {
         var ref = state.db.collection("congregants").doc(String(id));
         var now = new Date().toISOString(), data;
-        if (status === "approve") data = { status: "active", approvedBy: state.user.email, approvedAt: now };
+        if (status === "approve") {
+          /* Email-required (Nov 6): approving a join request whose email
+             already has a member record LINKS to that record instead of
+             creating a duplicate account for the same person. The join
+             document gets status "linked" and linkedTo (the existing
+             record id); it is not a member record of its own, and the
+             existing record stays the one the member signs in with.
+             The UI warns before calling this; this re-checks here, so a
+             stale list can never create the duplicate either. */
+          var linkedTo = null;
+          try {
+            var jd = await ref.get();
+            var em = String((jd.exists && (jd.data() || {}).email) || "").trim().toLowerCase();
+            if (em) {
+              var q = await state.db.collection("congregants").where("email", "==", em).get();
+              q.forEach(function (doc) {
+                if (doc.id === String(id)) return;
+                var st = memberStatus(doc.data());
+                if ((st === "active" || st === "inactive") && !linkedTo) linkedTo = doc.id;
+              });
+            }
+          } catch (e) {}
+          if (linkedTo) {
+            data = { status: "linked", linkedTo: linkedTo, approvedBy: state.user.email, approvedAt: now };
+            await ref.update(data);
+            return { saved: true, id: String(id), status: "linked", linked: true, congregantId: linkedTo };
+          }
+          data = { status: "active", approvedBy: state.user.email, approvedAt: now };
+        }
         else if (status === "declined") data = { status: "declined", declinedBy: state.user.email, declinedAt: now };
         else if (status === "inactive") data = { status: "inactive", inactiveBy: state.user.email, inactiveAt: now };
         else data = { status: "active", activeBy: state.user.email, activeAt: now };
