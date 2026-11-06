@@ -22,10 +22,12 @@
   var params = new URLSearchParams(location.search);
   var EMBED = params.get("embed") === "preview";
   var IN_FRAME = (function () { try { return W.self !== W.top; } catch (e) { return true; } })();
-  var PT_CACHE = "orHachaimTvPrayerDocs", SUN_CACHE = "orHachaimTvSunset", RELOAD_KEY = "orHachaimTvReloadedOn", TX_CACHE = "orHachaimTvScreenTexts", SDK_RETRY_KEY = "orHachaimTvSdkRetryAt";
+  var PT_CACHE = "orHachaimTvPrayerDocs", SUN_CACHE = "orHachaimTvSunset", RELOAD_KEY = "orHachaimTvReloadedOn", TX_CACHE = "orHachaimTvScreenTexts", SDK_RETRY_KEY = "orHachaimTvSdkRetryAt", DISP_CACHE = "orHachaimTvDisplay";
   var st = { cal: null, docs: null, docsFrom: "none", sunset: null, live: false, fromCache: true, lastServerAt: 0, unsub: null, lastSig: "", ds: null, reg: null, offlineSince: 0,
-    settings: null, settingsFrom: "none", setUnsub: null, setDeniedAt: 0, settingsError: null, layout: null, textSig: "" };
+    settings: null, settingsFrom: "none", setUnsub: null, setDeniedAt: 0, settingsError: null, layout: null, textSig: "",
+    tvDisplay: { nightDim: false }, tvDispUnsub: null, tvDispDeniedAt: 0 };
   W.OH_TV = st; /* read-only view for diagnostics and tests */
+  W.OH_TV_DISPLAY = st.tvDisplay; /* screen.js reads this: night dim is on only when nightDim is true */
 
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function $(id) { return document.getElementById(id); }
@@ -121,6 +123,33 @@
         st.setUnsub = null; st.setDeniedAt = Date.now(); st.settingsError = (err && err.code) || "error";
       });
     } catch (e) { st.setUnsub = null; st.setDeniedAt = Date.now(); }
+  }
+  /* ---------- night dim: settings/tvDisplay (LIVE) ----------
+     { nightDim: true/false, updatedBy, updatedAt }, super admin only.
+     Off by default (Hanoch Nov 6 2026): a missing document, a missing
+     field, or no answer yet all mean lit, never dimmed. screen.js reads
+     W.OH_TV_DISPLAY.nightDim on every tick, so a change lands within a
+     second with no reload. Same shape as startSettings above. */
+  function startTvDisplay() {
+    if (st.tvDispUnsub) return;
+    if (st.tvDispDeniedAt && Date.now() - st.tvDispDeniedAt < 120000) return; /* not allowed yet: ask again in 2 minutes */
+    var fb = W.OH_FIREBASE; if (!fb || !fb.ready || !fb._db) return;
+    var db = fb._db(); if (!db) return;
+    var cached = lsGet(DISP_CACHE);
+    if (cached && cached.nightDim === true) { st.tvDisplay.nightDim = true; W.OH_TV_DISPLAY = st.tvDisplay; }
+    try {
+      st.tvDispUnsub = db.doc("settings/tvDisplay").onSnapshot({ includeMetadataChanges: false }, function (snap) {
+        var fromCache = !!(snap.metadata && snap.metadata.fromCache);
+        var d = snap.exists ? snap.data() : null;
+        if (!d && fromCache) return; /* nothing known yet: keep the last known value, off by default */
+        st.tvDisplay.nightDim = !!(d && d.nightDim === true);
+        W.OH_TV_DISPLAY = st.tvDisplay;
+        if (!fromCache) lsSet(DISP_CACHE, { nightDim: st.tvDisplay.nightDim });
+      }, function (err) {
+        /* permission-denied until the public read rule is deployed: lit, no noise */
+        st.tvDispUnsub = null; st.tvDispDeniedAt = Date.now();
+      });
+    } catch (e) { st.tvDispUnsub = null; st.tvDispDeniedAt = Date.now(); }
   }
   /* the gabbai editor's preview (same site) can show a draft before saving */
   W.addEventListener("message", function (e) {
@@ -374,7 +403,7 @@
     ensureCal(); loadSunset(); registerSW();
     applySettings(st.settings || {}); /* the static words and the layout, now that the page is there */
     paint(true);
-    setInterval(function () { ensureCal(); startLive(); startSettings(); paint(false); }, 1000);
+    setInterval(function () { ensureCal(); startLive(); startSettings(); startTvDisplay(); paint(false); }, 1000);
     setInterval(function () { maybeDailyReload(); sdkWatch(); }, 30000);
     W.addEventListener("online", function () { setTimeout(sdkWatch, 3000); });
   }
