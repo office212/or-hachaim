@@ -860,10 +860,21 @@ function name (there is no function called "notifications"):
    join request is told to the super admin only (not every finance
    gabbai); the person who asked gets "אושרה" / "לא אושרה" on their bell.
    The other four functions in that folder did not change.
-5. **`dailyBackup`** (folder `functions/dailybackup`, Node 22): the
-   nightly file now holds the collections the site really has
-   (`recurringSchedules`, not `recurringCharges`; plus `nedarim`, the
-   screen content, `settings` and `yahrzeitRequests`).
+5. **`dailybackup`** (folder `functions/dailybackup`; the live function is
+   an HTTP function named `dailybackup`, lowercase, called by the Cloud
+   Scheduler job at 03:00, Node 22): the nightly file now holds the
+   collections the site really has (`recurringSchedules`, not
+   `recurringCharges`; plus `nedarim`, the screen content, `settings` and
+   `yahrzeitRequests`). And the upload no longer fails with 500: it is a
+   direct `createWriteStream` with `validation: false`, because in
+   `@google-cloud/storage` 7.x the only delete on the upload path is the
+   after-upload checksum check, and the backup account
+   (`or-hachaim-backup`) has `objectCreator` only, no delete (checked in
+   the library: with validation off that check, and so delete, is never
+   reached). Cloud Storage itself still needs delete to REPLACE a file that
+   exists, so a second run on the same day (a manual re-run) cannot
+   overwrite that day's file with `objectCreator` alone; the 03:00 run
+   writes a new name each day.
 6. **`setUserClaims`** (folder `functions/setUserClaims`, Node 22,
    console deploy): requires a verified email of the super admin, like
    the rules and `sendBroadcast`.
