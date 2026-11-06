@@ -802,6 +802,12 @@ standing rules for this repo:
    windows, and confirm the new file is actually on the CDN
    (fetching the file URL directly) before calling anything a
    defect. The owner's phone view settles cache doubts.
+   If the deploy job fails with "Deployment failed, try again
+   later" (the deployment stayed `deployment_queued`, a GitHub-side
+   problem, as on 2026-11-06 for PR #16) and its re-run sticks in
+   Queued (it can then be neither cancelled nor re-run), merge any
+   new commit to `main`: that starts a fresh Pages deployment that
+   carries everything merged so far.
 5. **Check before approving.** Every package is diffed file by
    file against the live head before upload: hashes against the
    package manifest, forbidden scope (rules, config, functions,
