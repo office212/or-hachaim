@@ -71,7 +71,7 @@
       out.push({ id: "shabbat", hi: false, icon: "candle", title: L("alShabbatT") + (d.parasha ? " | " + d.parasha : ""),
         text: F("alShabbatD", { date: t.dateLoc(sh, false) }) + (d.special ? " | " + d.special : ""), go: L("alShabbatGo"), href: "gabbai/shabbat/" });
     }
-    /* Nov 7: members' yahrzeit requests waiting for a content gabbai (src/ui/oh-yahrzeit.js) */
+    /* Nov 6: members' yahrzeit requests waiting for a content gabbai (src/ui/oh-yahrzeit.js) */
     if (screen && d.yzReq > 0) out.push({ id: "yzreq", hi: true, icon: "flame", title: F("alYzReqT", { n: d.yzReq }), text: L("alYzReqD"), go: L("alYzReqGo"), href: "gabbai/tv/content/#yz" });
     if (screen && d.items) {
       var E = window.OH_DISPLAY;

@@ -792,7 +792,7 @@
     broadcastFunctionUrl: function () {
       return window.OH_BROADCAST_FUNCTION_URL || (cfg && cfg.broadcastFunctionUrl) || "https://us-east1-or-hachaim.cloudfunctions.net/sendBroadcast";
     },
-    /* opts (Nov 7, "שבת שלום לקהילה"): { email: true, emailBody: "longer text" } also emails every active member */
+    /* opts (Nov 6, "שבת שלום לקהילה"): { email: true, emailBody: "longer text" } also emails every active member */
     sendBroadcastNotification: async function (title, body, audience, opts) {
       if (!state.ready || !state.user) return { ok: false, reason: "not-signed-in" };
       if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { ok: false, reason: "not-super-admin" };

@@ -195,7 +195,7 @@ await t("signed-in user without a role cannot read the ledger", getDoc(doc(plain
 await t("signed-in user without a role cannot write prayer times", setDoc(doc(plain, "prayerTimes/x"), { time: "7:00 AM" }), false);
 await t("screen gabbai writes a prayer time", setDoc(doc(scr, "prayerTimes/x"), { nameHe: "מנחה", time: "4:20 PM", order: 980 }), true);
 await t("screen gabbai cannot read the ledger", getDoc(doc(scr, "ledgerEntries/seed1")), false);
-console.log("--- 7. settings/shabbatScreen (Shabbat package on the TV, Nov 7) ---");
+console.log("--- 7. settings/shabbatScreen (Shabbat package on the TV, Nov 6) ---");
 const wk = { "2026-11-07": { friday: "2026-11-06", rows: [{ he: "מנחה וקבלת שבת", en: "Mincha", time: "4:30", min: 990, day: "fri" }] } };
 await t("screen gabbai writes this Shabbat's times", setDoc(doc(scr, "settings/shabbatScreen"), { weeks: wk, updatedBy: "scr@x.com", updatedAt: serverTimestamp() }), true);
 await t("anyone (the TV, no sign-in) reads them", getDoc(doc(anon, "settings/shabbatScreen")), true);
@@ -207,7 +207,7 @@ const many = {}; for (let i = 0; i < 13; i++) many["2027-01-" + String(i + 10)] 
 await t("more than 12 weeks is rejected", setDoc(doc(scr, "settings/shabbatScreen"), { weeks: many }), false);
 await t("nobody deletes it", deleteDoc(doc(sa, "settings/shabbatScreen")), false);
 await t("the Shabbat sheet itself stays signed-in only (unchanged)", getDoc(doc(anon, "settings/shabbatSheet")), false);
-console.log("--- 8. yahrzeitRequests (member yahrzeits, Nov 7) ---");
+console.log("--- 8. yahrzeitRequests (member yahrzeits, Nov 6) ---");
 const yz = (over = {}) => { const r = { congregantId: "c1", memberName: "A", uid: "ucong", email: "cong@x.com", nameHe: "אבי ז\"ל", relation: "אבא", hDay: 12, hMonth: "kislev", status: "pending", createdAt: serverTimestamp(), ...over }; for (const k of Object.keys(r)) if (r[k] === undefined) delete r[k]; return r; };
 await t("member asks for a yahrzeit on their own record", setDoc(doc(cong, "yahrzeitRequests/y1"), yz()), true);
 await t("member reads their own request", getDoc(doc(cong, "yahrzeitRequests/y1")), true);

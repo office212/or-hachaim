@@ -351,7 +351,7 @@
     return out;
   }
 
-  /* Hanoch Nov 7: what the TV's davening times show for this Shabbat when the
+  /* Hanoch Nov 6: what the TV's davening times show for this Shabbat when the
      gabbai turns on "הצג בזמני התפילות במסך": the davening, regular and added
      rows that are shown and have a time (candle lighting, Shkiah, Shema and
      Shabbat ends stay out: the TV computes those itself). Erev Shabbat rows are

@@ -431,7 +431,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    /* Shabbat package on the TV (Hanoch 2026-11-07): the davening times of a
+    /* Shabbat package on the TV (Hanoch 2026-11-06): the davening times of a
     Shabbat as the gabbai prepared them in the Shabbat package, shown on the TV
     INSTEAD of the regular davening times on that Friday afternoon and Shabbat
     ("הצג בזמני התפילות במסך" on gabbai/shabbat/). Only prayer names and times,
@@ -448,7 +448,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    /* Member yahrzeits (Hanoch 2026-11-07): a member asks to have a family
+    /* Member yahrzeits (Hanoch 2026-11-06): a member asks to have a family
     yahrzeit shown on the TV in its week; a content gabbai (or the super admin)
     approves it, and only then the gabbai's own browser saves the public
     yahrzeit item (yahrzeits/{id}, the existing screen-content path). A member

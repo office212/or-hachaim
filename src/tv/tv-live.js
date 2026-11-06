@@ -126,7 +126,7 @@
     } catch (e) { st.setUnsub = null; st.setDeniedAt = Date.now(); }
   }
   /* ---------- the Shabbat package's times: settings/shabbatScreen (LIVE) ----------
-     Hanoch Nov 7: { weeks: { "<shabbat iso>": { friday, rows: [{ he, en, time, min, day }] } } },
+     Hanoch Nov 6: { weeks: { "<shabbat iso>": { friday, rows: [{ he, en, time, min, day }] } } },
      written by gabbai/shabbat/ ("הצג בזמני התפילות במסך"). On that Friday afternoon
      and Shabbat the TV shows these rows INSTEAD of the regular davening times
      (prayer-rules.js ctx.sheet). Public read; kept on this TV for an offline start. */
@@ -265,7 +265,7 @@
   /* the gabbai's own name of a prayer, in the screen language */
   function nameMain(r) { return r.nameHe || r.nameEn || ""; }
   function rowHtml(r, isNext) {
-    return '<div class="zman-row' + (isNext ? " next" : "") + (r.rule ? " has-rule" : "") + '" data-id="' + esc(r.id) + '"><span class="zn"><span class="he">' + esc(r.nameHe) + '</span><span class="en">' + esc(r.nameEn) + '</span></span><span class="zt" dir="ltr">' + esc(String(r.time || "").replace(/\s*[AaPp]\.?[Mm]\.?$/, "")) + "</span></div>"; /* Hanoch Nov 7: no AM/PM, like every other time on the screen */
+    return '<div class="zman-row' + (isNext ? " next" : "") + (r.rule ? " has-rule" : "") + '" data-id="' + esc(r.id) + '"><span class="zn"><span class="he">' + esc(r.nameHe) + '</span><span class="en">' + esc(r.nameEn) + '</span></span><span class="zt" dir="ltr">' + esc(String(r.time || "").replace(/\s*[AaPp]\.?[Mm]\.?$/, "")) + "</span></div>"; /* Hanoch Nov 6: no AM/PM, like every other time on the screen */
   }
   function paintPrayers(now, ds) {
     var el = $("prayerList"); if (!el) return;
@@ -274,7 +274,7 @@
     var ctx = { zdays: zdays() || {}, sunsetRaw: st.sunset || {}, isYomTov: isYomTovIso };
     var p = DS.nyParts(now);
     var shabbatStarted = !!(ds && ds.key === "shabbat" && p.wd === 5);
-    var friday = p.wd === 5, grouped = friday || shabbatStarted; /* Hanoch Nov 7: the full Shabbat schedule all Friday */
+    var friday = p.wd === 5, grouped = friday || shabbatStarted; /* Hanoch Nov 6: the full Shabbat schedule all Friday */
     var nextIso = DS.addDays(p.iso, 1);
     ctx.shabbatStarted = shabbatStarted; ctx.friday = friday; ctx.nextIso = nextIso;
     ctx.sheet = sheetFor(p.iso) || sheetFor(nextIso);
@@ -282,7 +282,7 @@
     var tomorrowRows = PR.resolve(docs, nextIso, { zdays: ctx.zdays, sunsetRaw: ctx.sunsetRaw, isYomTov: isYomTovIso, sheet: ctx.sheet });
     var nx = PR.nextMinyan(rows, p.iso, p.minExact, grouped ? null : tomorrowRows);
     if (nx && nx.row && nx.row.min != null) nx.minutes = Math.max(0, DS.minutesUntil(now, nx.tomorrow && !nx.row.iso ? nextIso : (nx.row.iso || p.iso), nx.row.min));
-    /* Hanoch Nov 7: a prayer of today leaves the screen an hour after its time
+    /* Hanoch Nov 6: a prayer of today leaves the screen an hour after its time
        (Mincha at 3:00 is gone at 4:00). Tomorrow's rows (Shabbat, on Friday) stay.
        When today has nothing left, tomorrow's rows show under "מחר". */
     var GONE_AFTER_MIN = 60;
