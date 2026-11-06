@@ -87,6 +87,7 @@
     if (h === "pay" || h === "charge") { if (!st.pay || st.pay.kind !== (h === "pay" ? "payment" : "charge")) st.pay = newPay(h === "pay" ? "payment" : "charge", st.pay && st.pay.m); return "pay"; }
     if (h === "nedarim" || h === "owes" || h === "members" || h === "more") return h;
     if (h === "reports") return "more";
+    if (h === "ohJoinReqs") return "members"; /* the gabbai home's "join requests" link */
     return "home";
   }
   function go(hash) { if (("#" + hash) === location.hash) { route(); return; } location.hash = hash; }
@@ -95,8 +96,8 @@
 
   /* ---------- views ---------- */
   function tabs() {
-    var t = [["home", T("בית", "Home")], ["pay", T("תשלום", "Payment")], ["nedarim", T("נדרים", "Nedarim")], ["owes", T("מי חייב", "Who owes")]];
-    var cur = st.view === "member" || st.view === "members" || st.view === "more" ? "home" : st.view;
+    var t = [["home", T("בית", "Home")], ["pay", T("תשלום", "Payment")], ["nedarim", T("נדרים", "Nedarim")], ["owes", T("מי חייב", "Who owes")], ["members", T("מתפללים", "Members")]];
+    var cur = st.view === "member" ? "members" : st.view === "more" ? "home" : st.view;
     return '<nav class="fn-tabs" aria-label="' + T("כספים", "Finance") + '">' + t.map(function (x) { return '<button type="button" data-go="' + x[0] + '"' + (cur === x[0] ? ' aria-current="page"' : "") + ">" + esc(x[1]) + "</button>"; }).join("") + "</nav>";
   }
   function back(to) { return '<button type="button" class="fn-back" data-go="' + (to || "home") + '">→ ' + T("חזרה", "Back") + "</button>"; }
@@ -113,7 +114,9 @@
       });
     });
     recent.sort(function (a, b) { return a.e.date < b.e.date ? 1 : a.e.date > b.e.date ? -1 : (b.e._new || 0) - (a.e._new || 0); });
-    var h = '<div class="fn-search">' + I.search + '<input id="fnQ" type="search" autocomplete="off" placeholder="' + T("חיפוש מתפלל, לפי שם או טלפון", "Find a member, by name or phone") + '" value="' + esc(st.q) + '" aria-label="' + T("חיפוש מתפלל", "Find a member") + '"></div>';
+    var jr = M() && M().requestCount ? M().requestCount() : 0;
+    var h = jr ? '<button type="button" class="fn-act" data-go="members" style="margin-bottom:12px"><span class="fn-ic">' + I.owe + "</span><span><b>" + T("בקשות הצטרפות", "Join requests") + " (" + jr + ")</b><span>" + T("מחכות לאישור, בלשונית מתפללים", "Waiting for approval, in the Members tab") + "</span></span></button>" : "";
+    h += '<div class="fn-search">' + I.search + '<input id="fnQ" type="search" autocomplete="off" placeholder="' + T("חיפוש מתפלל, לפי שם או טלפון", "Find a member, by name or phone") + '" value="' + esc(st.q) + '" aria-label="' + T("חיפוש מתפלל", "Find a member") + '"></div>';
     h += '<div id="fnRes">' + results() + "</div>";
     h += '<div class="fn-acts">' +
       '<button type="button" class="fn-act fn-primary" data-go="pay"><span class="fn-ic">' + I.pay + "</span><span><b>" + T("רישום תשלום", "Record a payment") + "</b><span>" + T("שם, סכום, איך שילם", "Name, amount, how paid") + "</span></span></button>" +
@@ -123,7 +126,7 @@
       '<div class="fn-stat"><div class="fn-v fn-num">' + money(open) + '</div><div class="fn-k">' + T("פתוח לגבייה", "Open to collect") + '</div></div>' +
       '<div class="fn-stat"><div class="fn-v fn-num">' + owing.length + '</div><div class="fn-k">' + T("מתפללים עם יתרה", "Members with a balance") + "</div></div></div>";
     h += "<h2>" + T("רישומים אחרונים", "Recent entries") + '</h2><div class="fn-list">' + (recent.length ? recent.slice(0, 6).map(function (r) { return entryRow(r.c, r.e, r.voided, true); }).join("") : '<div class="fn-empty">' + T("אין עדיין רישומים", "No entries yet") + "</div>") + "</div>";
-    h += '<div class="fn-chips" style="margin-top:16px"><button type="button" class="fn-chip" data-go="members">' + T("כל המתפללים", "All members") + " (" + C().filter(listed).length + ')</button><button type="button" class="fn-chip" data-go="more">' + T("עוד: הוספת מתפלל, קבלות מס, דוח שנתי, גיבוי", "More: add member, tax letters, annual report, backup") + "</button></div>";
+    h += '<div class="fn-chips" style="margin-top:16px"><button type="button" class="fn-chip" data-go="more">' + T("עוד: קבלות מס, דוח שנתי, גיבוי", "More: tax letters, annual report, backup") + "</button></div>";
     return h;
   }
   function results() {
@@ -135,7 +138,7 @@
   }
   function memberRow(c) {
     var b = bal(c);
-    return '<button type="button" class="fn-rowbtn" data-go="m-' + esc(c.id) + '"><div class="fn-row"><div class="fn-grow"><div class="fn-t">' + esc(c.name) + (isActive(c) ? "" : ' <span class="fn-pill">' + T("לא פעיל", "Inactive") + "</span>") + '</div><div class="fn-d fn-num" style="text-align:right">' + esc(c.phone || "") + '</div></div><div class="fn-amt">' + (b > 0.004 ? '<span class="fn-num fn-owe fn-amt">' + money(b) + "</span>" : '<span class="fn-pill fn-ok">' + esc(U.balanceInfo(b).label) + (U.balanceInfo(b).kind === "credit" ? " " + esc(U.balanceInfo(b).amount) : "") + "</span>") + "</div></div></button>";
+    return '<button type="button" class="fn-rowbtn" data-go="m-' + esc(c.id) + '"><div class="fn-row"><div class="fn-grow"><div class="fn-t">' + esc(c.name) + (isActive(c) ? "" : ' <span class="fn-pill">' + T("לא פעיל", "Inactive") + "</span>") + (c.email ? "" : ' <span class="fn-pill">' + T("אין מייל", "No email") + "</span>") + '</div><div class="fn-d fn-num" style="text-align:right">' + esc(c.phone || "") + '</div></div><div class="fn-amt">' + (b > 0.004 ? '<span class="fn-num fn-owe fn-amt">' + money(b) + "</span>" : '<span class="fn-pill fn-ok">' + esc(U.balanceInfo(b).label) + (U.balanceInfo(b).kind === "credit" ? " " + esc(U.balanceInfo(b).amount) : "") + "</span>") + "</div></div></button>";
   }
   function typeWord(e) { return e.type === "payment" ? T("תשלום", "Payment") : e.type === "charge" ? T("חיוב", "Charge") : (VOID_RE.test(e.description || "") ? T("ביטול רישום", "Cancellation") : T("תיקון", "Correction")); }
   function entryDesc(e) {
@@ -249,13 +252,23 @@
       }).join("") : '<div class="fn-empty">' + T("אין חובות פתוחים ✓", "No open balances ✓") + "</div>") + "</div>";
   }
 
+  /* Hanoch Nov 6: the "מתפללים" tab, every member task in one place: search,
+     add (the page's own form and checks, addCong in finance/index.html, moved
+     in here), join requests (super admin, OH_MEMBERS), the inactive toggle,
+     and the list; a row opens the member card (edit details, payments, role). */
   function members() {
-    var q = st.mq.trim().toLowerCase();
-    var list = C().filter(listed).filter(function (c) { return !q || String(c.name || "").toLowerCase().indexOf(q) >= 0; }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name), "he"); });
-    return back("home") + "<h1>" + T("כל המתפללים", "All members") + '</h1><div class="fn-search">' + I.search + '<input id="fnMQ" type="search" autocomplete="off" placeholder="' + T("סינון לפי שם", "Filter by name") + '" value="' + esc(st.mq) + '" aria-label="' + T("סינון לפי שם", "Filter by name") + '"></div><div id="fnInactiveSlot"></div>' +
-      '<div class="fn-list" style="margin-top:10px">' + (list.length ? list.map(memberRow).join("") : '<div class="fn-empty">' + T("אין מתפללים", "No members") + "</div>") + "</div>";
+    var q = st.mq.trim().toLowerCase(), digits = q.replace(/\D/g, "");
+    var all = C().filter(listed);
+    var list = all.filter(function (c) { return !q || String(c.name || "").toLowerCase().indexOf(q) >= 0 || (digits.length >= 3 && String(c.phone || "").replace(/\D/g, "").indexOf(digits) >= 0); })
+      .sort(function (a, b) { return String(a.name).localeCompare(String(b.name), "he"); });
+    var h = "<h1>" + T("מתפללים", "Members") + '</h1><p class="fn-sub">' + all.length + " " + T("מתפללים", "members") + "</p>";
+    h += '<div id="fnJoinSlot"></div>';
+    h += st.addOpen ? '<div class="fn-box" style="margin:0 0 14px"><div class="fn-box-h" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>' + T("מתפלל חדש", "New member") + '</b><button type="button" class="fn-btn fn-ghost fn-sm" data-addmem="0">' + T("סגור", "Close") + '</button></div><div id="fnAddSlot" style="padding:0 6px 6px"></div></div>'
+      : '<div style="margin:0 0 14px"><button type="button" class="fn-btn fn-primary" data-addmem="1">+ ' + T("מתפלל חדש", "New member") + "</button></div>";
+    h += '<div class="fn-search">' + I.search + '<input id="fnMQ" type="search" autocomplete="off" placeholder="' + T("חיפוש לפי שם או טלפון", "Search by name or phone") + '" value="' + esc(st.mq) + '" aria-label="' + T("חיפוש מתפלל", "Find a member") + '"></div><div id="fnInactiveSlot" style="margin-top:8px"></div>' +
+      '<div class="fn-list" style="margin-top:10px">' + (list.length ? list.map(memberRow).join("") : '<div class="fn-empty">' + (q ? T("לא נמצא מתפלל כזה", "No member found") : T("אין מתפללים", "No members")) + "</div>") + "</div>";
+    return h;
   }
-
   function member() {
     var c = con(st.member);
     if (!c) return back("home") + '<div class="fn-empty">' + (C().length ? T("המתפלל לא נמצא.", "Member not found.") : T("טוען...", "Loading...")) + "</div>";
@@ -288,6 +301,11 @@
   var VIEWS = { home: home, pay: pay, nedarim: nedarim, owes: owes, members: members, member: member, more: function () { return back("home"); } };
   function render(focusSel) {
     var el = document.getElementById("fn"); if (!el) return;
+    /* the page's own parts that live inside the views (they keep their state and
+       handlers: the inactive toggle, the join requests, the add-member form):
+       out to the parking spot before anything is redrawn, back in after */
+    var park = document.getElementById("fnPark"), PARTS = [["ohInactiveToggle", "fnInactiveSlot"], ["ohJoinReqs", "fnJoinSlot"], ["fnAddMember", "fnAddSlot"]];
+    if (park) PARTS.forEach(function (x) { var n = document.getElementById(x[0]); if (n && n.parentNode !== park) park.appendChild(n); });
     if (document.body.classList.contains("gated")) { el.innerHTML = ""; var mo = document.getElementById("fnMore"); if (mo) mo.hidden = true; return; }
     var a = document.activeElement, keep = focusSel || null, pos = null;
     if (!keep && a && el.contains(a)) {
@@ -297,11 +315,8 @@
       try { pos = a.selectionStart; } catch (e) {}
     }
     el.innerHTML = tabs() + (VIEWS[st.view] || home)();
+    PARTS.forEach(function (x) { var n = document.getElementById(x[0]), slot = document.getElementById(x[1]); if (n && slot) slot.appendChild(n); });
     var more = document.getElementById("fnMore"); if (more) more.hidden = st.view !== "more";
-    /* the inactive toggle and join requests live in the page; they follow the view */
-    var tog = document.getElementById("ohInactiveToggle"), slot = document.getElementById("fnInactiveSlot");
-    if (tog) { if (slot) slot.appendChild(tog); else { var park = document.getElementById("fnPark"); if (park) park.appendChild(tog); } }
-    var jr = document.getElementById("ohJoinReqs"); if (jr) jr.style.display = st.view === "home" ? "" : "none";
     if (keep) { var f = el.querySelector(keep); if (f) { f.focus(); try { if (pos != null && f.setSelectionRange) f.setSelectionRange(pos, pos); } catch (e) {} } }
   }
 
@@ -444,6 +459,7 @@
     if (d.showdate) { st.pay.showDate = true; render("#fnDate"); return; }
     if (t.id === "fnSave") { savePay(); return; }
     if (d.void) { var c = con(d.cid), e = c && (c.ledger || []).filter(function (x) { return x.operationId === d.void; })[0]; voidEntry(c, e, false); return; }
+    if (d.addmem) { st.addOpen = d.addmem === "1"; render(st.addOpen ? "#newName" : null); return; }
     if (d.edit) { st.editing = d.edit; st.editDraft = null; st.editErr = ""; render("#fnEdName"); return; }
     if (d.edcancel) { st.editing = null; st.editDraft = null; st.editErr = ""; render(); return; }
     if (t.id === "fnEdSave") { saveDetails(); return; }
