@@ -1,11 +1,5 @@
 # Or Hachaim Congregation Site
 
-> **DRAFT README, written 2026-11-04.** This draft describes the live site.
-> It supersedes the scaffold-era `README.md` still in the repo, which
-> describes the November 2 test scaffold ("TEST DATA ONLY") and is
-> outdated. This draft is not yet the repo README; do not replace that
-> file with it without the owner's approval.
-
 ## What this is
 
 The website of **Or Hachaim Congregation**, a Sephardic congregation in
@@ -48,11 +42,13 @@ automatically.
 |---|---|---|
 | `/` | Everyone (public) | Landing page. No davening times or zmanim on the landing. A signed-in gabbai sees one button to the gabbai system; a member sees "My Account". Public hero button links to `/tv/`. |
 | `/tv/` | Everyone, no sign-in | The public TV screen. No sign-in/out button, no internal links. Loads only daily zmanim data, community davening times, and published screen content. |
+| `/privacy/` | Everyone (public) | Privacy policy, Hebrew and English. Not linked from any page yet; reachable only by its direct address. |
 | `/gabbai/` | Signed-in gabbaim and members, by role | Gabbai home. Tiles for screen content, davening times, finance, nedarim, reports, activity, and account, shown by role. The super admin also sees a "Join requests (N)" alert here. A signed-in person who is not a member yet is sent to the join screen instead. |
 | `/gabbai/shabbat/` | Signed-in gabbaim (screen) | The Shabbat sheet ("לשבת הזאת"): the printable weekly bulletin, edited per Shabbat, plus the extended bulletin behind a button. |
 | `/gabbai/settings/` | Signed-in gabbaim (screen texts, permissions, backup moved here) | Settings page. |
+| `/gabbai/activity/` | Super admin only | Activity log: every action, with when and who, filterable by area. |
 | `/admin/` | Signed-in gabbaim, by role | Gabbai editing interface: davening times, screen content editor, TV texts editor, landing texts editor, and user management (super admin only). A finance-only gabbai sees a "finance only" note here and no content editor or davening times section. |
-| `/finance/` | Finance gabbaim and super admin | Member list and cards, ledger, neder fast entry, recurring charges, tax letters, annual report, activity log, backup export. The super admin also sees join requests and role controls here. |
+| `/finance/` | Finance gabbaim and super admin | Member list and cards, ledger, neder fast entry, recurring charges, tax letters, annual report, backup export. Writes to the activity log as it goes, but does not show it (see `/gabbai/activity/`). The super admin also sees join requests and role controls here. |
 | `/congregant/` | Signed-in member (own record only) | "My Account": the member's own balance and history. A signed-in person who is not a member yet sees only the join request screen here. |
 | `/backup/` | Finance gabbaim and super admin | Download a full backup file (JSON) of all finance data. Changes nothing. |
 | `/restore/` | Finance gabbaim and super admin | Restore from a backup file. Step 1 is always a dry run (no writes); step 2 imports missing documents only and never deletes or overwrites. |
@@ -80,10 +76,13 @@ login of the site's own.
 
 ### Roles
 
-- **Super admin.** One account, management only. The super admin's
-  email is the one the Firestore rules check for (`isSuperAdmin()`).
-  Only the super admin writes `users` documents, grants or revokes
-  roles, approves or declines join requests, changes a member's status,
+- **Super admin.** One account, management only:
+  `hanochhason@gmail.com`, the email the Firestore rules check for
+  (`isSuperAdmin()`, verified-email required since the 2026-11-05
+  hardening) and the same email `functions/setUserClaims` and
+  `functions/notifications`' broadcast function require. Only the
+  super admin writes `users` documents, grants or revokes roles,
+  approves or declines join requests, changes a member's status,
   and deletes uploaded images.
 - **Finance gabbai** (`finance`). Members, ledger, nedarim,
   recurring charges, tax letters, reports, backup, restore. No screen
@@ -202,6 +201,39 @@ Key rules, in plain language:
   report is not a donation receipt, and no letter may claim every
   payment is deductible. The gabbai confirms the deductible amount
   before any real letter is issued.
+- **A ledger entry is shape-checked on the server, not only in the
+  UI.** A create must carry exactly the allowed fields (member,
+  date, type, amount, description, who entered it, operation id,
+  source, server timestamp, and, optionally, a payment method,
+  pledge id, or aliyah), the amount must fit the type (plus for a
+  charge or payment, plus or minus for a correction, never zero),
+  and the date must be a real date no more than one day in the
+  future. The one-day allowance is for time-zone slack, not a loophole.
+- **A member's email, once on their record, cannot be changed or
+  removed by a finance gabbai.** Finance may add an email to a
+  record that has none yet; only the super admin may move a record
+  to a different email. This stops a balance from silently landing
+  on the wrong Google account.
+- **A check that trusts an email requires a verified one.**
+  `isSuperAdmin()` and every "this is my own record" check now also
+  require `email_verified` on the sign-in token, not just a matching
+  address.
+- **The activity log is read by the super admin only.** Finance and
+  content gabbaim still write to it as they act, exactly as before;
+  only the super admin reads it back, at `/gabbai/activity/`. Every
+  entry must carry the signed-in person's own email and uid and the
+  server's own time, never a value the client supplies.
+- **Restore** (`/restore/`, super admin only) is its own rules path:
+  a restored document must keep its original fields and add only
+  `restored`, a server-timestamped `restoredAt`, and `restoredBy`
+  (the super admin's own uid).
+- **Push notification data is two collections, and nothing else
+  changed to add them.** `notificationTokens/{uid}` (a person's own
+  device registration) is readable and writable only by that
+  person; `notifications/{id}` (one row per person per
+  notification) is created only by the Cloud Functions below, never
+  by any client including the super admin, and the one change a
+  person may make to their own item is marking it read.
 
 ## Join requests
 
@@ -272,11 +304,15 @@ edited by gabbaim, never calculated.
 
 Display behaviour: a small Netz countdown appears from 5 minutes
 before Netz and disappears after Netz. Each zman disappears 5
-minutes after it passes. Hebrew and secular dates are shown, DST
-switches automatically (America/New_York), the content shifts
-gently against burn-in except on Shabbat and holidays (when it does
-not shift at all), and an offline fallback keeps showing the last
-data with a "last updated" stamp instead of a blank screen.
+minutes after it passes. The Hebrew date, on both the TV and the
+landing page, turns at shkiah rather than at midnight (added to
+both on 2026-11-05, the same rule and the same daily file), dropping
+the weekday after it turns; checked once a minute, so a page left
+open also turns on time without a reload. DST switches
+automatically (America/New_York), the content shifts gently against
+burn-in except on Shabbat and holidays (when it does not shift at
+all), and an offline fallback keeps showing the last data with a
+"last updated" stamp instead of a blank screen.
 Weekday-only items (payment text, donation QR, weather if ever
 added) are hidden automatically on Shabbat and Yom Tov by the
 system, not by gabbai memory.
@@ -387,15 +423,24 @@ every week.
 
 - Member list with search, member card, balance computed
   from the full ledger, printable balance statement and CSV
-  export.
+  export. A credit shows as "זכות: $X" in green; a zero balance
+  shows "אין חוב ✓"; only an actual amount owed shows as a plain
+  balance due (2026-11-05).
 - Add a member with or without email. A member without
   email is fully managed here and cannot sign in until the super
   admin adds an email to the same record; history and balance are
   preserved. Duplicate email is refused.
-- Ledger entries: date, amount, description, entered by, type
-  (charge, payment, correction), source (manual, neder,
-  recurring). Amounts are handled in cents; dates are New York
-  dates.
+- Ledger entries: date (today by default, any past date allowed for
+  a payment entered after the fact, never a future date - blocked
+  both in this form and, since 2026-11-05, by the rules
+  themselves), amount, description, entered by, type (charge,
+  payment, correction), source (manual, neder, recurring), and, on
+  a payment only, a payment method (cash, check, Zelle, card, bank
+  transfer, or none given), shown in the ledger row and totalled on
+  the annual report. Choosing "card" today only records the word;
+  it does not yet take a card (see "Donations and balance payment"
+  below). Amounts are stored as dollars with 2 decimals and summed in
+  whole cents; dates are New York dates.
 - Neder fast entry for Motzei Shabbat: name, amount, aliyah, one
   click per neder, idempotent.
 - Recurring charges: monthly or annual membership fees posted
@@ -408,12 +453,26 @@ every week.
   that must be recorded before real letters go out.
 - Annual financial report: total income, total charges, open
   balances, payments by method, unpaid pledges.
-- Activity log: who changed what and when, for permissions,
-  members, and ledger changes.
-- Backup export: one JSON file with the full ledger, member
-  records, recurring schedules, and activity log. Export files
-  are financial data: never public, never readable by a screen
-  viewer.
+- Backup export: one JSON file that attempts every collection the
+  rules define (members, ledger, pledges, recurring schedules, the
+  activity log, screen content, backups, users). A collection the
+  signed-in person cannot read - the activity log, for anyone but
+  the super admin, since 2026-11-05 - is listed as "not read"
+  instead of failing the whole export. Export files are financial
+  data: never public.
+
+### Activity log (`/gabbai/activity/`)
+
+A single audit trail, separate from every other page: every
+permissions change, member edit, ledger entry, join-request
+decision, screen-content action, davening-time edit, text change,
+and Shabbat-sheet edit, each with when, what, and who did it.
+Newest first, 50 lines at a time ("טען עוד"), filterable by area
+(finance, members, permissions, join requests, screen, times,
+texts, Shabbat sheet, backup). The super admin only; anyone else
+sees "אין הרשאה", and the rules refuse the read either way. Lines
+written before this page existed are shown with their original
+Hebrew sentence.
 
 ### Member dashboard (`/congregant/`)
 
@@ -431,25 +490,102 @@ needs on that bucket. A Drive folder of the same name is kept
 empty for manual super-admin exports only. Restore is tested
 periodically; backup files are never published to the site.
 
+### Install as an app (2026-11-05)
+
+Every page except `/tv/` (which keeps its own, older service
+worker, unchanged) loads one shared app-shell service worker
+(`sw-app.js`, scope `/`) through `src/pwa/pwa-app.js`. It does two
+things only: makes the site installable, and shows a push
+notification when one arrives. It never touches sign-in, Firestore,
+or Google's own domains, and it never caches a page or its data,
+only one offline fallback page (`offline.html`) for when the
+network fails - so sign-in and every balance shown are always
+fresh, never a stale cached copy. `manifest.webmanifest` and the
+icon set let Chrome, Edge, and iOS offer "install" or "add to home
+screen". On a signed-in page (never the public landing, which keeps
+its own top bar) a one-time popup offers the install the first time
+it becomes possible, shown once and remembered in the browser;
+after that, a small footer link ("התקן אפליקציה") offers it again
+any time it is still possible, and disappears once installed or on
+a page where it is not.
+
+### Signing in on iPhone (2026-11-05)
+
+Google sign-in tries a popup first everywhere (`/finance/`,
+`/gabbai/`, `/admin/`, `/congregant/`, `/backup/`, `/restore/`, and
+the landing page). Inside an installed, standalone app on iPhone,
+and in a few other environments, a popup can silently fail to open;
+sign-in now falls back to a full-page redirect for exactly the
+error codes that mean a popup will not work there, so sign-in
+completes either way. A real sign-in failure (not someone closing
+the picker on purpose) now shows one short line instead of silence.
+
+### Web push notifications (2026-11-05)
+
+A bell in the top bar of every signed-in page offers "הפעל
+התראות" (enable notifications); once allowed, the same bell shows
+unread items with a badge and a short list, newest first, with a
+mark-all-read button. Behind it, five Cloud Functions in
+`functions/notifications/` (Node 22, region us-east1, deployed on
+its own the same way as the two older functions - see "Cloud
+Functions deploys" below):
+
+- `onLedgerPayment` - a new ledger entry notifies finance gabbaim
+  and the member it belongs to.
+- `onJoinRequestWrite` - a new join request notifies finance
+  gabbaim; its approval or decline notifies the person who asked.
+- `onPrayerTimeWrite` - a davening-time change notifies content
+  and times gabbaim.
+- `onAnnouncementWrite` - a newly published announcement notifies
+  content and times gabbaim and members.
+- `sendBroadcast` - an HTTPS function the super admin's broadcast
+  form calls, to notify everyone at once; checked the same way as
+  `setUserClaims` (a verified Firebase token, the email checked in
+  code).
+
+Who gets notified is decided at send time from each person's
+current custom claims, never from anything saved when they turned
+notifications on, so a role change takes effect at once; the super
+admin gets everything, by design. The data behind this is two new
+Firestore collections (see "Firestore rules philosophy" above for
+their rules): `notificationTokens/{uid}` for a person's own device
+registration, `notifications/{id}` for the bell's items. The Web
+Push "VAPID" key lives in `src/ui/oh-shell.js`. This has not yet
+been confirmed received on a real phone or browser from this side;
+there is no automated test for it yet.
+
 ## Repository layout
 
 ```
 index.html                  Landing page
 CNAME                       orhachaimsi.org (never overwrite)
-tv/                         Public TV screen (+ service worker)
+manifest.webmanifest        PWA manifest (name, icons, colors)
+sw-app.js                   App-shell service worker (installability + push)
+offline.html                Offline fallback page (sw-app.js only)
+icons/                      App icons (manifest + apple-touch-icon)
+privacy/                    Privacy policy, Hebrew and English (not linked
+                            from any page yet)
+tv/                         Public TV screen (+ its own, older service worker)
 gabbai/                     Gabbai home
 gabbai/settings/            Settings page
 gabbai/shabbat/             Shabbat sheet screen
+gabbai/activity/            Activity log (super admin only)
 admin/                      Gabbai editing interface
   prayer-times.*            Prayer times list, sort box, styles
   content-editor.*          Announcements/dedications/flyers/yahrzeits/sponsors
   tv-texts-editor.js        TV wording editor
   home-texts-editor.js      Landing wording editor (super admin only)
 finance/                    Finance platform (single page app)
-congregant/                 Congregant dashboard / join screen
+congregant/                 Member dashboard / join screen
 backup/  restore/           Manual backup export / restore import
 screen/                     Shared screen files loaded by /tv/
                             (the gated screen page itself is deleted)
+functions/                  Cloud Functions source (see functions/README.md)
+  setUserClaims/            Role grants, HTTP, Node 20 (needs Node 22
+                            before its next redeploy; runs fine as is)
+  dailybackup/              Nightly Cloud Storage backup, scheduled, Node 20
+                            (same Node 22 note)
+  notifications/            Web push + in-app bell, 5 functions, Node 22
 src/firebase/               firebase-app.js (role resolver, all Firestore calls)
                             firestore.rules, storage.rules (repo copies)
                             firebase-config.js (LIVE config, never push a
@@ -459,7 +595,11 @@ src/ui/                     labels.js (all UI words, Hebrew + English)
                             oh-home.js (gabbai home + tiles)
                             oh-members.js/css (members, join requests, roles)
                             oh-cmdbar.js, oh-command.js (command bar + parser)
-                            oh-design.css, oh-shell.js, oh-shabbat.js, ...
+                            oh-activity.js (activity log page)
+                            oh-design.css, oh-shell.js (top bar, bell,
+                              install popup, VAPID key), oh-shabbat.js, ...
+src/pwa/                    pwa-app.js (install signal + service worker
+                            registration; no UI of its own)
 src/zmanim/                 Daily data + deviation rules + Rabbeinu Tam
 src/calendar/               Calendar engine, haftarah, content data
 src/engines/                display-engine, finance-states, idempotency,
@@ -513,6 +653,22 @@ standing rules for this repo:
    schema numbers, and public wording change only on the owner's
    word.
 
+### Cloud Functions deploys
+
+Functions are not part of the GitHub Pages file upload above: they
+deploy separately, from the Firebase console or the Firebase CLI,
+project `or-hachaim`, region `us-east1`. `functions/README.md` is
+the source of truth for what is actually deployed, and each
+function folder's own `package.json` states its Node version.
+`setUserClaims` and `dailybackup` are still on Node 20; Google
+stopped accepting new Node 20 deploys on 2026-10-30. Both keep
+running exactly as already deployed - nothing about them breaks on
+its own - but a future redeploy of either needs its `package.json`
+moved to Node 22 first, and may need `firebase-functions` and
+`firebase-admin` bumped if the deploy then complains about their
+versions. `notifications` (the five push functions) is already on
+Node 22 and is not affected.
+
 ### Rollback
 
 Each package ships a rollback zip that restores the changed files
@@ -553,11 +709,13 @@ rollback's "before" hashes against the actual live head first.
   hand, and never reinterpret an approved demo generically; copy
   its treatments exactly.
 
-## Current status, 2026-11-04
+## Current status, 2026-11-05
 
-Live HEAD: **`804f423`** (text cleanup). Live domain orhachaimsi.org,
-Enforce HTTPS on. The old domain orhachaimcong.org forwards
-(temporary redirect, no path forwarding) to orhachaimsi.org.
+Live HEAD: **`87ad210`** (a Pages-redeploy trigger commit; the last
+content commit is `9350efc`, the Node 22 switch for the
+notifications functions). Live domain orhachaimsi.org, Enforce
+HTTPS on. The old domain orhachaimcong.org forwards (temporary
+redirect, no path forwarding) to orhachaimsi.org.
 
 Stages live, in order:
 
@@ -594,10 +752,39 @@ Stages live, in order:
   language at a time, developer notes removed, English for
   מתפלל uniformly "member". Second-language lines are hidden by
   CSS, not deleted from page source.
+- **Hardening** (2026-11-05): additive-only rules checks (ledger
+  entry shape, a verified email required for email-based checks, a
+  member's existing email locked against finance, restore as its
+  own checked path), calendar-engine vendor license files added,
+  and the rules-tests suite updated to match.
+- **Functions exported to the repo** (2026-11-05): `functions/`
+  now holds the console source of the two already-deployed
+  functions (`setUserClaims`, `dailybackup`) plus
+  `functions/README.md` describing what is actually live; no
+  function code changed by this, only its source being checked in.
+- **Privacy page** (2026-11-05): `/privacy/`, Hebrew and English,
+  not yet linked from any page.
+- **Datefix v2** (2026-11-05): the Hebrew date on both the TV and
+  the landing page now turns at shkiah instead of midnight, checked
+  every minute so an already-open page turns on time too.
+- **Activity log** (2026-11-05): a dedicated page,
+  `/gabbai/activity/`, super admin only, separated out of the
+  general finance/screen read access it used to share.
+- **Today's combined package** (2026-11-05): install as an app
+  (manifest, app-shell service worker, a one-time install popup
+  after sign-in, a footer link), a sign-in redirect fallback for
+  iPhone's installed-app browser, a payment-method field on ledger
+  payments, a hard stop (UI and rules) on a future-dated ledger
+  entry, and web push notifications by role with an in-app bell and
+  a super-admin broadcast (`functions/notifications`, 5 functions,
+  Node 22; two new Firestore collections). See "Install as an app",
+  "Signing in on iPhone", and "Web push notifications" above, and
+  the Finance section for the payment method and date limit.
 
 Real data entered by the owner himself: the live community davening
-times (Shacharit 7:00 AM, Mincha 1:40 PM, Mincha 5:00 PM,
-Arvit 8:00 PM). The final gabbai list is granted and
+times (Mincha 1:40 PM, Arvit 8:00 PM). Shacharit 7:00 AM was
+removed by the owner, and Mincha 5:00 PM was a one-day entry.
+The final gabbai list is granted and
 re-sign-in verified.
 
 ### Still open (genuinely, not placeholders)
@@ -632,11 +819,11 @@ re-sign-in verified.
   failed/declined payments create none, refunds are correction
   entries, and the donor tax receipt is a separate document that
   never claims every payment is deductible. Zeffy and Stripe were
-  earlier options and are no longer the plan.
-- **Member balance wording.** A member with a credit (paid more
-  than charged) currently sees "balance due -$180". Proposed: show
-  "Credit: $180" in green, and "No balance due" at zero. Waiting
-  for the owner's word.
+  earlier options and are no longer the plan. As an interim step
+  (2026-11-05), a ledger payment can now carry a free-text payment
+  method (cash, check, Zelle, card, bank transfer); choosing "card"
+  today only records the word, it does not take a card - that
+  still waits on Sola.
 - **Two old test suites are stale.** The B1 suite expects the
   pre-phase-2 davening-times page (an add button and edit on every
   row) and the Shabbat sheet suite fails 9 checks (mostly an empty
@@ -657,8 +844,15 @@ re-sign-in verified.
 - **Final setUserClaims CORS cleanup.** Removing the two old-domain
   origins from the function allowlist is a separate, approval-gated
   step.
-- **Member read access to announcements** is still missing
-  from the rules design and must not be claimed as fixed.
+- **`setUserClaims` and `dailybackup` need a Node 22 switch before
+  their next redeploy** (Google closed new Node 20 deploys
+  2026-10-30). Both run fine as already deployed; see "Cloud
+  Functions deploys" above.
+- **Privacy page is not linked from the site.** `/privacy/` exists
+  and works but no page points to it yet.
+- **Web push notifications are not yet confirmed received** on a
+  real phone or browser; the code and rules are in, there is no
+  automated test for the send path yet.
 - **PUBLIC_ZMANIM flip** (showing zmanim on the landing page)
   remains a separate owner decision; it is currently off.
 - **Firebase Hosting custom-domain migration (Level 2)** is
