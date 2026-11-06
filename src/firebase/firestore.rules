@@ -400,6 +400,21 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    /* TV night dim (Hanoch 2026-11-06): whether the TV dims at night.
+       ONE public document settings/tvDisplay =
+       { nightDim: true/false, updatedBy, updatedAt }. Off by default: a
+       missing document or a missing field means lit. Only the night-dim
+       switch, no private data. Written by the super admin only, exactly
+       these keys. Firestore ORs the matches: the settings block above is
+       unchanged. */
+    match /settings/tvDisplay {
+      allow read: if true;
+      allow create, update: if isSuperAdmin()
+        && request.resource.data.keys().hasOnly(['nightDim', 'updatedBy', 'updatedAt'])
+        && (!('nightDim' in request.resource.data) || request.resource.data.nightDim is bool);
+      allow delete: if false;
+    }
+
     /* Shabbat sheet (Hanoch 2026-11-04 1:02 to 1:25 PM): this Shabbat's changes to
     the printed sheet (weeks: { "YYYY-MM-DD": {times, hidden, star, extra} }) and
     the rows kept for every week (regular). Only Shabbat times and row names, no
