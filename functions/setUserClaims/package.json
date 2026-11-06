@@ -1,1 +1,1 @@
-{"dependencies":{"firebase-admin":"^12.0.0"},"description":"LOCAL DRAFT ONLY, not deployed. setUserClaims Cloud Function for Or Hachaim.","engines":{"node":"20"},"main":"index.js","name":"or-hachaim-custom-claims","private":true}
+{"dependencies":{"firebase-admin":"^12.0.0"},"description":"LOCAL DRAFT ONLY, not deployed. setUserClaims Cloud Function for Or Hachaim.","engines":{"node":"22"},"main":"index.js","name":"or-hachaim-custom-claims","private":true}

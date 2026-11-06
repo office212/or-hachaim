@@ -92,7 +92,7 @@ async function refreshUmList(){
   var fb = window.OH_FIREBASE, listEl = document.getElementById("umList"), msgEl = document.getElementById("umMsg");
   if(!fb || !fb.listUsers){ if(listEl) listEl.innerHTML = "<p>" + L("ניהול משתמשים לא זמין כרגע.", "User management is not available right now.") + "</p>"; return; }
   var r = await fb.listUsers();
-  if(!r || !r.ok){ if(listEl) listEl.innerHTML = "<p>" + L("הרשימה לא נטענה: ", "The list did not load: ") + (r && r.reason ? r.reason : "?") + "</p>"; return; }
+  if(!r || !r.ok){ if(listEl) listEl.innerHTML = "<p>" + L("הרשימה לא נטענה: ", "The list did not load: ") + OH_UI.esc(r && r.reason ? r.reason : "?") + "</p>"; return; }
   if(!r.users.length){ listEl.innerHTML = "<p>" + L("אין משתמשים עדיין", "No users yet") + "</p>"; return; }
   listEl.innerHTML = r.users.map(function(u){
     var esc = OH_UI.esc, arg = OH_UI.jsArg; /* arg: safe inside onclick, also for an apostrophe in an email */
@@ -124,7 +124,7 @@ function editUm(id, email, perm, image){
 }
 async function deleteUm(id){
   var fb = window.OH_FIREBASE, msgEl = document.getElementById("umMsg");
-  if(!confirm(L("למחוק את המשתמש?", "Delete this user?"))) return;
+  if(!(await OH_UI.ask(L("למחוק את המשתמש?", "Delete this user?")))) return;
   try {
     var listR = await fb.listUsers();
     var target = listR && listR.users ? listR.users.find(function(u){ return u.id === id; }) : null;

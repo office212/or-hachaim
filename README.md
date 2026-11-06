@@ -47,7 +47,10 @@ automatically.
 | `/gabbai/shabbat/` | Signed-in gabbaim (screen) | The Shabbat sheet ("לשבת הזאת"): the printable weekly bulletin, edited per Shabbat, plus the extended bulletin behind a button. |
 | `/gabbai/settings/` | Signed-in gabbaim (screen texts, permissions, backup moved here) | Settings page. |
 | `/gabbai/activity/` | Super admin only | Activity log: every action, with when and who, filterable by area. |
-| `/admin/` | Signed-in gabbaim, by role | Gabbai editing interface: davening times, screen content editor, TV texts editor, landing texts editor, and user management (super admin only). A finance-only gabbai sees a "finance only" note here and no content editor or davening times section. |
+| `/gabbai/tv/` | Signed-in content gabbaim and super admin | Davening times editor and the TV texts editor (every heading and word on the TV, block order), each with a live TV preview. |
+| `/gabbai/tv/content/` | Signed-in content gabbaim and super admin | Screen content editor: announcements, dedications, sponsors, flyers, yahrzeits, with a TV preview (weekday and Shabbat) before publishing. Also has the command bar. |
+| `/gabbai/landing/` | Super admin only | Landing page wording editor (`settings/homeTexts`), with a live preview of `/`. |
+| `/admin/` | Super admin (user management); content gabbaim see the command bar | User management (grant/revoke gabbai roles) and the broadcast notification form. The editors that used to live here moved to `/gabbai/tv/`, `/gabbai/tv/content/` and `/gabbai/landing/` on 2026-11-05; their scripts still sit in `admin/` (see Repository layout). |
 | `/finance/` | Finance gabbaim and super admin | Member list and cards, ledger, neder fast entry, recurring charges, tax letters, annual report, backup export. Writes to the activity log as it goes, but does not show it (see `/gabbai/activity/`). The super admin also sees join requests and role controls here. |
 | `/congregant/` | Signed-in member (own record only) | "My Account": the member's own balance and history. A signed-in person who is not a member yet sees only the join request screen here. |
 | `/backup/` | Finance gabbaim and super admin | Download a full backup file (JSON) of all finance data. Changes nothing. |
@@ -347,6 +350,13 @@ nothing is ever early). It stays gated until: the real MyZmanim
 values for real ones, a never-early recheck passes, and the owner
 approves. Do not upload any 5788 file before that.
 
+Reminder (2026-11-06): 30 days before the last day in the daily
+files, the gabbai home shows the super admin an alert ("זמני היום על
+המסך נגמרים בעוד N ימים") naming the file to upload
+(`src/zmanim/roy-daily-5788.json`). The TV already loads that file
+by itself once it exists, and the alert goes away on its own
+(`src/ui/oh-alerts.js`, `checkDataEnd`).
+
 ## Features by area
 
 ### TV screen (`/tv/`)
@@ -363,10 +373,10 @@ and address fixed, with permanent dedications in a slow ticker.
 Donation/Zelle/QR boards are weekday-only rotating boards.
 Placeholder welcome/dedication/halacha texts show until a gabbai
 enters real content; that is by design, not a bug. A signed-in
-check of the TV preview exists in `/admin/` (exact TV preview
+check of the TV preview exists in `/gabbai/tv/content/` (exact TV preview
 before publishing).
 
-### Davening times editor (`/admin/`)
+### Davening times editor (`/gabbai/tv/`)
 
 Community davening times are Firestore documents (`prayerTimes`:
 Hebrew name, English name, time, order, updated by/at). The editor
@@ -384,7 +394,7 @@ go only through the davening-time save/update/delete functions.
 No sorting of davening times by time was ordered by the owner; the
 list order comes from the `order` field.
 
-### Screen content editor (`/admin/`)
+### Screen content editor (`/gabbai/tv/content/`)
 
 Announcements, dedications, sponsors, flyers, and yahrzeits, each
 with a date window (shown only between its dates), status
@@ -394,11 +404,12 @@ its week. Images upload through the Storage rules above. Editor
 writes go to the existing collections (no separate screen-items
 collection) and history goes to `activityLog`.
 
-### TV texts and landing texts editors (`/admin/`)
+### TV texts and landing texts editors (`/gabbai/tv/`, `/gabbai/landing/`)
 
-Every word on the TV and on the landing page is editable from
-`/admin/`: TV texts by content gabbaim (`settings/screenTexts`),
-landing texts by the super admin only (`settings/homeTexts`),
+Every word on the TV and on the landing page is editable: TV texts
+at `/gabbai/tv/` by content gabbaim (`settings/screenTexts`),
+landing texts at `/gabbai/landing/` by the super admin only
+(`settings/homeTexts`),
 each in Hebrew and English, up to 400 entries per map. The
 landing page itself shows no davening times or zmanim
 (`PUBLIC_ZMANIM` is off); turning it on is a separate owner
@@ -500,7 +511,12 @@ notification when one arrives. It never touches sign-in, Firestore,
 or Google's own domains, and it never caches a page or its data,
 only one offline fallback page (`offline.html`) for when the
 network fails - so sign-in and every balance shown are always
-fresh, never a stale cached copy. `manifest.webmanifest` and the
+fresh, never a stale cached copy. Since 2026-11-06 it also asks
+the server "changed?" for the site's own `.js`, `.css` and `.json`
+files on every load (a 304 "not changed" costs a few bytes), so a
+phone picks up a new upload at once instead of mixing a new page
+with a script or stylesheet from before the upload; it still stores
+nothing. `manifest.webmanifest` and the
 icon set let Chrome, Edge, and iOS offer "install" or "add to home
 screen". On a signed-in page (never the public landing, which keeps
 its own top bar) a one-time popup offers the install the first time
@@ -512,7 +528,7 @@ a page where it is not.
 ### Signing in on iPhone (2026-11-05)
 
 Google sign-in tries a popup first everywhere (`/finance/`,
-`/gabbai/`, `/admin/`, `/congregant/`, `/backup/`, `/restore/`, and
+`/gabbai/` and its sub-pages, `/admin/`, `/congregant/`, `/backup/`, `/restore/`, and
 the landing page). Inside an installed, standalone app on iPhone,
 and in a few other environments, a popup can silently fail to open;
 sign-in now falls back to a full-page redirect for exactly the
@@ -570,21 +586,31 @@ gabbai/                     Gabbai home
 gabbai/settings/            Settings page
 gabbai/shabbat/             Shabbat sheet screen
 gabbai/activity/            Activity log (super admin only)
-admin/                      Gabbai editing interface
-  prayer-times.*            Prayer times list, sort box, styles
+gabbai/tv/                  Davening times + TV texts editor page
+gabbai/tv/content/          Screen content editor page
+gabbai/landing/             Landing wording editor page (super admin only)
+admin/                      User management + broadcast form (page), and
+                            the editor scripts the gabbai/ pages load:
+  prayer-times.*            Prayer times list, sort box, styles (gabbai/tv/)
   content-editor.*          Announcements/dedications/flyers/yahrzeits/sponsors
-  tv-texts-editor.js        TV wording editor
-  home-texts-editor.js      Landing wording editor (super admin only)
+                            (gabbai/tv/content/)
+  tv-texts-editor.js        TV wording editor (gabbai/tv/)
+  home-texts-editor.js      Landing wording editor (gabbai/landing/)
+                            These scripts build relative links ("../../tv/")
+                            for the page that loads them: a page moved to
+                            another folder depth needs its links checked.
 finance/                    Finance platform (single page app)
 congregant/                 Member dashboard / join screen
 backup/  restore/           Manual backup export / restore import
 screen/                     Shared screen files loaded by /tv/
                             (the gated screen page itself is deleted)
 functions/                  Cloud Functions source (see functions/README.md)
-  setUserClaims/            Role grants, HTTP, Node 20 (needs Node 22
-                            before its next redeploy; runs fine as is)
-  dailybackup/              Nightly Cloud Storage backup, scheduled, Node 20
-                            (same Node 22 note)
+  setUserClaims/            Role grants, HTTP. package.json: Node 22
+                            (2026-11-06); the live service stays Node 20
+                            until it is redeployed
+  dailybackup/              Nightly Cloud Storage backup, scheduled.
+                            Same: package.json Node 22, live Node 20
+                            until redeployed
   notifications/            Web push + in-app bell, 5 functions, Node 22
 src/firebase/               firebase-app.js (role resolver, all Firestore calls)
                             firestore.rules, storage.rules (repo copies)
@@ -660,13 +686,16 @@ deploy separately, from the Firebase console or the Firebase CLI,
 project `or-hachaim`, region `us-east1`. `functions/README.md` is
 the source of truth for what is actually deployed, and each
 function folder's own `package.json` states its Node version.
-`setUserClaims` and `dailybackup` are still on Node 20; Google
-stopped accepting new Node 20 deploys on 2026-10-30. Both keep
-running exactly as already deployed - nothing about them breaks on
-its own - but a future redeploy of either needs its `package.json`
-moved to Node 22 first, and may need `firebase-functions` and
-`firebase-admin` bumped if the deploy then complains about their
-versions. `notifications` (the five push functions) is already on
+`setUserClaims` and `dailybackup` are deployed on Node 20; Google
+stopped accepting new Node 20 deploys on 2026-10-30 and is retiring
+the runtime. Their `package.json` files were moved to Node 22 on
+2026-11-06 (the same dependency versions `notifications` already
+deploys with on Node 22), but **the live services change only when
+each is redeployed** from its folder. Until then they still run on
+Node 20. After a redeploy: check that `setUserClaims` still grants a
+role, and that the next 03:00 run writes a `backupRuns` document with
+status ok. If the deploy complains about `firebase-functions` or
+`firebase-admin` versions, bump those too. `notifications` (the five push functions) is already on
 Node 22 and is not affected.
 
 ### Rollback
@@ -781,6 +810,21 @@ Stages live, in order:
   "Signing in on iPhone", and "Web push notifications" above, and
   the Finance section for the payment method and date limit.
 
+- **TV / landing split** (2026-11-05, fixes1): the old `/admin/`
+  editors split into `/gabbai/tv/` (times + TV texts),
+  `/gabbai/tv/content/` (screen content) and `/gabbai/landing/`
+  (landing wording); `/admin/` keeps user management and the
+  broadcast form. Follow-up fix: the content page's TV preview and
+  "open the screen" links pointed one folder too shallow, and the
+  command bar stylesheet was missing there.
+- **2026-11-06**: the 30-day reminder before the daily zmanim
+  files run out (see "The 5788 gate"); the site's own question
+  boxes (`OH_UI.ask` / `OH_UI.tell` in `src/ui/oh-ui.js`) in place
+  of the browser's `confirm()` / `alert()` in the content editor and
+  user management; fresh `.js` / `.css` / `.json` after every upload
+  (`sw-app.js` v3); one unescaped error text in user management
+  escaped.
+
 Real data entered by the owner himself: the live community davening
 times (Mincha 1:40 PM, Arvit 8:00 PM). Shacharit 7:00 AM was
 removed by the owner, and Mincha 5:00 PM was a one-day entry.
@@ -844,10 +888,11 @@ re-sign-in verified.
 - **Final setUserClaims CORS cleanup.** Removing the two old-domain
   origins from the function allowlist is a separate, approval-gated
   step.
-- **`setUserClaims` and `dailybackup` need a Node 22 switch before
-  their next redeploy** (Google closed new Node 20 deploys
-  2026-10-30). Both run fine as already deployed; see "Cloud
-  Functions deploys" above.
+- **`setUserClaims` and `dailybackup` must be redeployed on Node 22.**
+  Their `package.json` files say Node 22 since 2026-11-06, but the live
+  services are still the Node 20 deploys of 2026-11-02 until each is
+  redeployed (Google closed new Node 20 deploys 2026-10-30 and is
+  retiring the runtime). See "Cloud Functions deploys" above.
 - **Privacy page is not linked from the site.** `/privacy/` exists
   and works but no page points to it yet.
 - **Web push notifications are not yet confirmed received** on a

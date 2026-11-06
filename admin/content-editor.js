@@ -216,7 +216,7 @@
     if (status === "published") {
       var vW = E.visibility(Object.assign({}, it), { todayKey: today(), rest: false }), vS = E.visibility(Object.assign({}, it), { todayKey: today(), rest: true });
       var txt = "לפרסם למסך?\n" + (it.type === "yahrzeit" ? windowText(it) : ("מוצג: " + windowText(it))) + "\nיום חול: " + (vW.show ? "מוצג היום" : (WHY[vW.why] || vW.why)) + "\nשבת וחג: " + (vS.show ? "מוצג" : (WHY[vS.why] || vS.why)) + "\n\nבדקתם את התצוגה המקדימה בשני המצבים?";
-      if (!confirm(txt)) return;
+      if (!(await OH_UI.ask(txt))) return;
     }
     $("scMsg").textContent = "שומר...";
     var action = status === "published" ? "publish" : (st.editing && st.editing.status === "published" && status === "draft" ? "unpublish" : null);
@@ -247,7 +247,7 @@
       var b = ev.target.closest("button[data-hact]"); if (!b) return;
       var ver = r.versions.filter(function (x) { return String(x.version) === b.getAttribute("data-v"); })[0]; if (!ver) return;
       if (b.getAttribute("data-hact") === "view") { postPreview(Object.assign({}, ver.snapshot, { id: id })); $("scPvNote").textContent = "מוצגת גרסה " + ver.version + " (לא נשמר שום דבר)"; return; }
-      if (!confirm("לשחזר את גרסה " + ver.version + "? זו תהיה גרסה חדשה, והגרסה הנוכחית נשארת בהיסטוריה.")) return;
+      if (!(await OH_UI.ask("לשחזר את גרסה " + ver.version + "? זו תהיה גרסה חדשה, והגרסה הנוכחית נשארת בהיסטוריה."))) return;
       var res = await SC.restore(id, ver, it && it.col);
       if (res.saved) { $("scMsg").innerHTML = '<span class="sc-ok">שוחזר מגרסה ' + ver.version + " (גרסה חדשה " + res.version + ")</span>"; var cur = Object.assign({}, ver.snapshot, { id: id, col: res.col, version: res.version }); st.editing = cur; fillForm(cur); updateButtons(); showHistory(id); }
       else $("scMsg").innerHTML = '<span class="sc-err">השחזור נכשל: ' + esc(res.reason) + "</span>";
@@ -267,10 +267,10 @@
     $("scForm").addEventListener("change", onChange);
     $("scForm").addEventListener("submit", function (e) { e.preventDefault(); });
     $("scNew").addEventListener("click", function () { openEditor(null); });
-    $("scCancel").addEventListener("click", function () { if (st.dirty && !confirm("לצאת בלי לשמור?")) return; $("scEditor").hidden = true; st.editing = null; });
+    $("scCancel").addEventListener("click", async function () { if (st.dirty && !(await OH_UI.ask("לצאת בלי לשמור?"))) return; $("scEditor").hidden = true; st.editing = null; });
     $("scDraft").addEventListener("click", function () { doSave("draft"); });
     $("scPublish").addEventListener("click", function () { doSave("published"); });
-    $("scUnpublish").addEventListener("click", function () { if (confirm("להוריד מהמסך? הפריט יישמר כטיוטה.")) doSave("draft"); });
+    $("scUnpublish").addEventListener("click", async function () { if (await OH_UI.ask("להוריד מהמסך? הפריט יישמר כטיוטה.")) doSave("draft"); });
     document.querySelectorAll(".sc-pv-tabs button").forEach(function (b) {
       b.addEventListener("click", function () {
         st.rest = b.getAttribute("data-rest") === "1";
@@ -295,9 +295,9 @@
       if (act === "edit") openEditor(it);
       else if (act === "history") showHistory(id);
       else if (act === "archive" || act === "unarchive") {
-        if (act === "archive" && !confirm("להעביר לארכיון? הפריט יורד מהמסך ונשמר בהיסטוריה.")) return;
+        if (act === "archive" && !(await OH_UI.ask("להעביר לארכיון? הפריט יורד מהמסך ונשמר בהיסטוריה."))) return;
         var r = await SC.setStatus(it, act === "archive" ? "archived" : "draft");
-        if (!r.saved) alert("הפעולה נכשלה: " + (r.reason || ""));
+        if (!r.saved) OH_UI.tell("הפעולה נכשלה: " + (r.reason || ""));
       }
     });
     $("scImg").addEventListener("change", async function () {
