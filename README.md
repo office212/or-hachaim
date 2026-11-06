@@ -824,6 +824,47 @@ status ok. If the deploy complains about `firebase-functions` or
 `firebase-admin` versions, bump those too. `notifications` (the five push functions) is already on
 Node 22 and is not affected.
 
+### After the 2026-11-06 review fixes (owner checklist)
+
+The review of 2026-11-06 (Claude, with GPT, Gemini and Grok) fixed these
+in the repo. The site files go live with the merge; the rules and five
+functions only when they are published / redeployed, each by its own
+function name (there is no function called "notifications"):
+
+1. **Publish `firestore.rules`.** Adds `welcomeEmailSent` to the keys a
+   declined person may carry when sending a join request again (the
+   welcome function used to write it on requests, which then blocked
+   the resend), and a restore path for `yahrzeitRequests` (super admin
+   only, marked restored, as for ledger entries), so `/restore/` brings
+   back all 17 collections the backups hold. Rules tests: 161 pass.
+2. **`sendMail`** (folder `functions/sendMail`): no more endless loop.
+   It wrote its own delivery status back to the mail document and that
+   write fired it again, so a failed send (or a bad address) ran without
+   end. Now a write that changes only `delivery` is ignored, a
+   transaction claims the document ("PROCESSING") before sending, and a
+   mail is tried at most 5 times. To send a failed mail again, edit it
+   (fix `to`, or set `retry: true`). **The most urgent of the five.**
+3. **`onCongregantWrite`** (folder `functions/sendWelcomeEmail`): a
+   welcome only to an ACTIVE member, and only when the record is created
+   active, turns active (a join request approved), or gets a new email.
+   Before, a person who only asked to join got "you were added", and any
+   later edit of an older member sent one too.
+4. **`onJoinRequestWrite`** (folder `functions/notifications`): a new
+   join request is told to the super admin only (not every finance
+   gabbai); the person who asked gets "אושרה" / "לא אושרה" on their bell.
+   The other four functions in that folder did not change.
+5. **`dailyBackup`** (folder `functions/dailybackup`, Node 22): the
+   nightly file now holds the collections the site really has
+   (`recurringSchedules`, not `recurringCharges`; plus `nedarim`, the
+   screen content, `settings` and `yahrzeitRequests`).
+6. **`setUserClaims`** (folder `functions/setUserClaims`, Node 22,
+   console deploy): requires a verified email of the super admin, like
+   the rules and `sendBroadcast`.
+
+After 5: once, take a real nightly file from the bucket and run only
+step 1 (the dry run) of `/restore/`: it now reads the cloud file's
+`id` as well as the manual file's `_id`.
+
 ### Rollback
 
 Each package ships a rollback zip that restores the changed files
@@ -936,6 +977,19 @@ Stages live, in order:
   "Signing in on iPhone", and "Web push notifications" above, and
   the Finance section for the payment method and date limit.
 
+- **Repo review fixes** (2026-11-06): see "After the 2026-11-06 review
+  fixes" under Deploying changes for the rules and functions. In the
+  site itself: a cancelled payment or charge ("ביטול") no longer counts
+  in the tax letters and the annual report (`FinanceStates.liveEntries`);
+  the member's own page shows a cancelled entry struck through as
+  "(בוטל)" and never the internal cancellation line; boards and the
+  ticker still at their "PLACEHOLDER" words are never shown on the TV;
+  `/restore/` reads nightly cloud files (`id`) and manual files (`_id`)
+  and both backups list the same collections; `/backup/` and
+  `/restore/` show their controls only to who may use them; the privacy
+  page is linked from the landing footer and its contact email is
+  orhachaimcong@gmail.com; `offline.html` keeps its style in every
+  folder; a second, unused command-bar mount on the gabbai home removed.
 - **TV / landing split** (2026-11-05, fixes1): the old `/admin/`
   editors split into `/gabbai/tv/` (times + TV texts),
   `/gabbai/tv/content/` (screen content) and `/gabbai/landing/`
@@ -1061,8 +1115,6 @@ re-sign-in verified.
   in the shul): the TV reports "alive" every few minutes through a
   server function, and the super admin gets a bell item when it has
   been silent for 30 minutes.
-- **Privacy page is not linked from the site.** `/privacy/` exists
-  and works but no page points to it yet.
 - **Web push notifications are not yet confirmed received** on a
   real phone or browser; the code and rules are in, there is no
   automated test for the send path yet.

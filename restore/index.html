@@ -17,7 +17,8 @@
 <script>function L(he, en){ return window.OH_LANG === "en" ? en : he; } /* text cleanup (Nov 5): only the active language */</script>
 
 <div class="page">
-<div class="gold-frame tool-card">
+<p id="pgGate" class="oh-help" hidden></p>
+<div class="gold-frame tool-card" hidden>
 <h2>שחזור נתונים</h2>
 <p class="oh-help">מחזיר מקובץ גיבוי רק מה שחסר. לא מוחק ולא דורס דבר.</p>
 <input type="file" id="backupFile" accept="application/json">
@@ -42,11 +43,13 @@ async function dryRun(){
   if(!fb || !fb.ready || !fb.user){ document.getElementById('restoreMsg').textContent = L('קודם צריך להתחבר.', 'Sign in first.'); return; }
   try { _backup = await readFile(); } catch(e){ document.getElementById('restoreMsg').textContent = L('בעיה בקובץ: ', 'File problem: ') + e.message; return; }
   _missing = []; var lines = [];
-  var cols = ['congregants','ledgerEntries','operationIds','pledges','recurringSchedules','activityLog','prayerTimes','announcements','dedications','sponsors','flyers','yahrzeits','backups','users']; /* same list as the backup page */
+  var cols = ['congregants','ledgerEntries','operationIds','pledges','recurringSchedules','nedarim','activityLog','prayerTimes','announcements','dedications','sponsors','flyers','yahrzeits','yahrzeitRequests','settings','backups','users']; /* same list as the backup page */
   for(var i=0;i<cols.length;i++){
     var col = cols[i]; var docs = (_backup.collections && _backup.collections[col]) || [];
     for(var j=0;j<docs.length;j++){
-      var d = docs[j]; var id = d._id; if(!id) continue;
+      /* Nov 6: the manual backup (backup/) keeps each document id as _id, the
+         nightly cloud backup (functions/dailybackup) as id: both are read */
+      var d = docs[j]; var id = d._id || d.id; if(!id) continue;
       try {
         var snap = await fb._db().collection(col).doc(id).get();
         if(!snap.exists){ _missing.push({col: col, id: id, doc: d}); lines.push('MISSING: ' + col + '/' + id); }
@@ -64,12 +67,12 @@ async function doImport(){
   if(!_missing.length){ document.getElementById('restoreMsg').textContent = L('אין מה להחזיר. קודם שלב 1.', 'Nothing to restore. Do step 1 first.'); return; }
   var created = 0, failed = []; var lines = [];
   for(var i=0;i<_missing.length;i++){
-    var m = _missing[i]; var doc = {}; Object.keys(m.doc).forEach(function(k){ if(k !== '_id') doc[k] = m.doc[k]; });
+    var m = _missing[i]; var doc = {}, cloud = !('_id' in m.doc); Object.keys(m.doc).forEach(function(k){ if(k !== '_id' && !(cloud && k === 'id')) doc[k] = m.doc[k]; });
     /* Restored ledger entries keep their original date and enteredBy,
        and are marked as restored, with the server time and the uid of
        who restored them. firestore.rules allows this path for the
        super admin only, so a restore never looks like a new entry. */
-    if (m.col === 'ledgerEntries' || m.col === 'pledges' || m.col === 'activityLog') { doc.restored = true; doc.restoredAt = window.firebase.firestore.FieldValue.serverTimestamp(); doc.restoredBy = fb.user.uid; }
+    if (m.col === 'ledgerEntries' || m.col === 'pledges' || m.col === 'activityLog' || m.col === 'yahrzeitRequests') { doc.restored = true; doc.restoredAt = window.firebase.firestore.FieldValue.serverTimestamp(); doc.restoredBy = fb.user.uid; }
     try { await fb._db().collection(m.col).doc(m.id).set(doc); created++; lines.push('CREATED: ' + m.col + '/' + m.id); }
     catch(e){ failed.push(m.col + '/' + m.id + ' (' + (e.code || e.message) + ')'); lines.push('FAILED: ' + m.col + '/' + m.id + ' ' + (e.code || e.message)); }
   }
@@ -79,4 +82,24 @@ async function doImport(){
   if(created && fb.logActivity) fb.logActivity('שוחזרו ' + created + ' רשומות מגיבוי' + (failed.length ? ' (' + failed.length + ' נכשלו)' : ''), '', { area: 'backup', code: 'backup.restore' }); /* activity log (Nov 5) */
 }
 </script>
-</div></body></html>
+</div><script>
+/* Nov 6 (repo review): only the people this page is for see its controls
+   (the rules already refuse everyone else; this only spares them a page
+   that cannot work for them): signed out -> "כניסה נדרשת", no permission -> home. */
+(function(){
+  var done = false;
+  function tick(){
+    var fb = window.OH_FIREBASE, card = document.querySelector(".tool-card"), gate = document.getElementById("pgGate");
+    if(!card || !gate) return;
+    if(!fb || !fb.ready){ return; }
+    if(!fb.user){ card.hidden = true; gate.hidden = false; gate.textContent = L("כניסה נדרשת. למנהל הראשי בלבד.", "Sign-in required."); return; }
+    Promise.resolve(fb.resolveRole ? fb.resolveRole() : null).then(function(role){
+      if(!role) return;
+      if(!(role.isSuperAdmin)){ if(!done){ done = true; location.replace(role.authorized ? "../gabbai/" : "../"); } return; }
+      card.hidden = false; gate.hidden = true;
+    }, function(){});
+  }
+  setInterval(tick, 1000); tick();
+})();
+</script>
+</body></html>

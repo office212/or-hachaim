@@ -228,6 +228,15 @@ await t("screen gabbai approves, as themself", updateDoc(doc(scr, "yahrzeitReque
 await t("an approved request is not decided again", updateDoc(doc(scr, "yahrzeitRequests/y1"), { status: "declined" }), false);
 await t("member cannot cancel an approved request", deleteDoc(doc(cong, "yahrzeitRequests/y1")), false);
 await t("member asks again and cancels while pending", setDoc(doc(cong, "yahrzeitRequests/y9"), yz()).then(() => deleteDoc(doc(cong, "yahrzeitRequests/y9"))), true);
+console.log("--- 9. join request sent again after a decline, with welcomeEmailSent on it (Nov 6) ---");
+await env.withSecurityRulesDisabled(async (ctx) => { await setDoc(doc(ctx.firestore(), "congregants/join_ujr"), { name: "Old", phone: "7185550000", email: "jr@x.com", status: "declined", createdAt: "2026-11-01", declinedBy: "hanochhason@gmail.com", declinedAt: "2026-11-02", welcomeEmailSent: true }); });
+const jr = env.authenticatedContext("ujr", { email: "jr@x.com", email_verified: true }).firestore();
+await t("declined person sends again although the old welcome flag is on the record", updateDoc(doc(jr, "congregants/join_ujr"), { name: "New Name", phone: "7185550001", status: "pending", createdAt: "2026-11-06" }), true);
+await t("they still cannot set the welcome flag themself", updateDoc(doc(jr, "congregants/join_ujr"), { welcomeEmailSent: false }), false);
+console.log("--- 10. yahrzeitRequests restore (Nov 6) ---");
+await t("super admin restores a yahrzeit request, marked restored", setDoc(doc(sa, "yahrzeitRequests/r1"), { ...yz({ uid: "someone" }), restored: true, restoredAt: serverTimestamp(), restoredBy: "usa" }), true);
+await t("super admin cannot create one without the restored mark", setDoc(doc(sa, "yahrzeitRequests/r2"), yz({ uid: "someone" })), false);
+await t("a content gabbai cannot use the restore path", setDoc(doc(scr, "yahrzeitRequests/r3"), { ...yz({ uid: "someone" }), restored: true, restoredAt: serverTimestamp(), restoredBy: "uscr" }), false);
 console.log(`\n${pass} passed, ${fail} failed`);
 await env.cleanup();
 process.exit(fail ? 1 : 0);

@@ -135,8 +135,7 @@
     } catch (e) {
       G.msg = T("לא נשמר: ", "Not saved: ") + (e && e.message ? e.message : e) + T(". נסו שוב.", ". Try again."); G.kind = "warn";
     }
-    G.busy = false; await refreshGabbai();
-    if (window.OH_CONTENT_EDITOR_RELOAD) try { window.OH_CONTENT_EDITOR_RELOAD(); } catch (e) {}
+    G.busy = false; await refreshGabbai(); /* the content list below follows by itself (its live listener) */
   }
 
   /* ---------- events ---------- */

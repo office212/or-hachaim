@@ -254,7 +254,8 @@ function taxLetters(){
   var year = String(document.getElementById("taxYear").value || today().slice(0, 4)).trim();
   /* Stage D: inactive members still get their letter; join requests do not */
   var html = cons.filter(function(c){ return !window.OH_MEMBERS || window.OH_MEMBERS.isMember(c); }).map(function(c){
-    var pays = c.ledger.filter(function(e){ return e.type === "payment" && String(e.date).indexOf(year) === 0; });
+    /* Nov 6: a cancelled payment ("ביטול") is not a donation: FinanceStates.liveEntries drops it */
+    var pays = window.FinanceStates.liveEntries(c.ledger).filter(function(e){ return e.type === "payment" && String(e.date).indexOf(year) === 0; });
     var total = pays.reduce(function(s, e){ return s + OH_UI.cents(e.amount); }, 0) / 100;
     return '<div class="gold-frame tax-letter" style="margin:1rem 0"><h3>' + L("מכתב 501c3", "501c3 letter") + ' (' + esc(year) + '): ' + esc(c.name) + '</h3>' +
     '<p>Payments recorded in ' + esc(year) + ': ' + amt$(total) + ' (' + pays.length + ' payment(s)).</p>' +

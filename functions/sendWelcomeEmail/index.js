@@ -56,12 +56,29 @@ function escHtml(s) {
     .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
+/* Fix (2026-11-06, after the repo review): a join request is also a
+   congregants document (join_<uid>, status "pending"), and the old check
+   never looked at the status, so a person who only ASKED to join got
+   "you were added as a member" at once (and a declined one too); the
+   welcomeEmailSent flag it then wrote also blocked their "send again"
+   (the stage D2 rule allowed only the request's own keys). And any later
+   write to an older member (one added before this function existed, so
+   with no flag) sent them a welcome too. Now a welcome goes only to an
+   ACTIVE member, and only when they become one or get a new email:
+   - the record is created active (a gabbai adds a member);
+   - it turns active (a join request approved, or an inactive member back);
+   - its email is added or changed.
+   A plain edit of an active member (name, phone, status fields) sends nothing. */
+function isActive(c) { return !!c && (c.status || "active") === "active"; }
 function shouldSend(before, after) {
   if (!after) return false;
   if (after.welcomeEmailSent) return false;
+  if (!isActive(after)) return false;
   if (!isEmail(after.email)) return false;
-  if (before && before.email === after.email && before.welcomeEmailSent) return false;
-  return true;
+  if (!before) return true;                                   /* created active */
+  if (!isActive(before)) return true;                         /* became active */
+  if (String(before.email || "").toLowerCase() !== String(after.email || "").toLowerCase()) return true; /* new email */
+  return false;
 }
 
 function buildMail(c) {

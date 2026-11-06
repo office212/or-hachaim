@@ -53,14 +53,20 @@
 function renderCong(c, sourceLabel){
   var esc = OH_UI.esc, money = OH_UI.money, L = function (he, en) { return window.OH_LANG === "en" ? en : he; };
   var t = OH_UI.ledgerTotals(c);
-  var rows = (c.ledger || []).slice().sort(function(a, b){ return String(b.date).localeCompare(String(a.date)); });
+  /* Nov 6 (repo review): a gabbai's "ביטול" is a correction "ביטול [<id>]: ...";
+     the member sees the original entry struck through as cancelled, not that line */
+  var VOID_RE = /^ביטול \[([^\]]+)\]/, voided = {};
+  (c.ledger || []).forEach(function(e){ if(e.type === "correction"){ var m = VOID_RE.exec(e.description || ""); if(m) voided[m[1]] = true; } });
+  /* totals from the entries that stand (the balance is the same: a cancellation offsets its entry) */
+  t = OH_UI.ledgerTotals({ ledger: (c.ledger || []).filter(function(e){ return !voided[e.operationId] && !(e.type === "correction" && VOID_RE.test(e.description || "")); }) });
+  var rows = (c.ledger || []).filter(function(e){ return !(e.type === "correction" && VOID_RE.test(e.description || "")); }).slice().sort(function(a, b){ return String(b.date).localeCompare(String(a.date)); });
   var typeHe = { charge: L("חיוב", "Charge"), payment: L("תשלום", "Payment"), correction: L("תיקון", "Correction") };
   document.getElementById("card").innerHTML = '<div class="gold-frame"><h2>' + esc(c.name) + '</h2>' +
   (function(){ var b = OH_UI.balanceInfo(t.balance); /* hardening (Nov 5): owed as before, credit "זכות" in green, zero "אין חוב ✓" */
     return '<div class="balance-hero bh-' + b.kind + '"><span class="bh-label">' + esc(b.label) + '</span>' + (b.amount ? '<span class="bh-amount" dir="ltr">' + b.amount + '</span>' : '') + '</div>'; })() +
   '<p class="ledger-summary"><span>' + L("סך חיובים: ", "Total charges: ") + '<span dir="ltr">' + money(t.charges) + '</span></span><span>' + L("סך תשלומים: ", "Total payments: ") + '<span dir="ltr">' + money(t.payments) + '</span></span></p>' +
   '<table><tr><th>' + L("תאריך", "Date") + '</th><th>' + L("סוג", "Type") + '</th><th>' + L("סכום", "Amount") + '</th><th>' + L("תיאור", "Description") + '</th></tr>' +
-  rows.map(function(e){ return "<tr><td>" + esc(OH_UI.usDate(e.date)) + "</td><td>" + esc(typeHe[e.type] || e.type) + '</td><td dir="ltr">' + money(e.amount) + "</td><td>" + esc(e.description) + "</td></tr>"; }).join("") +
+  rows.map(function(e){ var v = voided[e.operationId]; return "<tr" + (v ? ' style="opacity:.6"' : "") + "><td>" + esc(OH_UI.usDate(e.date)) + "</td><td>" + esc(typeHe[e.type] || e.type) + (v ? " " + esc(L("(בוטל)", "(cancelled)")) : "") + '</td><td dir="ltr"' + (v ? ' style="text-decoration:line-through"' : "") + ">" + money(e.amount) + "</td><td>" + esc(e.description) + "</td></tr>"; }).join("") +
   '</table>' + (sourceLabel ? '<p class="oh-help"><small>' + esc(sourceLabel) + '</small></p>' : '') + '</div>';
 }
 document.getElementById('card').innerHTML = '<p>' + CL_("כניסה נדרשת", "Sign-in required") + '</p>';

@@ -78,61 +78,84 @@ function isEmail(s) {
 /* deps: { send: async function (mail) } where mail is
    { from, to, subject, text?, html }. The live `send` builds a
    nodemailer transporter from the secret and calls sendMail. */
+/* Fix (2026-11-06, after the repo review): the function wrote its own
+   delivery status back to the mail document, and that write fired this
+   same trigger again. A failed send (or a bad address) therefore ran
+   again and again with no end. Now:
+   - only a change to the mail itself counts: a write that changes nothing
+     but `delivery` (the function's own bookkeeping) is ignored;
+   - before sending, one transaction claims the document (delivery.state
+     "PROCESSING"), so two invocations can never both send it;
+   - at most MAX_ATTEMPTS sends per document.
+   To send a failed mail again: edit the document (fix `to`, or set
+   retry: true, or any change outside `delivery`); that is one new attempt.
+   A document left in PROCESSING (the function stopped mid-send) is never
+   sent again by itself: clear its `delivery` to send it once more. */
+var MAX_ATTEMPTS = 5;
+function contentKey(d) {
+  var o = {}; Object.keys(d || {}).sort().forEach(function (k) { if (k !== "delivery") o[k] = d[k]; });
+  return JSON.stringify(o);
+}
 async function handleMailWrite(deps, event) {
   var after = event.data && event.data.after ? event.data.after : null;
-  if (!after) return; /* deleted document: nothing to send */
+  if (!after || (after.exists === false)) return; /* deleted document: nothing to send */
+  var before = event.data && event.data.before && event.data.before.exists ? event.data.before : null;
   var data = after.data() || {};
   var ref = after.ref;
   var delivery = data.delivery || {};
-  if (delivery.state === "SUCCESS") return; /* already sent: never send twice */
-  var attempts = (typeof delivery.attempts === "number" ? delivery.attempts : 0) + 1;
+  if (delivery.state === "SUCCESS" || delivery.state === "PROCESSING") return; /* sent, or being sent */
+  /* our own bookkeeping write (only `delivery` changed): never a new attempt */
+  if (before && contentKey(before.data()) === contentKey(data)) return;
 
-  async function markError(reason) {
-    var doc = { state: "ERROR", attempts: attempts, error: reason, endTime: admin.firestore.FieldValue.serverTimestamp() };
+  async function markError(reason, attempts) {
+    var doc = { state: "ERROR", attempts: attempts, error: reason, endTime: deps.serverTimestamp() };
     try { await ref.update({ delivery: doc }); }
     catch (e) { console.error("sendMail: could not mark delivery ERROR", e && e.message ? e.message : e); }
   }
-
-  if (!isEmail(data.to)) { await markError("missing-or-invalid-to"); return; }
+  var prevAttempts = typeof delivery.attempts === "number" ? delivery.attempts : 0;
+  if (!isEmail(data.to)) { await markError("missing-or-invalid-to", prevAttempts); return; }
   var msg = data.message || {};
   if (typeof msg.subject !== "string" || !msg.subject.trim() ||
       typeof msg.html !== "string" || !msg.html.trim()) {
-    await markError("missing-message");
+    await markError("missing-message", prevAttempts);
     return;
   }
+  if (prevAttempts >= MAX_ATTEMPTS) { await markError("too-many-attempts", prevAttempts); return; }
+
+  /* claim: one transaction moves the document to PROCESSING; a second
+     invocation that arrives at the same moment finds it claimed and stops */
+  var attempts;
+  try {
+    attempts = await deps.claim(ref, function (cur) {
+      var dv = (cur && cur.delivery) || {};
+      if (dv.state === "SUCCESS" || dv.state === "PROCESSING") return null;
+      var n = (typeof dv.attempts === "number" ? dv.attempts : 0) + 1;
+      if (n > MAX_ATTEMPTS) return null;
+      return { state: "PROCESSING", attempts: n, startTime: deps.serverTimestamp() };
+    });
+  } catch (e) { console.error("sendMail: claim failed", e && e.message ? e.message : e); return; }
+  if (!attempts) return;
+
   var from = (typeof data.from === "string" && data.from.trim()) ? data.from.trim() : DEFAULT_FROM;
-  var mail = {
-    from: from,
-    to: String(data.to).trim(),
-    subject: msg.subject,
-    html: msg.html
-  };
+  var mail = { from: from, to: String(data.to).trim(), subject: msg.subject, html: msg.html };
   if (typeof msg.text === "string" && msg.text) mail.text = msg.text;
 
   try {
     await deps.send(mail);
   } catch (e) {
-    /* Record ERROR and return normally: never throw, so the platform
-       never retries this invocation and the member never gets the same
-       mail twice. The failure stays visible in delivery.error. */
+    /* Record ERROR and return normally: never throw, so the platform never
+       retries; that ERROR write is bookkeeping only, so it does not fire a
+       new attempt either. The failure stays visible in delivery.error. */
     var reason = String((e && e.message) || e || "send-failed").slice(0, 500);
     console.error("sendMail: send failed for", mail.to, reason);
-    await markError(reason);
+    await markError(reason, attempts);
     return;
   }
-
   try {
-    await ref.update({
-      delivery: {
-        state: "SUCCESS",
-        attempts: attempts,
-        endTime: admin.firestore.FieldValue.serverTimestamp()
-      }
-    });
+    await ref.update({ delivery: { state: "SUCCESS", attempts: attempts, endTime: deps.serverTimestamp() } });
   } catch (e) {
-    /* The mail was sent but the bookkeeping write failed. Log it and
-       return: throwing here would risk a platform retry that sends
-       the mail a second time. */
+    /* sent, but the bookkeeping write failed: the document stays PROCESSING,
+       so it is never sent a second time */
     console.error("sendMail: sent but could not mark delivery SUCCESS", e && e.message ? e.message : e);
   }
 }
@@ -150,6 +173,18 @@ const liveDeps = {
       auth: { user: SMTP_USER, pass: gmailAppPassword.value() }
     });
     return transporter.sendMail(mail);
+  },
+  serverTimestamp: function () { return admin.firestore.FieldValue.serverTimestamp(); },
+  /* one transaction: read the mail document, and if next(current) returns a
+     delivery object, write it; returns its attempts number, or null */
+  claim: function (ref, next) {
+    return ref.firestore.runTransaction(async function (tx) {
+      var snap = await tx.get(ref);
+      var d = next(snap.exists ? snap.data() : null);
+      if (!d) return null;
+      tx.update(ref, { delivery: d });
+      return d.attempts;
+    });
   }
 };
 
@@ -158,4 +193,4 @@ exports.sendMail = onDocumentWritten(
   function (event) { return handleMailWrite(liveDeps, event); }
 );
 
-exports._test = { isEmail: isEmail, handleMailWrite: handleMailWrite };
+exports._test = { isEmail: isEmail, handleMailWrite: handleMailWrite, contentKey: contentKey, MAX_ATTEMPTS: MAX_ATTEMPTS };

@@ -85,7 +85,8 @@ window.OH_HOME_TEXTS = {
 
     footerBrand: "אור החיים",
     footerSub: "Or Hachaim Congregation",
-    footerCopy: "Or Hachaim Congregation"
+    footerCopy: "Or Hachaim Congregation",
+    footerPrivacy: "מדיניות פרטיות"
   },
   en: {
     pageTitle: "Or Hachaim Congregation, Staten Island | בית הכנסת אור החיים",
@@ -155,7 +156,8 @@ window.OH_HOME_TEXTS = {
 
     footerBrand: "Or Hachaim",
     footerSub: "Congregation of Staten Island",
-    footerCopy: "Or Hachaim Congregation"
+    footerCopy: "Or Hachaim Congregation",
+    footerPrivacy: "Privacy policy"
   },
   groups: [
     { id: "top", he: "סרגל עליון וכניסה", en: "Top bar and sign-in" },
@@ -239,6 +241,7 @@ window.OH_HOME_TEXTS = {
 
     footerBrand: { group: "footer", desc: "השם בתחתית" },
     footerSub: { group: "footer", desc: "שורה קטנה מתחת לשם" },
-    footerCopy: { group: "footer", desc: "שם בשורת הזכויות ©" }
+    footerCopy: { group: "footer", desc: "שם בשורת הזכויות ©" },
+    footerPrivacy: { group: "footer", desc: "הקישור למדיניות הפרטיות בתחתית" }
   }
 };
