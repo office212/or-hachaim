@@ -632,11 +632,19 @@ function tick() {
   updateOfflineNote();
 }
 /* Night dim, against burn-in: from NIGHT_DIM_FROM until 60 minutes
-   before Alot the whole screen dims. Automatic, also on Shabbat, so
-   nobody touches anything. Set NIGHT_DIM to false to turn it off. */
-var NIGHT_DIM = true, NIGHT_DIM_FROM = "23:30";
+   before Alot the whole screen dims, but ONLY when the super admin
+   turned it on (settings/tvDisplay { nightDim: true }). Off by default
+   (Hanoch Nov 6 2026): a missing document, a missing field, or no
+   answer yet all mean lit, never dimmed. The value arrives from
+   tv-live.js (onSnapshot, no reload); turning it off removes the
+   class on the next tick, within a second. */
+var NIGHT_DIM_FROM = "23:30";
+function dimEnabled() {
+  var s = window.OH_TV_DISPLAY;
+  return !!(s && s.nightDim === true);
+}
 function applyNightDim() {
-  if (!NIGHT_DIM) return;
+  if (!dimEnabled()) { document.body.classList.remove("night"); return; }
   var now = nowMinsNY(), from = mins(NIGHT_DIM_FROM);
   var wake = ROY_DAY && ROY_DAY.alot ? mins(ROY_DAY.alot) - 60 : 4 * 60;
   document.body.classList.toggle("night", now >= from || now < wake);

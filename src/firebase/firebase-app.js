@@ -988,6 +988,28 @@
         return { saved: true, texts: out.texts, textsEn: out.textsEn };
       } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
     },
+    /* TV night dim (Hanoch 2026-11-06): the TV dims at night only when
+       the super admin turns it on. ONE public document
+       settings/tvDisplay = { nightDim: true/false, updatedBy,
+       updatedAt }. Off by default: a missing document or a missing
+       field means lit. Rules: public read; create/update by the super
+       admin only, exactly these keys (RULES_DELTA_tvDisplay.md). */
+    loadTvDisplay: async function () {
+      if (!state.ready || !state.db) return { ok: false, reason: "test-only" };
+      try {
+        var d = await state.db.collection("settings").doc("tvDisplay").get();
+        var data = d.exists ? (d.data() || {}) : {};
+        return { ok: true, nightDim: data.nightDim === true, updatedBy: data.updatedBy || "" };
+      } catch (e) { return { ok: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
+    },
+    saveTvDisplay: async function (nightDim) {
+      if (!state.ready || !state.db || !state.user) return { saved: false, reason: "not-signed-in" };
+      var ref = state.db.collection("settings").doc("tvDisplay"), email = state.user.email || "";
+      try {
+        await ref.set({ nightDim: nightDim === true, updatedBy: email, updatedAt: window.firebase.firestore.FieldValue.serverTimestamp() });
+        return { saved: true, nightDim: nightDim === true };
+      } catch (e) { return { saved: false, reason: String(e && e.message ? e.message : e), code: (e && e.code) || "" }; }
+    },
     deletePrayerTime: async function (id) {
       if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
       if (!id) return { saved: false, reason: "missing-id" };
