@@ -646,6 +646,8 @@ window.OH_TERMS_EN = {
     alSunsetD: "{name} {time} is after " + T.shkiah + " on {n} days (" + T.shkiah + ": {range})", alSunsetD1: "{name} {time} is after " + T.shkiah + " on one day this week (" + T.shkiah + ": {range})",
     alRange: "{a} to {b}", alExpireD: "{name} {time} ({days}) until {date}", alRecOne: "One recurring charge this week",
     alRecLate: "{n} already late", alRecNot: "not charged yet", alPledgeOld: "{n} over 30 days",
+    alDataT: "The daily zmanim on the screen run out in {n} days", alDataT1: "The daily zmanim on the screen run out tomorrow", alDataT0: "The daily zmanim on the screen have run out",
+    alDataD: "Last day in the files: {date}. Upload the file {file} before then, or the screen will have no daily zmanim.",
     spTitle: T.shabbat + " package",
     spSub: "A printable bulletin and a screen draft",
     spPrint: "Print or save as a file",

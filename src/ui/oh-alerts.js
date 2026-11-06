@@ -26,7 +26,9 @@
     alKiddushD: "לשבת {date}", alKiddushDraft: "יש טיוטה שמחכה לפרסום", alDraftOne: "טיוטה אחת מחכה לפרסום",
     alSunsetD: "{name} {time} אחרי השקיעה ב-{n} ימים השבוע (השקיעה השבוע: {range})", alSunsetD1: "{name} {time} אחרי השקיעה ביום אחד השבוע (השקיעה: {range})",
     alRange: "{a} עד {b}", alExpireD: "{name} {time} ({days}) עד {date}", alRecOne: "חיוב קבוע אחד לשבוע הזה",
-    alRecLate: "{n} כבר באיחור", alRecNot: "עדיין לא חויבו", alPledgeOld: "{n} מעל 30 יום"
+    alRecLate: "{n} כבר באיחור", alRecNot: "עדיין לא חויבו", alPledgeOld: "{n} מעל 30 יום",
+    alDataT: "זמני היום על המסך נגמרים בעוד {n} ימים", alDataT1: "זמני היום על המסך נגמרים מחר", alDataT0: "זמני היום על המסך נגמרו",
+    alDataD: "היום האחרון בקבצים: {date}. צריך להעלות את הקובץ {file} לפני כן, אחרת המסך יישאר בלי זמני היום."
   };
   function F(k, o) { return String(L(k)).replace(/\{(\w+)\}/g, function (m, x) { return o && o[x] != null ? o[x] : m; }); }
   function L(k) { var o = window.OH_LABELS || {}; return (o[k] !== undefined && o[k] !== null && o[k] !== "") ? o[k] : DEF[k]; }
@@ -49,12 +51,21 @@
   function escT(s) { return esc(s).replace(/\b(\d{1,2}:\d{2}(?:\s?[AP]M)?)/g, '<bdi dir="ltr">$1</bdi>'); }
   function money(n) { n = +n || 0; return "$" + n.toLocaleString("en-US", { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 }); }
 
-  var st = { el: null, uid: null, role: null, items: null, docs: null, rec: null, pledges: null, unsub: null, sb: null, timer: null };
+  var st = { el: null, uid: null, role: null, items: null, docs: null, rec: null, pledges: null, unsub: null, sb: null, timer: null, dataEnd: null };
+  var DATA_WARN_DAYS = 30; /* Hanoch Nov 6: a month before the daily zmanim files run out */
 
   /* ---------- pure: build the alert list (also used by the tests) ---------- */
   function build(d) {
     var t = T(), today = d.today, sh = t.comingShabbat(today), weekEnd = t.addDays(today, 6), out = [];
     var role = d.role || {}, screen = !!(role.isSuperAdmin || role.canScreen), finance = !!(role.isSuperAdmin || role.canFinance);
+    /* the daily zmanim files (src/zmanim/roy-daily-<year>.json) run out: the super admin uploads the next one */
+    if (role.isSuperAdmin && d.dataEnd && d.dataEnd.last) {
+      var left = t.diffDays(today, d.dataEnd.last);
+      if (left + 1 <= DATA_WARN_DAYS) { /* left + 1: the day the screen would first be blank */
+        out.push({ id: "zmanimdata", hi: true, icon: "clock", title: left < 0 ? L("alDataT0") : (left === 0 ? L("alDataT1") : F("alDataT", { n: left + 1 })),
+          text: F("alDataD", { date: t.dateLoc(d.dataEnd.last, true), file: "src/zmanim/" + d.dataEnd.next }) });
+      }
+    }
     if (screen) {
       out.push({ id: "shabbat", hi: false, icon: "candle", title: L("alShabbatT") + (d.parasha ? " | " + d.parasha : ""),
         text: F("alShabbatD", { date: t.dateLoc(sh, false) }) + (d.special ? " | " + d.special : ""), go: L("alShabbatGo"), href: "gabbai/shabbat/" });
@@ -128,13 +139,14 @@
   function render() {
     if (!st.el) return;
     var t = T(), today = t.nyIso(now());
-    var list = build({ today: today, role: st.role, items: st.items, docs: st.docs, zman: t.zman, rec: st.rec, pledges: st.pledges, isYomTov: st.cal && st.cal.isYomTov ? function (iso) { try { return !!st.cal.isYomTov(iso); } catch (e) { return false; } } : null,
+    var list = build({ today: today, role: st.role, dataEnd: st.dataEnd, items: st.items, docs: st.docs, zman: t.zman, rec: st.rec, pledges: st.pledges, isYomTov: st.cal && st.cal.isYomTov ? function (iso) { try { return !!st.cal.isYomTov(iso); } catch (e) { return false; } } : null,
       parasha: st.sb && st.sb.parashaHe, special: st.sb && st.sb.special && st.sb.special.map(function (x) { return x.he; }).join(" | ") });
     var real = list.filter(function (a) { return a.id !== "shabbat"; });
     var h = '<div class="al-head"><h2>' + esc(L("alTitle")) + "</h2><span>" + esc(L("alTitleEn")) + "</span></div>";
     h += '<div class="al-list">' + list.map(function (a) {
       return '<div class="al-item' + (a.hi ? " hi" : "") + '" data-alert="' + esc(a.id.replace(/-.*$/, "")) + '"><div class="al-top"><span class="al-ic">' + (I[a.icon] || "") + '</span><div><div class="al-t">' + esc(a.title) + '</div><div class="al-d">' + escT(a.text) + "</div></div></div>" +
-        (a.cmd !== undefined
+        (!a.go ? ""
+          : a.cmd !== undefined
           ? '<button type="button" class="x-btn' + (a.hi ? " primary" : "") + '" data-cmd="' + esc(a.cmd) + '" data-go="' + (a.cmdGo ? "1" : "0") + '" data-href="' + esc(a.href) + '">' + esc(a.go) + "</button>"
           : '<a class="x-btn' + (a.id === "shabbat" ? " primary" : "") + '" href="' + esc(rootPath() + a.href) + '">' + esc(a.go) + "</a>") + "</div>";
     }).join("") + "</div>";
@@ -163,7 +175,29 @@
       db.collection("recurringSchedules").get().then(function (s) { var a = []; s.forEach(function (x) { var o = x.data() || {}; o.id = x.id; a.push(o); }); st.rec = a; render(); }).catch(function () { st.rec = []; render(); });
       db.collection("pledges").get().then(function (s) { var a = []; s.forEach(function (x) { var o = x.data() || {}; o.id = x.id; a.push(o); }); st.pledges = a; render(); }).catch(function () { st.pledges = []; render(); });
     }
+    if (role.isSuperAdmin) checkDataEnd();
     render();
+  }
+  /* The last day the TV has zmanim for: the TV (screen/screen.js) merges every
+     src/zmanim/roy-daily-<year>.json it finds, so the same files are read here,
+     year after year, until the first one that is missing. Only when the first
+     file is within DATA_WARN_DAYS of its end, so a normal day costs nothing extra. */
+  function checkDataEnd() {
+    var t = T(), first = 5787;
+    t.loadZmanim(rootPath()).then(function () {
+      var last = t.lastZmanDay(); if (!last) return;
+      if (t.diffDays(t.nyIso(now()), last) + 1 > DATA_WARN_DAYS) { st.dataEnd = null; render(); return; }
+      var y = first + 1;
+      (function next() {
+        if (y > first + 6) { st.dataEnd = { last: last, next: "roy-daily-" + y + ".json" }; render(); return; }
+        fetch(rootPath() + "src/zmanim/roy-daily-" + y + ".json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }).then(function (j) {
+          var k = j && j.days ? Object.keys(j.days).sort() : [];
+          if (!k.length) { st.dataEnd = { last: last, next: "roy-daily-" + y + ".json" }; render(); return; }
+          if (k[k.length - 1] > last) last = k[k.length - 1];
+          y++; next();
+        });
+      })();
+    });
   }
   async function loadDocs() { var f = fb(); if (f && f.loadPrayerTimes) { var r = await f.loadPrayerTimes(); if (r && r.ok) { st.docs = r.items; render(); } } }
   window.addEventListener("oh-prayertimes-changed", function () { if (st.el) loadDocs(); });

@@ -6,6 +6,9 @@
    exactly as before, and it never caches a page or its data: navigations
    go to the network first, and only when the network fails does the saved
    offline page show, so nobody ever sees a stale page or a stale balance.
+   Since v3 (2026-11-06) the site's own .js / .css / .json files are also
+   re-checked with the server on each load (see the fetch handler), so a
+   new upload is picked up at once; still nothing is cached here.
    /tv/ keeps its own worker (tv/sw.js, scope /tv/): the browser already
    sends /tv/ requests there since that scope is more specific, and this
    file skips /tv/ on its own as a second guard, so the TV is never
@@ -19,7 +22,7 @@
    self.registration.showNotification the same way any Web Push
    notification is shown, and does not need any Firebase script
    loaded inside the worker. */
-var VERSION = "oh-app-shell-v2";
+var VERSION = "oh-app-shell-v3";
 var OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", function (e) {
@@ -51,7 +54,18 @@ self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET") return;
   if (isBypassed(req.url)) return;
-  if (req.mode !== "navigate") return; /* this worker only answers page loads, nothing else */
+  /* Fresh code after an upload (Hanoch Nov 6): the site's own .js / .css / .json
+     files are checked with the server on every page load (cache "no-cache":
+     the browser asks "changed?" and GitHub Pages answers 304 "not changed",
+     a few bytes, when it is the same file). Without this a phone could keep
+     a CSS or script from before an upload for up to 10 minutes, next to a
+     new page: a half-old page. Nothing is stored here; if the check fails
+     (no network) the browser's own copy is used, as before. */
+  if (req.mode !== "navigate") {
+    if (req.url.indexOf(self.location.origin + "/") !== 0 || !/\.(js|css|json)(\?|$)/.test(req.url) || req.cache === "no-store" || req.cache === "reload") return;
+    e.respondWith(fetch(req, { cache: "no-cache" }).catch(function () { return fetch(req); }));
+    return;
+  }
   e.respondWith(
     fetch(req).catch(function () {
       return caches.match(OFFLINE_URL).then(function (hit) { return hit || Response.error(); });

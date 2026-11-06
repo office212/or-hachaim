@@ -103,7 +103,51 @@
     };
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
   }
-  var api = { isolateBilingual: isolateBilingual, esc: esc, jsArg: jsArg, cents: cents, money: money, nyDate: nyDate, usDate: usDate, ledgerTotals: ledgerTotals, balanceInfo: balanceInfo, addMonths: addMonths };
+  /* ask / tell (Hanoch Nov 6): the site's own question box in place of the
+     browser's confirm() / alert(). ask(text, { ok, cancel }) resolves true
+     or false, tell(text) resolves when closed. Each line of text is its own
+     paragraph, so oh-i18n.js switches it to English like any other page text.
+     A browser without <dialog> keeps the old confirm() / alert(). */
+  function dialogWords() {
+    var en = global.OH_LANG === "en" || (typeof document !== "undefined" && document.documentElement.classList.contains("oh-en"));
+    return en ? { ok: "OK", cancel: "Cancel" } : { ok: "אישור", cancel: "ביטול" };
+  }
+  function dialogCss() {
+    if (document.getElementById("ohDlgCss")) return;
+    var s = document.createElement("style"); s.id = "ohDlgCss";
+    s.textContent = ".oh-dlg{border:1px solid var(--gold,#b48e56);border-radius:18px;padding:22px 22px 18px;max-width:min(460px,calc(100vw - 32px));width:100%;background:#fffdf9;color:var(--navy,#0e2c4c);box-shadow:0 24px 60px -20px rgba(8,27,48,.55);font:inherit;font-size:17px;line-height:1.55}" +
+      ".oh-dlg::backdrop{background:rgba(8,27,48,.45)}.oh-dlg p{margin:0 0 6px}.oh-dlg p:first-child{font-weight:700;font-size:18px}" +
+      ".oh-dlg-acts{display:flex;gap:10px;justify-content:flex-start;flex-wrap:wrap;margin-top:18px}" +
+      ".oh-dlg-acts button{font:inherit;font-weight:700;font-size:16px;min-height:46px;padding:0 22px;border-radius:12px;cursor:pointer;border:1px solid var(--gold,#b48e56);background:#fff;color:var(--navy,#0e2c4c)}" +
+      ".oh-dlg-acts button.ok{background:var(--navy,#0e2c4c);color:#f6ecd6;border-color:transparent}" +
+      ".oh-dlg-acts button:focus-visible{outline:3px solid rgba(180,142,86,.6);outline-offset:2px}";
+    document.head.appendChild(s);
+  }
+  function openDialog(text, opts, withCancel) {
+    var native = withCancel ? global.confirm : global.alert;
+    if (typeof document === "undefined" || typeof global.HTMLDialogElement !== "function") return Promise.resolve(native.call(global, text) !== false);
+    dialogCss();
+    var w = dialogWords(); opts = opts || {};
+    var d = document.createElement("dialog"); d.className = "oh-dlg";
+    d.setAttribute("dir", document.documentElement.getAttribute("dir") || "rtl");
+    String(text == null ? "" : text).split("\n").forEach(function (line) { if (!line.trim()) return; var p = document.createElement("p"); p.textContent = line; d.appendChild(p); });
+    var acts = document.createElement("div"); acts.className = "oh-dlg-acts";
+    var ok = document.createElement("button"); ok.type = "button"; ok.className = "ok"; ok.textContent = opts.ok || w.ok; acts.appendChild(ok);
+    if (withCancel) { var no = document.createElement("button"); no.type = "button"; no.textContent = opts.cancel || w.cancel; acts.appendChild(no); }
+    d.appendChild(acts); document.body.appendChild(d);
+    return new Promise(function (resolve) {
+      var done = false;
+      function close(v) { if (done) return; done = true; try { d.close(); } catch (e) {} d.remove(); resolve(v); }
+      ok.addEventListener("click", function () { close(true); });
+      if (no) no.addEventListener("click", function () { close(false); });
+      d.addEventListener("cancel", function (e) { e.preventDefault(); close(!withCancel); });
+      try { d.showModal(); } catch (e) { d.remove(); resolve(native.call(global, text) !== false); return; }
+      (withCancel ? no : ok).focus(); /* the safe choice has the focus, as with confirm() */
+    });
+  }
+  function ask(text, opts) { return openDialog(text, opts, true); }
+  function tell(text, opts) { return openDialog(text, opts, false).then(function () {}); }
+  var api = { isolateBilingual: isolateBilingual, esc: esc, jsArg: jsArg, cents: cents, money: money, nyDate: nyDate, usDate: usDate, ledgerTotals: ledgerTotals, balanceInfo: balanceInfo, addMonths: addMonths, ask: ask, tell: tell };
   global.OH_UI = api;
   if (typeof global.ledgerTotals !== "function") global.ledgerTotals = ledgerTotals;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
