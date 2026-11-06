@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>תוכן למסך | אור החיים</title>
+<!-- 2040 phase 1 fix (2026-11-05, Hanoch: "תוכן המסך נפרד מהכותרות, שלא יהיו טעויות"):
+     this page is ONLY the TV's content (dedications, the running ticker,
+     announcements, who donated what) - split out of the old admin/ page and
+     kept separate from gabbai/tv/ (the times and the TV's headings/layout),
+     exactly so adding a dedication can never be confused with changing a
+     heading. Same editor, same collections, same rules - only where it
+     lives changed. "חסות" (sponsorship) is now free text (Hanoch: "חסות לא
+     נשמע טוב"): the item's own title/text carries the occasion, not a fixed
+     Kiddush/Seudah Shlishit list, so "someone donated the Seudah Shlishit"
+     is one new item away, not a dead end. -->
+<link rel="stylesheet" href="../../../src/theme.css">
+<link rel="stylesheet" href="../../../admin/content-editor.css">
+<link rel="stylesheet" href="../../../src/ui/oh-design.css">
+<script src="../../../src/ui/labels.js"></script>
+<script src="../../../src/ui/oh-shell.js" defer></script>
+<script src="../../../src/firebase/firebase-config.js"></script>
+<script src="../../../src/firebase/firebase-app.js"></script>
+<script src="../../../src/ui/oh-ui.js"></script>
+<script src="../../../src/engines/display-engine.js"></script>
+<script src="../../../src/firebase/screen-content.js"></script>
+<meta name="theme-color" content="#0e2c4c">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="אור החיים">
+<script src="/src/pwa/pwa-app.js" defer></script>
+</head>
+<body class="gated" data-oha-page="tv-content">
+<div class="page">
+<div class="gate-card" id="signInGate"><h2>כניסה נדרשת</h2><button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>התחברות עם Google</span></button><p class="hint" id="gateMsg"></p></div>
+<p class="oh-help">כל שינוי כאן מופיע במסך תוך שניות.</p>
+<!-- 2040 phase 1: the command bar (content gabbaim and the super admin), src/ui/oh-cmdbar.js -->
+<div id="ohCmdMount" hidden></div>
+<section id="screenContent" class="sc" hidden aria-labelledby="scHeading">
+<div class="sc-head">
+<div><h2 id="scHeading">תוכן המסך</h2>
+<p class="sc-lead oh-help">כל פריט מוצג רק בין התאריכים שלו. בשבת מוסתרים חול, תשלום ו-QR.</p></div>
+<div class="sc-head-actions"><a class="btn secondary sc-tv-link" href="../../tv/" target="_blank" rel="noopener">זמני תפילה וזמני היום /tv/</a><button type="button" class="btn sc-new" id="scNew">+ פריט חדש</button></div>
+</div>
+<div class="sc-toolbar">
+<div class="sc-filter" role="group" aria-label="סינון">
+<button type="button" data-f="active" aria-pressed="true">פעילים</button><button type="button" data-f="published" aria-pressed="false">מפורסמים</button><button type="button" data-f="draft" aria-pressed="false">טיוטות</button><button type="button" data-f="archived" aria-pressed="false">ארכיון</button>
+</div>
+<select id="scTypeFilter" aria-label="סוג"></select>
+</div>
+<div id="scEditor" class="sc-editor gold-frame" hidden>
+<h3 id="scEdTitle" class="sc-ed-title">פריט חדש</h3>
+<div class="sc-grid">
+<form id="scForm" class="sc-form" autocomplete="off">
+<label for="scType">סוג</label><select id="scType"></select>
+<div id="scSubWrap" hidden><label for="scSub">סוג משנה</label><select id="scSub"></select></div>
+<div id="scYzWrap" hidden>
+<label for="scYzName">שם הנפטר/ת בעברית</label><input id="scYzName" placeholder="שם מלא כפי שיוצג במסך">
+<label for="scYzNameEn">שם באנגלית (רשות)</label><input id="scYzNameEn" dir="ltr" placeholder="רשות">
+<div class="sc-row2"><div><label for="scYzDay">יום</label><select id="scYzDay"></select></div><div><label for="scYzMonth">חודש עברי</label><select id="scYzMonth"></select></div><div><label for="scYzYear">שנת פטירה (רשות)</label><input id="scYzYear" inputmode="numeric" dir="ltr" placeholder="5770"></div></div>
+<details class="sc-calc"><summary>יש רק תאריך לועזי? חישוב התאריך העברי</summary>
+<label for="scYzGreg">תאריך פטירה לועזי</label><input type="date" id="scYzGreg" lang="en-US">
+<label class="sc-check"><input type="checkbox" id="scYzAfter"> נפטר/ה אחרי השקיעה</label>
+<button type="button" class="btn secondary sc-sm" id="scYzCalc">חשב תאריך עברי</button> <span id="scYzCalcMsg" class="sc-meta"></span>
+</details>
+<p class="sc-help oh-help">מזינים פעם אחת, וכל שנה זה מופיע לבד בשבוע שלו.</p>
+</div>
+<div id="scTitleWrap">
+<label for="scTitleHe">כותרת בעברית</label><input id="scTitleHe" placeholder="כותרת קצרה" maxlength="200">
+<label for="scTitleEn">כותרת באנגלית (רשות)</label><input id="scTitleEn" dir="ltr" placeholder="רשות" maxlength="200">
+</div>
+<label for="scBodyHe" id="scBodyLabel">טקסט בעברית</label><textarea id="scBodyHe" rows="4" maxlength="2000" placeholder="הטקסט כפי שיוצג במסך"></textarea>
+<label for="scBodyEn">טקסט באנגלית (רשות)</label><textarea id="scBodyEn" rows="2" dir="ltr" maxlength="2000" placeholder="רשות"></textarea>
+<div id="scCampWrap" hidden><div class="sc-row2"><div><label for="scGoal">יעד ($, רשות)</label><input id="scGoal" type="number" min="0" step="1" dir="ltr"></div><div><label for="scRaised">נאסף עד כה ($)</label><input id="scRaised" type="number" min="0" step="1" dir="ltr"></div></div></div>
+<div id="scImgWrap" hidden>
+<label for="scImg" id="scImgLabel">תמונה</label><input type="file" id="scImg" accept="image/jpeg,image/png,image/webp">
+<p class="sc-help oh-help">JPG, PNG או WebP. מוקטן לבד. <span id="scImgWrapNote" hidden>לחשבון זה אין הרשאת העלאת תמונות.</span></p>
+<p id="scImgMsg" class="sc-meta"></p><div id="scImgPrev" class="sc-img-prev"></div>
+</div>
+<div id="scWhenWrap">
+<div class="sc-row2"><div><label for="scStart">מתאריך</label><input type="date" id="scStart" lang="en-US"></div><div><label for="scEnd">עד תאריך (כולל)</label><input type="date" id="scEnd" lang="en-US"></div></div>
+<div id="scPermWrap" hidden><label class="sc-check"><input type="checkbox" id="scPerm"> הקדשה קבועה, בלי תאריך סיום (מוצגת ברצועת הטקסט הרץ בתחתית המסך)</label></div>
+</div>
+<div id="scShowWrap"><fieldset class="sc-fs"><legend>מתי להציג</legend>
+<label class="sc-check"><input type="radio" name="scShowOn" value="all" checked> כל הימים</label>
+<label class="sc-check"><input type="radio" name="scShowOn" value="weekday"> יום חול בלבד</label>
+<label class="sc-check"><input type="radio" name="scShowOn" value="shabbat"> שבת וחג בלבד</label>
+</fieldset>
+<label class="sc-check"><input type="checkbox" id="scPay"> מכיל תשלום, Zelle או QR (יוסתר בשבת וחג)</label></div>
+<p id="scForcedNote" class="sc-help oh-help" hidden>תרומה ומגבית מוסתרות תמיד בשבת וביום טוב, אוטומטית.</p>
+<fieldset class="sc-fs"><legend>איפה להציג</legend>
+<label class="sc-check"><input type="radio" name="scVis" value="public" checked> מסך ציבורי (/tv/)</label>
+</fieldset>
+<label for="scOrder">סדר (מספר קטן מוצג קודם)</label><input id="scOrder" type="number" min="0" max="9999" value="100" dir="ltr">
+<ul id="scWarn" class="sc-warn" aria-live="polite"></ul>
+</form>
+<aside class="sc-preview" aria-label="תצוגה מקדימה">
+<div class="sc-pv-bar"><div class="sc-pv-tabs" role="group" aria-label="מצב תצוגה"><button type="button" data-rest="0" aria-pressed="true">תצוגת חול</button><button type="button" data-rest="1" aria-pressed="false">תצוגת שבת וחג</button></div><button type="button" class="btn secondary sc-sm" id="scPvBig" aria-pressed="false">הגדלה</button></div>
+<div class="sc-pv-box" id="scPvBox"><iframe id="scPv" src="../../tv/?embed=preview" title="תצוגה מקדימה של המסך, 16:9, 1920x1080" tabindex="-1" loading="lazy"></iframe></div>
+<p id="scPvNote" class="sc-pv-note"></p>
+<p class="sc-help oh-help">זה המסך האמיתי, מוקטן. נשמר רק בשמירה או בפרסום.</p>
+<a class="btn secondary sc-sm sc-pv-open" id="scPvOpen" href="../../tv/" target="_blank" rel="noopener">פתיחת המסך בחלון חדש</a>
+</aside>
+</div>
+<div class="sc-actions">
+<button type="button" class="btn" id="scPublish">פרסום למסך</button>
+<button type="button" class="btn secondary" id="scDraft">שמירה כטיוטה</button>
+<button type="button" class="btn secondary" id="scUnpublish" hidden>הורדה מהמסך</button>
+<button type="button" class="btn secondary" id="scCancel">סגירה</button>
+</div>
+<p id="scMsg" class="sc-msg" aria-live="polite"></p>
+<div id="scHistory" class="sc-history"></div>
+</div>
+<p id="scListMsg" class="sc-err"></p>
+<div id="scList" class="sc-list"></div>
+
+</section>
+<script>
+function signInFromGate(){
+  var fb = window.OH_FIREBASE;
+  if(!fb || !fb.signIn){ document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.'; return; }
+  if(fb.user){ fb.signOut(); return; }
+  var r = fb.signIn();
+  if(r && r.catch) r.catch(function(e){ document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e); });
+}
+/* Page gate: a content gabbai or the super admin only; everyone else goes
+   home. The content-editor.js module gates #screenContent itself too (by
+   role), this just handles the sign-in card and sends a non-content gabbai
+   back to the home page instead of an empty page. */
+async function refreshGate(){
+  try {
+    var fb = window.OH_FIREBASE;
+    if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; return; }
+    var role = await fb.resolveRole();
+    if(!role || !role.authorized){ document.body.classList.add('gated'); if(role){ document.getElementById('gateMsg').textContent = (window.OH_LABELS && window.OH_LABELS.notAuthorized) || 'החשבון הזה אינו מורשה למערכת הגבאים.'; } return; }
+    document.body.classList.remove('gated'); document.getElementById('gateMsg').textContent = '';
+    if(!role.canScreen){ location.replace('../../'); return; }
+  } catch(e) {}
+}
+setInterval(refreshGate, 1000);
+refreshGate();
+</script>
+<script src="../../../src/calendar/or-calendar.min.js"></script>
+<script src="../../../src/ui/oh-times.js"></script>
+<script src="../../../src/ui/oh-command.js"></script>
+<script src="../../../src/ui/oh-cmdbar.js"></script>
+<script src="../../../admin/content-editor.js"></script>
+</div></body></html>

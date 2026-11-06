@@ -16,7 +16,7 @@
     alAllGood: "הכל מסודר ✓ אין כרגע משהו שדורש תשומת לב",
     alShabbatT: "חבילת שבת", alShabbatGo: "פתח חבילת שבת",
     alYzT: "יארצייט השבוע", alYzGo: "לעורך המסך",
-    alKiddushT: "אין עדיין חסות לקידוש", alKiddushGo: "הוסף חסות קידוש",
+    alKiddushT: "אין עדיין מי שתרם לקידוש השבת", alKiddushGo: "הוסף תרומה לקידוש",
     alSunsetT: "זמן תפילה אחרי השקיעה", alSunsetGo: "תקן: 15 דק׳ לפני השקיעה",
     alExpireT: "זמן לפי תאריכים מסתיים בקרוב", alExpireGo: "הארך",
     alDraftsT: "טיוטות מחכות לפרסום", alDraftsGo: "לטיוטות",
@@ -66,18 +66,18 @@
       if (yz.length) {
         var drafts = yz.filter(function (x) { return x.status !== "published"; }).length;
         out.push({ id: "yahrzeit", hi: drafts > 0, icon: "flame", title: (yz.length === 1 ? L("alYzT") : F("alYzN", { n: yz.length })),
-          text: yz.map(function (x) { return (x.yahrzeit && x.yahrzeit.nameHe) || x.titleHe || ""; }).join(", ") + (drafts ? " | " + F("alYzDraftN", { n: drafts }) : " | " + L("alYzOn")), go: L("alYzGo"), href: "admin/#screenContent" });
+          text: yz.map(function (x) { return (x.yahrzeit && x.yahrzeit.nameHe) || x.titleHe || ""; }).join(", ") + (drafts ? " | " + F("alYzDraftN", { n: drafts }) : " | " + L("alYzOn")), go: L("alYzGo"), href: "gabbai/tv/content/" });
       }
       /* kiddush sponsor for the coming Shabbat */
       var kid = d.items.filter(function (x) { return x.type === "sponsor" && (x.subtype || "kiddush") === "kiddush" && x.status !== "archived" && (!x.startDate || x.startDate <= sh) && (!x.endDate || x.endDate >= sh); });
       var kidPub = kid.filter(function (x) { return x.status === "published"; });
       if (!kidPub.length) {
         out.push({ id: "kiddush", hi: true, icon: "cup", title: L("alKiddushT"), text: F("alKiddushD", { date: t.dateLoc(sh, false) }) + (d.parasha ? ", " + d.parasha : "") + (kid.length ? " | " + L("alKiddushDraft") : ""),
-          go: L("alKiddushGo"), cmd: "קידוש בחסות ", cmdGo: false, href: "admin/#screenContent" });
+          go: L("alKiddushGo"), cmd: "קידוש נתרם על ידי ", cmdGo: false, href: "gabbai/tv/content/" });
       }
       var dr = d.items.filter(function (x) { return x.status === "draft"; });
       if (dr.length) out.push({ id: "drafts", hi: false, icon: "draft", title: dr.length === 1 ? L("alDraftOne") : dr.length + " " + L("alDraftsT"),
-        text: dr.slice(0, 3).map(function (x) { return x.titleHe || (x.yahrzeit && x.yahrzeit.nameHe) || ""; }).filter(Boolean).join(" | "), go: L("alDraftsGo"), href: "admin/#screenContent" });
+        text: dr.slice(0, 3).map(function (x) { return x.titleHe || (x.yahrzeit && x.yahrzeit.nameHe) || ""; }).filter(Boolean).join(" | "), go: L("alDraftsGo"), href: "gabbai/tv/content/" });
     }
     if (screen && d.docs && d.zman) {
       d.docs.forEach(function (doc) {
@@ -93,7 +93,7 @@
           var lab = doc.rule && doc.rule.kind === "sunset" ? t.offsetLoc(doc.rule.offsetMin) : doc.time;
           out.push({ id: "sunset-" + doc.id, hi: true, icon: "sun", title: L("alSunsetT"),
             text: F(after === 1 ? "alSunsetD1" : "alSunsetD", { name: (t.isEn() && doc.nameEn) || doc.nameHe, time: lab, n: after, range: minS === maxS ? t.short12(minS) : F("alRange", { a: t.short12(minS), b: t.short12(maxS) }) }),
-            go: L("alSunsetGo"), cmd: "שנה " + doc.nameHe + " " + (doc.rule && doc.rule.kind === "sunset" ? t.offsetHe(doc.rule.offsetMin).replace(" דק׳ ", " דקות ") : doc.time) + " ל-15 דקות לפני השקיעה", cmdGo: true, href: "admin/#ptSection" });
+            go: L("alSunsetGo"), cmd: "שנה " + doc.nameHe + " " + (doc.rule && doc.rule.kind === "sunset" ? t.offsetHe(doc.rule.offsetMin).replace(" דק׳ ", " דקות ") : doc.time) + " ל-15 דקות לפני השקיעה", cmdGo: true, href: "gabbai/tv/#ptSection" });
         }
       });
       d.docs.forEach(function (doc) {
@@ -102,7 +102,7 @@
         var lab = r.kind === "sunset" ? t.offsetLoc(r.offsetMin) : doc.time;
         out.push({ id: "expire-" + doc.id, hi: false, icon: "clock", title: L("alExpireT"),
           text: F("alExpireD", { name: (t.isEn() && doc.nameEn) || doc.nameHe, time: lab, days: t.dayLoc(r.days || "all"), date: t.dateLoc(r.until, false) }),
-          go: L("alExpireGo"), cmd: "שנה " + doc.nameHe + " " + (r.kind === "sunset" ? t.offsetHe(r.offsetMin).replace(" דק׳ ", " דקות ") : doc.time) + " עד ", cmdGo: false, href: "admin/#ptSection" });
+          go: L("alExpireGo"), cmd: "שנה " + doc.nameHe + " " + (r.kind === "sunset" ? t.offsetHe(r.offsetMin).replace(" דק׳ ", " דקות ") : doc.time) + " עד ", cmdGo: false, href: "gabbai/tv/#ptSection" });
       });
     }
     /* Hanoch Nov 5 7:57 AM: no recurring charges for now, so no alert that links to them */

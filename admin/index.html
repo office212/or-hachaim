@@ -1,18 +1,21 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl"><head><meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ממשק גבאי</title>
+<title>ניהול גבאים | אור החיים</title>
+<!-- 2040 phase 1 fix (2026-11-05, Hanoch: "ניהול ה-TV צריך להיות בנפרד מניהול דף הנחיתה"):
+     this page used to hold the daily times, the TV's headings, the landing
+     page's wording AND the TV's content, all on one page. Those four moved
+     out to their own pages (gabbai/tv/, gabbai/tv/content/, gabbai/landing/);
+     this page is now only what its title says: gabbaim, their permissions,
+     and the broadcast notification form - the super admin's own page. -->
 <link rel="stylesheet" href="../src/theme.css">
-<link rel="stylesheet" href="content-editor.css">
 <link rel="stylesheet" href="../src/ui/oh-design.css">
-<link rel="stylesheet" href="prayer-times.css">
 <link rel="stylesheet" href="../src/ui/oh-2040.css">
 <script src="../src/ui/labels.js"></script>
 <script src="../src/ui/oh-shell.js" defer></script>
 <script src="../src/firebase/firebase-config.js"></script>
 <script src="../src/firebase/firebase-app.js"></script>
 <script src="../src/ui/oh-ui.js"></script>
-<script src="../src/engines/display-engine.js"></script>
-<script src="../src/firebase/screen-content.js"></script><meta name="theme-color" content="#0e2c4c">
+<meta name="theme-color" content="#0e2c4c">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -58,97 +61,8 @@
 <p id="bcMsg" class="hint"></p>
 </div>
 </div>
-<div id="finOnlyNote" class="note" hidden><strong>פיננסים בלבד:</strong> אין לך הרשאת תוכן וזמנים.<br><a href="../finance/">מעבר לפיננסים</a></div>
-<!-- 2040 phase 1: the command bar (content gabbaim and the super admin), src/ui/oh-cmdbar.js -->
-<div id="ohCmdMount" hidden></div>
-<section id="ptSection" class="ohpt" hidden aria-labelledby="ptHeading"></section>
-<!-- 2040 phase 1: every word on the TV, editable (admin/tv-texts-editor.js, reads src/tv/tv-texts.js) -->
-<section id="ttSection" hidden aria-labelledby="ttHeading"></section>
-<section id="htSection" hidden aria-labelledby="htHeading"></section>
-<section id="screenContent" class="sc" hidden aria-labelledby="scHeading">
-<div class="sc-head">
-<div><h2 id="scHeading">תוכן המסך</h2>
-<p class="sc-lead oh-help">כל פריט מוצג רק בין התאריכים שלו. בשבת מוסתרים חול, תשלום ו-QR.</p></div>
-<div class="sc-head-actions"><a class="btn secondary sc-tv-link" href="../tv/" target="_blank" rel="noopener">זמני תפילה וזמני היום /tv/</a><button type="button" class="btn sc-new" id="scNew">+ פריט חדש</button></div>
 </div>
-<div class="sc-toolbar">
-<div class="sc-filter" role="group" aria-label="סינון">
-<button type="button" data-f="active" aria-pressed="true">פעילים</button><button type="button" data-f="published" aria-pressed="false">מפורסמים</button><button type="button" data-f="draft" aria-pressed="false">טיוטות</button><button type="button" data-f="archived" aria-pressed="false">ארכיון</button>
-</div>
-<select id="scTypeFilter" aria-label="סוג"></select>
-</div>
-<div id="scEditor" class="sc-editor gold-frame" hidden>
-<h3 id="scEdTitle" class="sc-ed-title">פריט חדש</h3>
-<div class="sc-grid">
-<form id="scForm" class="sc-form" autocomplete="off">
-<label for="scType">סוג</label><select id="scType"></select>
-<div id="scSubWrap" hidden><label for="scSub">סוג משנה</label><select id="scSub"></select></div>
-<div id="scYzWrap" hidden>
-<label for="scYzName">שם הנפטר/ת בעברית</label><input id="scYzName" placeholder="שם מלא כפי שיוצג במסך">
-<label for="scYzNameEn">שם באנגלית (רשות)</label><input id="scYzNameEn" dir="ltr" placeholder="רשות">
-<div class="sc-row2"><div><label for="scYzDay">יום</label><select id="scYzDay"></select></div><div><label for="scYzMonth">חודש עברי</label><select id="scYzMonth"></select></div><div><label for="scYzYear">שנת פטירה (רשות)</label><input id="scYzYear" inputmode="numeric" dir="ltr" placeholder="5770"></div></div>
-<details class="sc-calc"><summary>יש רק תאריך לועזי? חישוב התאריך העברי</summary>
-<label for="scYzGreg">תאריך פטירה לועזי</label><input type="date" id="scYzGreg">
-<label class="sc-check"><input type="checkbox" id="scYzAfter"> נפטר/ה אחרי השקיעה</label>
-<button type="button" class="btn secondary sc-sm" id="scYzCalc">חשב תאריך עברי</button> <span id="scYzCalcMsg" class="sc-meta"></span>
-</details>
-<p class="sc-help oh-help">מזינים פעם אחת, וכל שנה זה מופיע לבד בשבוע שלו.</p>
-</div>
-<div id="scTitleWrap">
-<label for="scTitleHe">כותרת בעברית</label><input id="scTitleHe" placeholder="כותרת קצרה" maxlength="200">
-<label for="scTitleEn">כותרת באנגלית (רשות)</label><input id="scTitleEn" dir="ltr" placeholder="רשות" maxlength="200">
-</div>
-<label for="scBodyHe" id="scBodyLabel">טקסט בעברית</label><textarea id="scBodyHe" rows="4" maxlength="2000" placeholder="הטקסט כפי שיוצג במסך"></textarea>
-<label for="scBodyEn">טקסט באנגלית (רשות)</label><textarea id="scBodyEn" rows="2" dir="ltr" maxlength="2000" placeholder="רשות"></textarea>
-<div id="scCampWrap" hidden><div class="sc-row2"><div><label for="scGoal">יעד ($, רשות)</label><input id="scGoal" type="number" min="0" step="1" dir="ltr"></div><div><label for="scRaised">נאסף עד כה ($)</label><input id="scRaised" type="number" min="0" step="1" dir="ltr"></div></div></div>
-<div id="scImgWrap" hidden>
-<label for="scImg" id="scImgLabel">תמונה</label><input type="file" id="scImg" accept="image/jpeg,image/png,image/webp">
-<p class="sc-help oh-help">JPG, PNG או WebP. מוקטן לבד. <span id="scImgWrapNote" hidden>לחשבון זה אין הרשאת העלאת תמונות.</span></p>
-<p id="scImgMsg" class="sc-meta"></p><div id="scImgPrev" class="sc-img-prev"></div>
-</div>
-<div id="scWhenWrap">
-<div class="sc-row2"><div><label for="scStart">מתאריך</label><input type="date" id="scStart"></div><div><label for="scEnd">עד תאריך (כולל)</label><input type="date" id="scEnd"></div></div>
-<div id="scPermWrap" hidden><label class="sc-check"><input type="checkbox" id="scPerm"> הקדשה קבועה, בלי תאריך סיום (ברצועה התחתונה)</label></div>
-</div>
-<div id="scShowWrap"><fieldset class="sc-fs"><legend>מתי להציג</legend>
-<label class="sc-check"><input type="radio" name="scShowOn" value="all" checked> כל הימים</label>
-<label class="sc-check"><input type="radio" name="scShowOn" value="weekday"> יום חול בלבד</label>
-<label class="sc-check"><input type="radio" name="scShowOn" value="shabbat"> שבת וחג בלבד</label>
-</fieldset>
-<label class="sc-check"><input type="checkbox" id="scPay"> מכיל תשלום, Zelle או QR (יוסתר בשבת וחג)</label></div>
-<p id="scForcedNote" class="sc-help oh-help" hidden>תרומה ומגבית מוסתרות תמיד בשבת וביום טוב, אוטומטית.</p>
-<fieldset class="sc-fs"><legend>איפה להציג</legend>
-<label class="sc-check"><input type="radio" name="scVis" value="public" checked> מסך ציבורי (/tv/)</label>
-</fieldset>
-<label for="scOrder">סדר (מספר קטן מוצג קודם)</label><input id="scOrder" type="number" min="0" max="9999" value="100" dir="ltr">
-<ul id="scWarn" class="sc-warn" aria-live="polite"></ul>
-</form>
-<aside class="sc-preview" aria-label="תצוגה מקדימה">
-<div class="sc-pv-bar"><div class="sc-pv-tabs" role="group" aria-label="מצב תצוגה"><button type="button" data-rest="0" aria-pressed="true">תצוגת חול</button><button type="button" data-rest="1" aria-pressed="false">תצוגת שבת וחג</button></div><button type="button" class="btn secondary sc-sm" id="scPvBig" aria-pressed="false">הגדלה</button></div>
-<div class="sc-pv-box" id="scPvBox"><iframe id="scPv" src="../tv/?embed=preview" title="תצוגה מקדימה של המסך, 16:9, 1920x1080" tabindex="-1" loading="lazy"></iframe></div>
-<p id="scPvNote" class="sc-pv-note"></p>
-<p class="sc-help oh-help">זה המסך האמיתי, מוקטן. נשמר רק בשמירה או בפרסום.</p>
-<a class="btn secondary sc-sm sc-pv-open" id="scPvOpen" href="../tv/" target="_blank" rel="noopener">פתיחת המסך בחלון חדש</a>
-</aside>
-</div>
-<div class="sc-actions">
-<button type="button" class="btn" id="scPublish">פרסום למסך</button>
-<button type="button" class="btn secondary" id="scDraft">שמירה כטיוטה</button>
-<button type="button" class="btn secondary" id="scUnpublish" hidden>הורדה מהמסך</button>
-<button type="button" class="btn secondary" id="scCancel">סגירה</button>
-</div>
-<p id="scMsg" class="sc-msg" aria-live="polite"></p>
-<div id="scHistory" class="sc-history"></div>
-</div>
-<p id="scListMsg" class="sc-err"></p>
-<div id="scList" class="sc-list"></div>
-
-</section>
 <script>
-/* text cleanup (Nov 5): only the active language is shown */
-function L(he, en){ return window.OH_LANG === "en" ? en : he; }
-/* Stage B1: the prayer times manager lives in prayer-times.js (window.OH_PT). */
-var _lastPTUser = null;
 function signInFromGate(){
   var fb = window.OH_FIREBASE;
   if(!fb || !fb.signIn){ document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.'; return; }
@@ -156,26 +70,23 @@ function signInFromGate(){
   var r = fb.signIn();
   if(r && r.catch) r.catch(function(e){ document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e); });
 }
-async function refreshPT(){
+/* text cleanup (Nov 5): only the active language is shown */
+function L(he, en){ return window.OH_LANG === "en" ? en : he; }
+/* 2040 phase 1 fix (2026-11-05): this page is now the super admin's own page
+   (gabbaim, permissions, broadcast). A signed-in gabbai who is not the super
+   admin goes home instead of seeing an empty page. */
+async function refreshGate(){
   try {
     var fb = window.OH_FIREBASE;
-    if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastPTUser !== null){ _lastPTUser = null; if(window.OH_PT) OH_PT.hide(); } return; }
+    if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; return; }
     var role = await fb.resolveRole();
-    if(!role || !fb.canAccess('admin')){ document.body.classList.add('gated'); if(role){ if(role.authorized){ location.replace('../gabbai/'); return; } document.getElementById('gateMsg').textContent = (window.OH_LABELS && window.OH_LABELS.notAuthorized) || 'החשבון הזה אינו מורשה למערכת הגבאים.'; } /* 2040 phase 1: no access prompts; a gabbai on a page that is not theirs goes home */ _lastPTUser = null; if(window.OH_PT) OH_PT.hide(); return; }
+    if(!role || !role.authorized){ document.body.classList.add('gated'); if(role){ document.getElementById('gateMsg').textContent = (window.OH_LABELS && window.OH_LABELS.notAuthorized) || 'החשבון הזה אינו מורשה למערכת הגבאים.'; } return; }
     document.body.classList.remove('gated'); document.getElementById('gateMsg').textContent = '';
-    /* Stage 2: prayer times are content and times; a finance-only account sees a note instead. */
-    var canContent = !!(window.OH_SCREEN_CONTENT && window.OH_SCREEN_CONTENT.canEdit(role));
-    /* 2040 phase 1 (Hanoch 5:46 AM): no "finance only" note; this page has nothing for a finance-only gabbai, so home */
-    if(!canContent && !role.isSuperAdmin){ location.replace('../gabbai/'); return; }
-    if(!canContent){ _lastPTUser = null; if(window.OH_PT) OH_PT.hide(); else document.getElementById('ptSection').hidden = true; return; }
-    var email = fb.user.email || '';
-    if(email === _lastPTUser) return;
-    _lastPTUser = email;
-    if(window.OH_PT) OH_PT.show({ email: email, isSuperAdmin: !!role.isSuperAdmin });
+    if(!role.isSuperAdmin){ location.replace('../gabbai/'); return; }
   } catch(e) {}
 }
-setInterval(refreshPT, 1000);
-refreshPT();
+setInterval(refreshGate, 1000);
+refreshGate();
 var _umShown = false;
 async function refreshUmList(){
   var fb = window.OH_FIREBASE, listEl = document.getElementById("umList"), msgEl = document.getElementById("umMsg");
@@ -253,14 +164,4 @@ async function sendBroadcast(){
   }
 }
 </script>
-<script src="../src/calendar/or-calendar.min.js"></script>
-<script src="../src/ui/oh-times.js"></script>
-<script src="../src/ui/oh-command.js"></script>
-<script src="prayer-times.js"></script>
-<script src="../src/ui/oh-cmdbar.js"></script>
-<script src="../src/tv/tv-texts.js"></script>
-<script src="tv-texts-editor.js"></script>
-<script src="../src/home/home-texts.js"></script>
-<script src="home-texts-editor.js"></script>
-<script src="content-editor.js"></script>
-</div></body></html>
+</body></html>

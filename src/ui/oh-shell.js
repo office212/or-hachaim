@@ -181,7 +181,7 @@
     setInterval(refresh, 1000);
     scrollToHash();
   }
-  /* A home tile can point at a section (admin/#ptSection, finance/#nedarim).
+  /* A home tile can point at a section (gabbai/tv/#ptSection, finance/#nedarim).
      The inner pages show their sections only after sign-in, so wait until
      the section is visible, then scroll to it once. */
   function scrollToHash() {

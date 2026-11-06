@@ -110,7 +110,7 @@
       '<div class="tt-grid"><div class="tt-main">' +
       '<input class="tt-search" id="htSearch" type="search" placeholder="' + esc(L("htSearch")) + '" aria-label="' + esc(L("htSearch")) + '">' +
       '<div id="htList" class="tt-list"></div></div>' +
-      '<div class="tt-side"><div class="tt-pv-head"><b>' + esc(L("htPreview")) + '</b><a href="../" target="_blank" rel="noopener">' + esc(L("htOpen")) + '</a></div><div class="tt-pv ht-pv" id="htPv"><iframe id="htFrame" title="' + esc(L("htPreview")) + '" src="about:blank"></iframe></div></div></div></div>';
+      '<div class="tt-side"><div class="tt-pv-head"><b>' + esc(L("htPreview")) + '</b><a href="../../" target="_blank" rel="noopener">' + esc(L("htOpen")) + '</a></div><div class="tt-pv ht-pv" id="htPv"><iframe id="htFrame" title="' + esc(L("htPreview")) + '" src="about:blank"></iframe></div></div></div></div>';
     $("htSearch").addEventListener("input", function () { S.q = this.value.trim(); renderList(); });
     sec.addEventListener("click", onClick);
     sec.addEventListener("input", function (e) { var i = e.target.closest && e.target.closest("[data-ht-in]"); if (!i) return; var dk = i.getAttribute("data-ht-in"); (S.draft[dk] = S.draft[dk] || {})[i.getAttribute("data-lang")] = i.value; if (!shared(dk)) S.pvLang = i.getAttribute("data-lang"); preview(); });
@@ -178,7 +178,7 @@
     var m = draftMaps();
     try { f.contentWindow.postMessage({ type: "oh-home-texts-preview", texts: m.texts, textsEn: m.textsEn, lang: S.pvLang === "en" ? "en" : "he" }, location.origin); } catch (e) {}
   }
-  function reloadPreview() { var f = $("htFrame"); if (f) f.src = "../?ohpv=" + Date.now(); }
+  function reloadPreview() { var f = $("htFrame"); if (f) f.src = "../../?ohpv=" + Date.now(); }
   function failText(r) { return /permission|denied/i.test(String(r && (r.code || r.reason))) ? L("htDenied") : L("htFailed"); }
   /* Activity log (Nov 5): a Hebrew sentence, area "texts" */
   function log(action, detail) { try { var fb = window.OH_FIREBASE; if (fb.logActivity) fb.logActivity({ "homeTexts.update": "עודכן טקסט בדף הבית", "homeTexts.reset": "טקסט בדף הבית חזר לברירת המחדל" }[action] || action, detail, { area: "texts", code: action, collection: "settings", itemId: "homeTexts" }); } catch (e) {} }
@@ -214,7 +214,7 @@
     var r = await window.OH_FIREBASE.loadHomeTexts();
     if (r && r.ok) { S.texts = r.texts; S.textsEn = r.textsEn; }
     renderList();
-    var f = $("htFrame"); if (f && (!f.getAttribute("src") || f.getAttribute("src") === "about:blank")) f.src = "../?ohpv=1";
+    var f = $("htFrame"); if (f && (!f.getAttribute("src") || f.getAttribute("src") === "about:blank")) f.src = "../../?ohpv=1";
     if (/#htSection$/.test(location.hash)) { try { $("htSection").scrollIntoView({ block: "start" }); } catch (e) {} }
   }
   async function tick() {

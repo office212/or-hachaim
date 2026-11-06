@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl"><head><meta charset="utf-8"><script>/* clean URL: /x/index.html shows as /x/ (GitHub Pages has no server redirect) */if(/\/index\.html$/.test(location.pathname)&&history.replaceState)history.replaceState(null,"",location.pathname.replace(/index\.html$/,"")+location.search+location.hash);</script><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ניהול המסך | אור החיים</title>
+<!-- 2040 phase 1 fix (2026-11-05, Hanoch: "ניהול ה-TV צריך להיות בנפרד מניהול דף הנחיתה"):
+     this page is the TV's OWN management, split out of the old admin/ page:
+     the daily times (admin/prayer-times.js, unchanged) and the TV's headings
+     and layout (admin/tv-texts-editor.js, unchanged) - both about how the
+     screen itself is set up. The landing page's wording now has its own page
+     (gabbai/landing/), and the TV's actual CONTENT (dedications, sponsors,
+     announcements, the running ticker) has its own simple page
+     (gabbai/tv/content/), separate from these headings, so there are no
+     mistakes between the two. Nothing here changed except where it lives. -->
+<link rel="stylesheet" href="../../src/theme.css">
+<link rel="stylesheet" href="../../admin/prayer-times.css">
+<link rel="stylesheet" href="../../src/ui/oh-design.css">
+<link rel="stylesheet" href="../../src/ui/oh-2040.css">
+<script src="../../src/ui/labels.js"></script>
+<script src="../../src/ui/oh-shell.js" defer></script>
+<script src="../../src/firebase/firebase-config.js"></script>
+<script src="../../src/firebase/firebase-app.js"></script>
+<script src="../../src/ui/oh-ui.js"></script>
+<meta name="theme-color" content="#0e2c4c">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="אור החיים">
+<script src="/src/pwa/pwa-app.js" defer></script>
+</head>
+<body class="gated" data-oha-page="tv-settings">
+<div class="page">
+<div class="gate-card" id="signInGate"><h2>כניסה נדרשת</h2><button class="gsi-btn" onclick="signInFromGate()"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.6-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 8 3l5.7-5.7C34.5 6.1 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.6 5.1C9.7 39.7 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C36.9 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.9z"/></svg><span>התחברות עם Google</span></button><p class="hint" id="gateMsg"></p></div>
+<p class="oh-help">כל שינוי כאן מופיע במסך תוך שניות.</p>
+<section id="ptSection" class="ohpt" hidden aria-labelledby="ptHeading"></section>
+<!-- 2040 phase 1: every word on the TV, editable (admin/tv-texts-editor.js, reads src/tv/tv-texts.js) -->
+<section id="ttSection" hidden aria-labelledby="ttHeading"></section>
+<script>
+/* Page gate: a content gabbai or the super admin only; everyone else goes home.
+   Unchanged logic from the old admin/index.html's refreshPT(), minus the
+   sections that moved to other pages. */
+function signInFromGate(){
+  var fb = window.OH_FIREBASE;
+  if(!fb || !fb.signIn){ document.getElementById('gateMsg').textContent = 'Sign-in is not ready yet. Please try again in a moment.'; return; }
+  if(fb.user){ fb.signOut(); return; }
+  var r = fb.signIn();
+  if(r && r.catch) r.catch(function(e){ document.getElementById('gateMsg').textContent = 'Firebase sign-in failed: ' + (e && e.message ? e.message : e); });
+}
+var _lastPTUser = null;
+async function refreshPT(){
+  try {
+    var fb = window.OH_FIREBASE;
+    if(!fb || !fb.ready || !fb.user){ document.body.classList.add('gated'); document.getElementById('gateMsg').textContent = ''; if(_lastPTUser !== null){ _lastPTUser = null; if(window.OH_PT) OH_PT.hide(); } return; }
+    var role = await fb.resolveRole();
+    if(!role || !role.authorized){ document.body.classList.add('gated'); if(role){ document.getElementById('gateMsg').textContent = (window.OH_LABELS && window.OH_LABELS.notAuthorized) || 'החשבון הזה אינו מורשה למערכת הגבאים.'; } _lastPTUser = null; if(window.OH_PT) OH_PT.hide(); return; }
+    document.body.classList.remove('gated'); document.getElementById('gateMsg').textContent = '';
+    if(!role.canScreen){ location.replace('../'); return; }
+    var email = fb.user.email || '';
+    if(email === _lastPTUser) return;
+    _lastPTUser = email;
+    if(window.OH_PT) OH_PT.show({ email: email, isSuperAdmin: !!role.isSuperAdmin });
+  } catch(e) {}
+}
+setInterval(refreshPT, 1000);
+refreshPT();
+</script>
+<script src="../../src/ui/oh-times.js"></script>
+<script src="../../admin/prayer-times.js"></script>
+<script src="../../src/tv/tv-texts.js"></script>
+<script src="../../admin/tv-texts-editor.js"></script>
+</div></body></html>

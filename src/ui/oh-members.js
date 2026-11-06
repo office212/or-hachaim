@@ -16,7 +16,8 @@
   function fb() { return window.OH_FIREBASE; }
   function isSA() { var f = fb(); return !!(f && f.isSuperAdminClient && f.isSuperAdminClient()); }
   function statusOf(c) { return (c && c.status) || "active"; }
-  function shortDate(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || "")); return m ? (+m[3]) + "/" + (+m[2]) : ""; }
+  /* US format (2026-11-05): month first. */
+  function shortDate(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || "")); return m ? (+m[2]) + "/" + (+m[3]) : ""; }
   var REASON_HE = { "permission-denied": "אין הרשאה", "unavailable": "אין חיבור", "not-signed-in": "לא מחובר", "super-admin-protected": "התפקיד של המנהל הראשי לא משתנה", "missing-name": "חסר שם מלא", "invalid-phone": "מספר הטלפון לא תקין" };
   function why(r) { var k = r && r.reason; return REASON_HE[k] || "לא נשמר"; }
 

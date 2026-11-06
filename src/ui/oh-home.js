@@ -40,8 +40,8 @@
   /* 2040 phase 1 (Hanoch 5:49 AM): the home keeps the daily actions; screen texts,
      permissions and backup moved to the one Settings page (gabbai/settings/). */
   var TILES = [
-    { k: "screen", icon: I.tv, href: "admin/#screenContent", can: function (r) { return r.canScreen; }, count: true },
-    { k: "times", icon: I.clock, href: "admin/#ptSection", can: function (r) { return r.canScreen; } },
+    { k: "screen", icon: I.tv, href: "gabbai/tv/content/", can: function (r) { return r.canScreen; }, count: true },
+    { k: "times", icon: I.clock, href: "gabbai/tv/#ptSection", can: function (r) { return r.canScreen; } },
     { k: "finance", icon: I.wallet, href: "finance/", can: function (r) { return r.canFinance; } },
     { k: "nedarim", icon: I.book, href: "finance/#nedarim", can: function (r) { return r.canFinance; } },
     { k: "reports", icon: I.doc, href: "finance/#reports", can: function (r) { return r.canFinance; } },
@@ -145,7 +145,7 @@
     var financeOnly = role.canFinance && !role.canScreen && !role.isSuperAdmin;
     var helloText = t("helloText"), btn = "";
     if (!role.authorized) helloText = "";
-    else if (role.canScreen) btn = '<a class="btn primary" href="' + ROOT + 'admin/#screenContent">' + I.plus + esc(t("mainButtonScreen")) + "</a>";
+    else if (role.canScreen) btn = '<a class="btn primary" href="' + ROOT + 'gabbai/tv/content/">' + I.plus + esc(t("mainButtonScreen")) + "</a>";
     else if (role.canFinance) { helloText = t("helloTextFinance"); btn = '<a class="btn primary" href="' + ROOT + 'finance/#search">' + I.search + esc(t("mainButtonFinance")) + "</a>"; }
     else if (role.isCongregant) { helloText = t("helloTextCongregant"); btn = '<a class="btn primary" href="' + ROOT + 'congregant/">' + I.person + esc(t("mainButtonCongregant")) + "</a>"; }
     if (role.canScreen && !role.canFinance && !role.isSuperAdmin) helloText = t("helloTextScreen");

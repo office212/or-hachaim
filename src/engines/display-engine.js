@@ -215,7 +215,12 @@
     dedication: { he: "הקדשות", en: "Dedications" },
     flyer: { he: "פלייר", en: "Flyer" },
     yahrzeit: { he: "יארצייט השבוע", en: "Yahrzeit This Week" },
-    sponsor: { he: "נותני חסות", en: "Sponsors" },
+    /* Free text (2026-11-05, Hanoch: "חסות does not sound good"): the board
+       title reads "נתרם על ידי" (Donated By) instead of "sponsors/חסות", and the
+       occasion itself (Kiddush, Seudah Shlishit, or anything else) is free text
+       typed into the item, not a fixed choice. See SUBTYPES below: sponsor has
+       no fixed subtypes any more, exactly so any occasion can be entered. */
+    sponsor: { he: "נתרם על ידי", en: "Donated By" },
     parnas: { he: "פרנס היום ונר למאור", en: "Parnas Hayom and Ner LaMaor" },
     mazaltov: { he: "מזל טוב", en: "Mazal Tov" },
     hazkara: { he: "הזכרות ותנחומים", en: "Hazkarot and Condolences" },
@@ -224,7 +229,10 @@
     donation: { he: "תרומה", en: "Donation" }
   };
   var SUBTYPES = {
-    sponsor: { kiddush: "קידוש", seudah3: "סעודה שלישית" },
+    /* sponsor: free text only (2026-11-05, Hanoch). No fixed list here on
+       purpose: he wanted to write "donated the Seudah Shlishit" and could only
+       pick Kiddush before, because the old list had just these two choices.
+       The occasion now goes straight into the item's own title/text. */
     parnas: { parnas: "פרנס היום", nerLamaor: "נר למאור" },
     hazkara: { hazkara: "הזכרה", tanchumim: "תנחומים" },
     rabbi: { message: "הודעת הרב", brachaShabbat: "ברכת שבת" },

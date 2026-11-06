@@ -57,7 +57,7 @@ function renderCong(c, sourceLabel){
     return '<div class="balance-hero bh-' + b.kind + '"><span class="bh-label">' + esc(b.label) + '</span>' + (b.amount ? '<span class="bh-amount" dir="ltr">' + b.amount + '</span>' : '') + '</div>'; })() +
   '<p class="ledger-summary"><span>' + L("סך חיובים: ", "Total charges: ") + '<span dir="ltr">' + money(t.charges) + '</span></span><span>' + L("סך תשלומים: ", "Total payments: ") + '<span dir="ltr">' + money(t.payments) + '</span></span></p>' +
   '<table><tr><th>' + L("תאריך", "Date") + '</th><th>' + L("סוג", "Type") + '</th><th>' + L("סכום", "Amount") + '</th><th>' + L("תיאור", "Description") + '</th></tr>' +
-  rows.map(function(e){ return "<tr><td>" + esc(e.date) + "</td><td>" + esc(typeHe[e.type] || e.type) + '</td><td dir="ltr">' + money(e.amount) + "</td><td>" + esc(e.description) + "</td></tr>"; }).join("") +
+  rows.map(function(e){ return "<tr><td>" + esc(OH_UI.usDate(e.date)) + "</td><td>" + esc(typeHe[e.type] || e.type) + '</td><td dir="ltr">' + money(e.amount) + "</td><td>" + esc(e.description) + "</td></tr>"; }).join("") +
   '</table>' + (sourceLabel ? '<p class="oh-help"><small>' + esc(sourceLabel) + '</small></p>' : '') + '</div>';
 }
 document.getElementById('card').innerHTML = '<p>' + CL_("כניסה נדרשת", "Sign-in required") + '</p>';

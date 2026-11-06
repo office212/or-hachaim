@@ -29,7 +29,10 @@
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
   var TYPE_ORDER = ["announcement", "dedication", "flyer", "yahrzeit", "sponsor", "parnas", "mazaltov", "hazkara", "rabbi", "campaign", "donation"];
-  var TYPE_LABEL = { announcement: "הכרזה", dedication: "הקדשה", flyer: "פלייר", yahrzeit: "יארצייט", sponsor: "חסות קידוש / סעודה שלישית", parnas: "פרנס היום / נר למאור",
+  /* "חסות" replaced with free text (2026-11-05, Hanoch): the item itself is now
+     the whole occasion in plain words ("נתרם על ידי משפחת כהן לרגל בר המצווה"),
+     not a fixed Kiddush/Seudah Shlishit choice. */
+  var TYPE_LABEL = { announcement: "הכרזה", dedication: "הקדשה", flyer: "פלייר", yahrzeit: "יארצייט", sponsor: "נתרם על ידי... (תרומה לאירוע)", parnas: "פרנס היום / נר למאור",
     mazaltov: "מזל טוב", hazkara: "הזכרה / תנחומים", rabbi: "הודעת הרב / ברכת שבת", campaign: "מבצע / מגבית", donation: "תרומה (Zelle / QR)" };
   var STATUS_LABEL = { draft: "טיוטה", published: "מפורסם", archived: "בארכיון" };
   var WHY = { "ok": "יוצג עכשיו במסך", "not-published": "לא מפורסם (טיוטה)", "screen-only": "רק במסך המוגן, לא ב-/tv/", "before-start": "עוד לא התחיל (לפני תאריך ההתחלה)",
@@ -39,10 +42,12 @@
   var st = { items: [], role: null, filter: "active", typeFilter: "", editing: null, rest: false, pvReady: false, unsub: null, image: null, dirty: false };
 
   function today() { return E.nyParts(new Date()).key; }
-  function fmtDate(k) { if (!k) return ""; var p = k.split("-"); return +p[2] + "." + +p[1] + "." + p[0]; }
+  /* US format (2026-11-05, Hanoch: month first). */
+  function fmtDate(k) { if (!k) return ""; var p = k.split("-"); return +p[1] + "/" + +p[2] + "/" + p[0]; }
   function fmtStamp(v) {
     if (!v) return ""; var d = new Date(v); if (isNaN(d)) return "";
-    return d.toLocaleString("he-IL", { timeZone: "America/New_York", day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+    /* US format (2026-11-05, Hanoch: month first): en-US also reads the date month-first. */
+    return d.toLocaleString("en-US", { timeZone: "America/New_York", day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
   }
   function windowText(it) {
     if (it.type === "yahrzeit") { var y = it.yahrzeit || {}; return y.hDay ? "כל שנה, שבוע " + E.hebrewDayMonthLabel(+y.hDay, y.hMonth) : ""; }
@@ -95,6 +100,9 @@
     $("scShowWrap").hidden = type === "donation" || type === "campaign";
     $("scForcedNote").hidden = !(type === "donation" || type === "campaign");
     $("scBodyLabel").textContent = type === "yahrzeit" ? "הערה (רשות), למשל שעת אזכרה" : "טקסט בעברית";
+    /* Free text sponsorship (2026-11-05, Hanoch): a placeholder, not a fixed
+       list, so any occasion can be typed, not only Kiddush. */
+    $("scTitleHe").placeholder = type === "sponsor" ? "לדוגמה: קידוש נתרם על ידי משפחת כהן, או: סעודה שלישית נתרם על ידי..." : "כותרת קצרה";
     syncEnd();
   }
   function syncEnd() { var perm = $("scType").value === "dedication" && $("scPerm").checked; $("scEnd").disabled = perm; if (perm) $("scEnd").value = ""; }

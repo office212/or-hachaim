@@ -57,13 +57,15 @@
   /* the coming Shabbat (today when today is Shabbat) */
   function comingShabbat(iso) { var w = dow(iso); return addDays(iso, (6 - w + 7) % 7); }
   function nextDow(iso, wd) { return addDays(iso, (wd - dow(iso) + 7) % 7); }
-  /* "יום ד׳ 21.4.2027" */
+  /* US date format (2026-11-05, Hanoch: month first, "it's America"), everywhere
+     this reads: "יום ד׳ 4/21/2027". The stored value is always "YYYY-MM-DD";
+     only this text changes. */
   function dateHe(iso, withYear) {
     if (!isIso(iso)) return "";
     var p = iso.split("-");
-    return "יום " + WD_SHORT[dow(iso)] + " " + (+p[2]) + "." + (+p[1]) + (withYear === false ? "" : "." + p[0]);
+    return "יום " + WD_SHORT[dow(iso)] + " " + (+p[1]) + "/" + (+p[2]) + (withYear === false ? "" : "/" + p[0]);
   }
-  function dateShort(iso) { var p = iso.split("-"); return (+p[2]) + "." + (+p[1]); }
+  function dateShort(iso) { var p = iso.split("-"); return (+p[1]) + "/" + (+p[2]); }
 
   function daysMatch(days, wd) {
     switch (days || "all") {
@@ -171,7 +173,8 @@
     var p = iso.split("-");
     return WD_EN[dow(iso)] + " " + (+p[1]) + "/" + (+p[2]) + (withYear === false ? "" : "/" + p[0]);
   }
-  function dateShortLoc(iso) { if (!isEn()) return dateShort(iso); var p = iso.split("-"); return (+p[1]) + "/" + (+p[2]); }
+  /* US format (2026-11-05): dateShort is already month-first in both languages now, so the English branch is no longer different. Kept as one function for every caller. */
+  function dateShortLoc(iso) { return dateShort(iso); }
   function offsetLoc(off) {
     if (!isEn()) return offsetHe(off);
     off = Math.round(+off || 0); var sk = term("shkiah", "Shkiah");

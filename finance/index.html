@@ -43,7 +43,7 @@
 <div id="printArea"></div>
 <h2 id="nedarim">נדרים</h2>
 <div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">לכל נדר: שם, סכום ועלייה.</p>
-<label>מתפלל</label><select id="nederCong"></select><label>שם</label><input id="nederName"><label>סכום</label><input id="nederAmt" type="number" step="0.01"><label>עלייה</label><input id="nederAliyah" placeholder="למשל כהן, לוי, ישראל">
+<label>מתפלל</label><select id="nederCong"></select><label>סכום</label><input id="nederAmt" type="number" step="0.01"><label>עלייה</label><input id="nederAliyah" placeholder="למשל כהן, לוי, ישראל">
 <button class="btn btn-gold" onclick="addNeder()">הוסף נדר</button><p id="nederMsg"></p><div id="nederList"></div></div>
 <h2 hidden>חיובים קבועים</h2><!-- hidden (Hanoch Nov 5 7:57 AM: no recurring charges planned for now) -->
 <div class="gold-frame no-print" style="padding:1rem" hidden><p class="oh-help">דמי חבר נרשמים לבד, כל חודש או כל שנה.</p>
@@ -117,7 +117,7 @@ function showCard(id){
   var c = cons.find(function(x){ return x.id === id; }); if(!c) return;
   var t = totals(c);
   if(!pendingOp[id]) pendingOp[id] = newOp("entry");
-  var rows = c.ledger.map(function(e){ return "<tr><td>" + esc(e.date) + "</td><td>" + word(e.type) + (e.type === "payment" && e.method ? " | " + mword(e.method) : "") + "</td><td>" + amt$(e.amount) + "</td><td>" + esc(e.description) + "</td><td>" + esc(e.enteredBy) + "</td></tr>"; }).join("");
+  var rows = c.ledger.map(function(e){ return "<tr><td>" + esc(OH_UI.usDate(e.date)) + "</td><td>" + word(e.type) + (e.type === "payment" && e.method ? " | " + mword(e.method) : "") + "</td><td>" + amt$(e.amount) + "</td><td>" + esc(e.description) + "</td><td>" + esc(e.enteredBy) + "</td></tr>"; }).join("");
   document.getElementById("printArea").innerHTML =
     '<div class="gold-frame"><h2>' + L("כרטיס מתפלל: ", "Member card: ") + esc(c.name) + '</h2>' +
     '<p>' + L("טלפון: ", "Phone: ") + esc(c.phone) + ' | ' + L("מייל: ", "Email: ") + (c.email ? esc(c.email) : L("אין", "none")) + ' | ' + L("תאריך הדפסה: ", "Print date: ") + esc(today()) + '</p>' +
@@ -128,7 +128,7 @@ function showCard(id){
     '<div class="no-print" style="margin-top:1rem"><label>' + L("הוסף רשומה", "Add entry") + '</label>' +
     '<select id="eType" onchange="syncMethod()"><option value="charge">' + L("חיוב", "Charge") + '</option><option value="payment">' + L("תשלום", "Payment") + '</option><option value="correction">' + L("תיקון", "Correction") + '</option></select>' +
     '<div id="eMethodWrap" hidden><label for="eMethod">' + L("אמצעי תשלום", "Payment method") + '</label><select id="eMethod"><option value="">' + mword("unspecified") + '</option>' + PAY_METHODS.map(function(k){ return '<option value="' + k + '">' + mword(k) + '</option>'; }).join("") + '</select></div>' +
-    '<label for="eDate">' + L("תאריך", "Date") + '</label><input id="eDate" class="oh-entry-date" type="date" value="' + esc(today()) + '" max="' + esc(today()) + '">' +
+    '<label for="eDate">' + L("תאריך", "Date") + '</label><input id="eDate" class="oh-entry-date" type="date" lang="en-US" value="' + esc(today()) + '" max="' + esc(today()) + '">' +
     '<label>' + L("סכום (בתיקון: מינוס מוריד יתרה)", "Amount (correction: minus lowers it)") + '</label><input id="eAmt" type="number" step="0.01" inputmode="decimal"><label>' + L("תיאור", "Description") + '</label><input id="eDesc">' +
     '<button class="btn" id="eBtn" onclick="addEntry(' + jsArg(c.id) + ')">' + L("הוסף רשומה", "Add entry") + '</button><p id="eMsg" class="hint"></p></div></div>';
 }
@@ -168,7 +168,7 @@ async function addEntry(id){
   if (r.saved || r.reason === "duplicate-operationId" || r.reason === "test-only") {
     if (r.reason !== "duplicate-operationId") c.ledger.push({ date: entry.date, operationId: opId, type: type, amount: entry.amount, description: desc, enteredBy: who(), method: method });
     delete pendingOp[id]; /* the next entry gets a new id */
-    if (r.saved) logLine("finance", "נרשם " + TYPE_HE[type] + " של " + money(entry.amount) + (method ? " (" + MW[method][0] + ")" : "") + " ל" + c.name + (entry.date !== today() ? " (תאריך רטרואקטיבי: " + entry.date + ")" : ""), { code: "ledger." + type, target: c.name, targetId: id, amount: entry.amount });
+    if (r.saved) logLine("finance", "נרשם " + TYPE_HE[type] + " של " + money(entry.amount) + (method ? " (" + MW[method][0] + ")" : "") + " ל" + c.name + (entry.date !== today() ? " (תאריך רטרואקטיבי: " + OH_UI.usDate(entry.date) + ")" : ""), { code: "ledger." + type, target: c.name, targetId: id, amount: entry.amount });
     showCard(id); renderList();
     document.getElementById("eMsg").textContent = r.saved ? L("נשמר.", "Saved.") : (r.reason === "test-only" ? L("תצוגה מקומית בלבד, לא נשמר.", "Local preview only, not saved.") : L("כבר נשמר.", "Already saved."));
   } else {
@@ -241,7 +241,7 @@ function renderNederCong(){
   /* Stage D: only active members are offered for a new neder */
   document.getElementById("nederCong").innerHTML = cons.filter(function(c){ return !window.OH_MEMBERS || window.OH_MEMBERS.isActive(c); }).map(function(c){ return '<option value="' + esc(c.id) + '">' + esc(c.name) + '</option>'; }).join("");
   document.getElementById("nederList").innerHTML = pledges.map(function(n){
-    return "<p>" + esc(n.date) + " | " + esc(n.name) + " | " + amt$(n.amount) + " | " + L("עלייה: ", "Aliyah: ") + esc(n.aliyah) + "</p>";
+    return "<p>" + esc(OH_UI.usDate(n.date)) + " | " + esc(n.name) + " | " + amt$(n.amount) + " | " + L("עלייה: ", "Aliyah: ") + esc(n.aliyah) + "</p>";
   }).join("") || "<p>" + L("אין נדרים עדיין", "No nedarim yet") + "</p>";
 }
 /* One operationId for the neder form, kept until a confirmed save. */
@@ -249,9 +249,12 @@ var nederOp = null;
 async function addNeder(){
   var id = document.getElementById("nederCong").value;
   var c = cons.find(function(x){ return x.id === id; });
-  var name = document.getElementById("nederName").value.trim(), amt = Number(document.getElementById("nederAmt").value), aliyah = document.getElementById("nederAliyah").value.trim();
+  /* Hardening (2026-11-05, Hanoch: "the name field is redundant, the member is already chosen"):
+     the name on the neder is always the selected member's own name, never a
+     separately typed field, so the two can never disagree. */
+  var name = c ? c.name : "", amt = Number(document.getElementById("nederAmt").value), aliyah = document.getElementById("nederAliyah").value.trim();
   var msg = document.getElementById("nederMsg");
-  if(!c || !name || !isFinite(amt) || amt <= 0){ msg.textContent = L("בחר מתפלל, שם וסכום בפלוס.", "Choose a member, a name and a plus amount."); return; }
+  if(!c || !isFinite(amt) || amt <= 0){ msg.textContent = L("בחר מתפלל וסכום בפלוס.", "Choose a member and a plus amount."); return; }
   /* Foundation: a neder first creates a pledge, not a payment.
      Converting it creates a ledger charge with a unique operationId,
      so a double click records one charge only. */
@@ -270,10 +273,10 @@ async function addNeder(){
   if (r.reason !== "duplicate-operationId") {
     pledges.push({ id: "pledge-local-" + Date.now(), congregantId: id, name: name, amount: entry.amount, aliyah: aliyah, date: entry.date, status: "converted" });
     c.ledger.push({ date: entry.date, operationId: opId, type: "charge", amount: entry.amount, description: entry.description, enteredBy: who() });
-    if (r.saved) logLine("finance", "נרשם נדר של " + money(entry.amount) + " ל" + c.name + " (" + name + (aliyah ? ", עלייה: " + aliyah : "") + ")", { code: "ledger.neder", target: c.name, targetId: id, amount: entry.amount });
+    if (r.saved) logLine("finance", "נרשם נדר של " + money(entry.amount) + " ל" + c.name + (aliyah ? " (עלייה: " + aliyah + ")" : ""), { code: "ledger.neder", target: c.name, targetId: id, amount: entry.amount });
   }
   nederOp = null;
-  document.getElementById("nederName").value = ""; document.getElementById("nederAmt").value = ""; document.getElementById("nederAliyah").value = "";
+  document.getElementById("nederAmt").value = ""; document.getElementById("nederAliyah").value = "";
   msg.textContent = (r.saved ? L("נשמר: ", "Saved: ") : (r.reason === "test-only" ? L("תצוגה מקומית: ", "Local preview: ") : L("כבר נשמר: ", "Already saved: "))) + L("נדר של ", "neder for ") + c.name + ".";
   renderList(); renderNederCong();
 }
@@ -320,7 +323,7 @@ function renderPledges(){
   var el = document.getElementById("pledgeList"); if(!el) return;
   el.innerHTML = pledges.map(function(p){
     var c = cons.find(function(x){ return x.id === p.congregantId; });
-    return "<p>" + esc(p.date) + " | " + esc(c ? c.name : p.congregantId) + " | " + esc(p.name) + " | " + amt$(p.amount) + " | " + L("עלייה: ", "Aliyah: ") + esc(p.aliyah) + " | " + word(p.status) + "</p>";
+    return "<p>" + esc(OH_UI.usDate(p.date)) + " | " + esc(c ? c.name : p.congregantId) + " | " + esc(p.name) + " | " + amt$(p.amount) + " | " + L("עלייה: ", "Aliyah: ") + esc(p.aliyah) + " | " + word(p.status) + "</p>";
   }).join("");
 }
 function annualReport(){

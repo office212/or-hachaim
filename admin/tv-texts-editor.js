@@ -77,7 +77,7 @@
       '<details class="tt-layout" id="ttLayoutBox"><summary><b>' + esc(L("ttLayoutTitle")) + '</b> <span class="oh-help">' + esc(L("ttLayoutSub")) + '</span></summary><div id="ttLayout"></div></details>' +
       '<input class="tt-search" id="ttSearch" type="search" placeholder="' + esc(L("ttSearch")) + '" aria-label="' + esc(L("ttSearch")) + '">' +
       '<div id="ttList" class="tt-list"></div></div>' +
-      '<div class="tt-side"><div class="tt-pv-head"><b>' + esc(L("ttPreview")) + '</b><a href="../tv/" target="_blank" rel="noopener">' + esc(L("ttOpen")) + '</a></div><div class="tt-pv" id="ttPv"><iframe id="ttFrame" title="' + esc(L("ttPreview")) + '" src="about:blank"></iframe></div></div></div></div>';
+      '<div class="tt-side"><div class="tt-pv-head"><b>' + esc(L("ttPreview")) + '</b><a href="../../tv/" target="_blank" rel="noopener">' + esc(L("ttOpen")) + '</a></div><div class="tt-pv" id="ttPv"><iframe id="ttFrame" title="' + esc(L("ttPreview")) + '" src="about:blank"></iframe></div></div></div></div>';
     $("ttSearch").addEventListener("input", function () { S.q = this.value.trim(); renderList(); });
     sec.addEventListener("click", onClick); sec.addEventListener("input", function (e) { var i = e.target.closest && e.target.closest("[data-tt-in]"); if (!i) return; var dk = i.getAttribute("data-tt-in"); (S.draft[dk] = S.draft[dk] || {})[i.getAttribute("data-lang")] = i.value; preview(dk); }); var tf = $("ttFrame"); if (tf) tf.addEventListener("load", function () { preview(); });
     fit(); window.addEventListener("resize", fit);
@@ -155,7 +155,7 @@
           else if (Date.now() - t0 > 9000) { clearInterval(iv); res(!want); }
         }, 400);
       };
-      f.src = "../tv/?ohpv=" + Date.now();
+      f.src = "../../tv/?ohpv=" + Date.now();
     });
   }
   function apply(r) { if (r && r.saved) { S.texts = r.texts || {}; S.textsEn = r.textsEn || {}; S.layout = r.layout || {}; preview(); } }
@@ -224,7 +224,7 @@
     var r = await window.OH_FIREBASE.loadScreenTexts();
     if (r && r.ok) { S.texts = r.texts; S.textsEn = r.textsEn; S.layout = r.layout; }
     render();
-    var f = $("ttFrame"); if (f && (!f.getAttribute("src") || f.getAttribute("src") === "about:blank")) f.src = "../tv/";
+    var f = $("ttFrame"); if (f && (!f.getAttribute("src") || f.getAttribute("src") === "about:blank")) f.src = "../../tv/";
     if (/#ttSection$/.test(location.hash)) { try { $("ttSection").scrollIntoView({ block: "start" }); } catch (e) {} }
   }
   async function tick() {

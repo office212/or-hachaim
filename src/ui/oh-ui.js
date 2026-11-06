@@ -30,6 +30,14 @@
       .formatToParts(d || new Date()).forEach(function (x) { p[x.type] = x.value; });
     return p.year + "-" + p.month + "-" + p.day;
   }
+  /* US date format (2026-11-05, Hanoch: "dates must be month first, it's America"):
+     a "YYYY-MM-DD" value shown as "M/D/YYYY" everywhere in the gabbai system.
+     The stored value never changes, only how it reads on screen. */
+  function usDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso == null ? "" : iso));
+    if (!m) return iso == null ? "" : String(iso);
+    return (+m[2]) + "/" + (+m[3]) + "/" + m[1];
+  }
   function ledgerTotals(c) {
     var charges = 0, payments = 0, corrections = 0;
     ((c && c.ledger) || []).forEach(function (e) {
@@ -95,7 +103,7 @@
     };
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
   }
-  var api = { isolateBilingual: isolateBilingual, esc: esc, jsArg: jsArg, cents: cents, money: money, nyDate: nyDate, ledgerTotals: ledgerTotals, balanceInfo: balanceInfo, addMonths: addMonths };
+  var api = { isolateBilingual: isolateBilingual, esc: esc, jsArg: jsArg, cents: cents, money: money, nyDate: nyDate, usDate: usDate, ledgerTotals: ledgerTotals, balanceInfo: balanceInfo, addMonths: addMonths };
   global.OH_UI = api;
   if (typeof global.ledgerTotals !== "function") global.ledgerTotals = ledgerTotals;
   if (typeof module !== "undefined" && module.exports) module.exports = api;

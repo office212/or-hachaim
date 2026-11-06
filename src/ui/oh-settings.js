@@ -3,11 +3,15 @@
    One big card per setup thing, one action each. A card is there only for the
    people who may use it (no lock messages):
      interface language   every gabbai
-     prayer times         content gabbaim and the super admin  -> admin/#ptSection
-     screen texts and layout   content gabbaim and the super admin -> admin/#ttSection
-     landing page wording      super admin (2040 phase 2)       -> admin/#htSection
+     prayer times         content gabbaim and the super admin  -> gabbai/tv/#ptSection
+     screen texts and layout   content gabbaim and the super admin -> gabbai/tv/#ttSection
+     landing page wording      super admin (2040 phase 2)       -> gabbai/landing/#htSection
      gabbaim and permissions   super admin                      -> admin/#userMgmtSection
-     backup and restore        super admin                      -> backup/ */
+     backup and restore        super admin                      -> backup/
+     2026-11-05 (Hanoch: TV management separate from the landing page): prayer
+     times and screen texts moved off admin/ onto their own gabbai/tv/ page;
+     landing page wording moved onto its own gabbai/landing/ page; admin/ now
+     holds only gabbaim-and-permissions and the broadcast form. */
 (function () {
   "use strict";
   var DEF = {
@@ -49,11 +53,11 @@
     var seg = SH && SH.segHtml ? SH.segHtml("setLangSeg", [{ v: "he", label: "עברית", flags: ["il"], lang: "he" }, { v: "en", label: "English", flags: ["us"], lang: "en" }], window.OH_LANG === "en" ? "en" : "he", L("setLangT")) : "";
     h += card("setLang", IC.lang, L("setLangT"), L("setLangD"), seg);
     if (role.isSuperAdmin || role.canScreen) {
-      h += card("setTimes", IC.clock, L("setTimesT"), L("setTimesD"), go("admin/#ptSection", L("setTimesGo")));
-      h += card("setTexts", IC.tv, L("setTextsT"), L("setTextsD"), go("admin/#ttSection", L("setTextsGo")));
+      h += card("setTimes", IC.clock, L("setTimesT"), L("setTimesD"), go("gabbai/tv/#ptSection", L("setTimesGo")));
+      h += card("setTexts", IC.tv, L("setTextsT"), L("setTextsD"), go("gabbai/tv/#ttSection", L("setTextsGo")));
     }
     if (role.isSuperAdmin) {
-      h += card("setHome", IC.home, L("setHomeT"), L("setHomeD"), go("admin/#htSection", L("setHomeGo")));
+      h += card("setHome", IC.home, L("setHomeT"), L("setHomeD"), go("gabbai/landing/#htSection", L("setHomeGo")));
       h += card("setUsers", IC.shield, L("setUsersT"), L("setUsersD"), go("admin/#userMgmtSection", L("setUsersGo")));
       h += card("setBackup", IC.cloud, L("setBackupT"), L("setBackupD"), go("backup/", L("setBackupGo")));
     }

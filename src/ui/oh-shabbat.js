@@ -180,7 +180,7 @@
     render();
     if (window.OH_SHEET_EDITOR) {
       try {
-        window.OH_SHEET_EDITOR.mount(document.getElementById("ohSheetEd"), { shabbat: sh, sb: sb, days: (daily && daily.days) || {}, docs: docs, settings: sheetSettings, ptHref: root + "admin/#ptSection",
+        window.OH_SHEET_EDITOR.mount(document.getElementById("ohSheetEd"), { shabbat: sh, sb: sb, days: (daily && daily.days) || {}, docs: docs, settings: sheetSettings, ptHref: root + "gabbai/tv/#ptSection",
           timeOf: function (d, iso) { return t.timeOn(d, iso, t.zman, isYT); } });
       } catch (e) {}
     }

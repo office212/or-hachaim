@@ -204,7 +204,7 @@
         var endEl = st.el.querySelector("#ohCmdEnd"); if (endEl && endEl.value) it2.endDate = endEl.value;
         res = await SC.save(it2, "create");
         if (res && res.saved) { undo = { kind: "sc-archive", id: res.id, col: res.col, item: it2 }; if (!st.choice.publish) okText = L("cmdSavedDraft"); logged = !!res.logged; /* screen-content writes its own log line */ }
-        label = (p.action === "sponsor" ? "חסות: " : "הכרזה: ") + it2.titleHe;
+        label = (p.action === "sponsor" ? "תרומה: " : "הכרזה: ") + it2.titleHe;
       }
     } catch (e) { res = { saved: false, reason: String(e) }; }
     st.busy = false;

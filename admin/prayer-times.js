@@ -125,7 +125,7 @@
       '</div></div>' +
       '<aside class="ohpt-card ohpt-pv" aria-label="' + esc(L("ptPreviewTitle")) + '"><h3><i aria-hidden="true"></i>' + esc(L("ptPreviewTitle")) + '</h3>' +
       '<div class="ohpt-tv" id="ptTv"></div><p class="oh-help">' + esc(L("ptPreviewNote")) + '</p>' +
-      '<a class="ohpt-btn outline" href="../tv/" target="_blank" rel="noopener">' + esc(L("ptPreviewOpen")) + '</a></aside></div>';
+      '<a class="ohpt-btn outline" href="../../tv/" target="_blank" rel="noopener">' + esc(L("ptPreviewOpen")) + '</a></aside></div>';
     $("ptList").addEventListener("click", function (e) { var b = e.target.closest("[data-add]"); if (b && !S.busy) openForm(null, b.getAttribute("data-add")); });
     $("ptCancelBtn").addEventListener("click", closeForm);
     $("ptForm").addEventListener("submit", function (e) { e.preventDefault(); save(); });
@@ -195,7 +195,7 @@
     var box = $("ptTv"); if (!box) return;
     var f = document.createElement("iframe");
     f.title = L("ptPreviewTitle"); f.setAttribute("tabindex", "-1"); f.setAttribute("aria-hidden", "true");
-    f.src = "../tv/";
+    f.src = "../../tv/";
     box.appendChild(f); S.frame = f;
     var fit = function () { var w = box.clientWidth; if (w) f.style.transform = "scale(" + (w / 1920) + ")"; };
     fit(); if (window.ResizeObserver) new ResizeObserver(fit).observe(box); else window.addEventListener("resize", fit);
@@ -216,7 +216,7 @@
         setTimeout(poll, 300);
       }
       f.addEventListener("load", function onl() { f.removeEventListener("load", onl); setTimeout(poll, 300); });
-      f.src = "../tv/?t=" + Date.now();
+      f.src = "../../tv/?t=" + Date.now();
     });
   }
 
@@ -344,7 +344,7 @@
     if (S.kind === "sunset") {
       var ov = $("ptOffMin").value;
       if (ov === "" || !(+ov >= 0 && +ov <= 180)) { err.textContent = L("ptNeedOffset"); $("ptMoreBox").open = true; $("ptOffMin").focus(); return; }
-      var TT = T(); if (TT && TT.loadZmanim) { try { await TT.loadZmanim("../"); } catch (e) {} }
+      var TT = T(); if (TT && TT.loadZmanim) { try { await TT.loadZmanim("../../"); } catch (e) {} }
       var first = TT ? TT.firstDay(rule, todayIso(), 400) : null;
       if (!first) { err.textContent = L("ptNeverApplies"); return; }
       min = TT.sunsetRuleMin(TT.zman, first, rule.offsetMin);
@@ -415,7 +415,7 @@
       if (S.role && role && S.role.email === role.email) return;
       S.role = role || {}; S.items = []; S.editId = null; S.confirmId = null;
       startPreview(); load();
-      if (T() && T().loadZmanim) T().loadZmanim("../").then(function () { render(); sunsetHint(); }, function () {});
+      if (T() && T().loadZmanim) T().loadZmanim("../../").then(function () { render(); sunsetHint(); }, function () {});
     },
     hide: function () { var sec = $("ptSection"); if (sec) sec.hidden = true; S.role = null; },
     _minutesOf12: minutesOf12, _to12: to12, _to24: to24

@@ -483,11 +483,11 @@ var BOARDS = [
   { k: "phHalacha", he: "הלכה יומית", en: "Daily Halacha", body: "PLACEHOLDER / פליסהולדר: daily halacha, 365 cycle, to be entered by a gabbai." },
   { k: "phMazalTov", he: "מזל טוב", en: "Mazal Tov", body: "PLACEHOLDER / פליסהולדר: Mazal Tov notice to be entered by a gabbai." },
   { k: "phHazkarot", he: "הזכרות", en: "Hazkarot", body: "PLACEHOLDER / פליסהולדר: hazkarot and condolences to be entered by a gabbai." },
-  { k: "phSponsors", he: "נותני חסות: קידוש וסעודה שלישית", en: "Kiddush and Seudah Shelishit Sponsors", body: "PLACEHOLDER / פליסהולדר: Kiddush and Seudah Shlishit sponsors to be entered by a gabbai." },
+  { k: "phSponsors", he: "נתרם על ידי: לדוגמה קידוש או סעודה שלישית", en: "Donated By: for example Kiddush or Seudah Shlishit", body: "PLACEHOLDER / פליסהולדר: donations for Kiddush, Seudah Shlishit or any other occasion, in free text, to be entered by a gabbai." },
   { k: "phParnas", he: "פרנס היום", en: "Parnas Hayom", body: "PLACEHOLDER / פליסהולדר: Parnas Hayom and Ner LaMaor to be entered by a gabbai." },
   { k: "phRabbi", he: "ברכת הרב", en: "Message from the Rav", body: "PLACEHOLDER / פליסהולדר: rabbi message and Shabbat blessing to be entered by a gabbai." },
   { k: "phFlyers", he: "פליירים", en: "Flyers", body: "PLACEHOLDER / פליסהולדר: date-windowed flyers, shown only inside their start and end dates, to be entered by a gabbai. Not yet saved to Firestore." },
-  { k: "phDated", he: "נותני חסות לפי תאריך", en: "Sponsorships by Date", body: "PLACEHOLDER / פליסהולדר: date-windowed sponsorships, shown only inside their start and end dates, to be entered by a gabbai. Not yet saved to Firestore." },
+  { k: "phDated", he: "נתרם על ידי, לפי תאריך", en: "Donations by Date", body: "PLACEHOLDER / פליסהולדר: date-windowed donations, shown only inside their start and end dates, to be entered by a gabbai. Not yet saved to Firestore." },
   { k: "phDedications", he: "הקדשות קבועות", en: "Permanent Dedications", body: "PLACEHOLDER / פליסהולדר: permanent dedications to be entered by a gabbai. Not yet saved to Firestore." },
   { k: "phCampaign", he: "מגבית", en: "Campaign", body: "PLACEHOLDER / פליסהולדר: campaign board to be entered by a gabbai. Weekday only, hidden on Shabbat.", weekdayOnly: true },
   { k: "phYahrzeit", he: "יורצייט", en: "Yahrzeit", body: "PLACEHOLDER / פליסהולדר: yahrzeit added once, recurs yearly in its week, to be entered by a gabbai. Not yet saved to Firestore." }

@@ -57,8 +57,15 @@
     { k: ["גיבוי", "גיבויים", "הגיבוי", "backup", "backups"], href: "backup/", he: "גיבוי", can: "super" },
     { k: ["שחזור", "שחזר"], href: "restore/", he: "שחזור", can: "super" },
     { k: ["הרשאות", "משתמשים", "ניהול משתמשים", "גבאים"], href: "admin/#userMgmtSection", he: "הרשאות", can: "super" },
-    { k: ["זמני תפילה", "זמני התפילה", "זמנים", "prayer times", "zmanim"], href: "admin/#ptSection", he: "זמני תפילה", can: "screen" },
-    { k: ["עורך המסך", "תוכן", "תוכן המסך", "הכרזות", "עריכת המסך", "חסויות", "יארצייטים"], href: "admin/#screenContent", he: "תוכן המסך", can: "screen" },
+    { k: ["זמני תפילה", "זמני התפילה", "זמנים", "prayer times", "zmanim"], href: "gabbai/tv/#ptSection", he: "זמני תפילה", can: "screen" },
+    /* 2040 phase 1 fix (2026-11-05, Hanoch: TV management separate from the landing page, and
+       TV content on its own simple screen, separate from the TV headings): the old single
+       "admin/#screenContent" page split into gabbai/tv/ (times + headings) and
+       gabbai/tv/content/ (the content itself). "חסויות" stays as a recognized word so an old
+       habit still finds the content screen, where the free-text item itself now carries the
+       occasion instead of a fixed list. */
+    { k: ["ניהול המסך", "הגדרות מסך", "כותרות המסך", "זמנים וכותרות"], href: "gabbai/tv/", he: "ניהול המסך", can: "screen" },
+    { k: ["עורך המסך", "תוכן", "תוכן המסך", "הכרזות", "עריכת המסך", "חסויות", "תרומות", "יארצייטים"], href: "gabbai/tv/content/", he: "תוכן המסך", can: "screen" },
     { k: ["המסך", "מסך", "טלוויזיה", "הטלוויזיה", "tv", "המסך בבית הכנסת", "screen"], href: "tv/", he: "המסך", can: "any" },
     { k: ["חבילת שבת", "עלון שבת", "עלון", "חבילת השבת", "עלון השבת", "שבת"], href: "gabbai/shabbat/", he: "חבילת שבת", can: "screen" },
     { k: ["דף הבית", "בית", "ראשי", "home"], href: "gabbai/", he: "דף הבית", can: "any" },
@@ -802,16 +809,23 @@
       { k: "פעולה", v: draft ? "הכרזה חדשה, טיוטה (לא על המסך)" : "הכרזה חדשה על המסך" }, { k: "כותרת", v: title }].concat(body ? [{ k: "טקסט", v: body }] : []).concat([
       { k: "מתי", v: "מ" + T.dateHe(item.startDate) + " עד " + T.dateHe(item.endDate) }]), warnings: [] } };
   }
+  /* Free text (2026-11-05, Hanoch: "חסות does not sound good"): the generated
+     title now reads "X נתרם על ידי Y" instead of "X בחסות Y", and "בחסות" is
+     still read as an input synonym so an old habit keeps working, but it is
+     never written out any more. subtype still records kiddush/seudah3 for
+     this one shortcut; a different occasion (not Kiddush or Seudah Shlishit)
+     has no command-bar shortcut and is written in the TV content screen
+     (gabbai/tv/content/) instead, as free text, with no fixed list. */
   function parseSponsor(t, ctx) {
     var m = t.match(/^(?:חסות\s+)?(הקידוש|קידוש|סעודה שלישית|סעודה ג'|סעודה ג)(?:\s+(?:השבת|בשבת הקרובה|בשבת|לשבת|של שבת))?\s*(?:בחסות|נתרם על ידי|נתרם ע"י|ע"י|על ידי|לכבוד|:|-)\s*(.+)$/);
     if (!m) return null;
     var who = m[2].trim().replace(/^[:-]\s*/, "");
-    if (who.length < 2) return err("בחסות מי?", ["קידוש בחסות משפחת כהן"]);
+    if (who.length < 2) return err("מי תרם?", ["קידוש נתרם על ידי משפחת כהן"]);
     var sub = /סעודה/.test(m[1]) ? "seudah3" : "kiddush", sh = T.comingShabbat(ctx.today), fri = T.addDays(sh, -1);
     var label = sub === "kiddush" ? "הקידוש" : "סעודה שלישית";
-    var item = { type: "sponsor", subtype: sub, titleHe: label + " בחסות " + who, bodyHe: "", startDate: T.addDays(sh, -6) < ctx.today ? ctx.today : T.addDays(sh, -6), endDate: sh, showOn: "all", status: "published" };
+    var item = { type: "sponsor", subtype: sub, titleHe: label + " נתרם על ידי " + who, bodyHe: "", startDate: T.addDays(sh, -6) < ctx.today ? ctx.today : T.addDays(sh, -6), endDate: sh, showOn: "all", status: "published" };
     return { type: "plan", plan: { action: "sponsor", item: item, publish: true, rows: [
-      { k: "פעולה", v: "חסות " + (sub === "kiddush" ? "קידוש" : "סעודה שלישית") + " על המסך" }, { k: "טקסט", v: item.titleHe },
+      { k: "פעולה", v: "תרומה ל" + (sub === "kiddush" ? "קידוש" : "סעודה שלישית") + " על המסך" }, { k: "טקסט", v: item.titleHe },
       { k: "לשבת", v: T.dateHe(sh) }, { k: "מתי על המסך", v: "מ" + T.dateHe(item.startDate) + " עד מוצאי שבת" }], warnings: [] } };
   }
 
@@ -857,7 +871,7 @@
     var timeOnly = /^(?:ב-?|ל-?)?\d{1,2}[:.]\d{2}(?:\s+\S+)?$/.test(t);
     if (timeOnly) return err("חסר שם התפילה", ["מנחה " + t, "שחרית " + t, "ערבית " + t]);
     if (/(שילם|חייב|יתרה|תרומה|תרומות|נדר)/.test(t)) return err("שאלות על כספים עוד לא בשורה הזאת. אפשר לפתוח את הכספים", allowed("finance", ctx.role) ? ["כספים", "נדרים"] : []);
-    if (/(יארצייט|אזכרה|הזכרה|פלייר|חסות|הקדשה|מזל טוב)/.test(t)) return err("את זה עושים כרגע בעורך המסך", ["תוכן המסך", "קידוש בחסות משפחת כהן", "הכרזה: ..."]);
+    if (/(יארצייט|אזכרה|הזכרה|פלייר|חסות|הקדשה|מזל טוב)/.test(t)) return err("את זה עושים כרגע בעורך המסך", ["תוכן המסך", "קידוש נתרם על ידי משפחת כהן", "הכרזה: ..."]);
     if (/^(?:מחק|תמחק|הסר|שנה|עדכן|הוסף)(?:\s|$)/.test(t)) return err("איזה זמן תפילה?", ["מחק שחרית 7:05", "שנה מנחה ל-6:45", "הוסף ערבית 7:30"]);
     return err("לא הבנתי את \"" + t + "\". אפשר לנסות למשל:", examples(ctx.role));
   }
