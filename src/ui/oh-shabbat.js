@@ -127,27 +127,33 @@
      included: OH_SHEET.lines), plus the Kiddush sponsors and this week's yahrzeits.
      Sent by functions/notifications sendBroadcast (super admin only, checked there):
      the bell gets a short line, the email the full text. */
+  /* Nov 6 (Hanoch): English first, then Hebrew: the title, the email (the sheet's
+     English lines, then its Hebrew lines) and the bell line (English). */
   function shalomMessage() {
     var ed = window.OH_SHEET_EDITOR && window.OH_SHEET_EDITOR._state, m = ed && ed.model, S = window.OH_SHEET, g = st.data || {};
-    var parasha = (m && m.title && m.title.he) || g.parashaHe || "";
-    var title = "שבת שלום" + (parasha ? " | " + parasha : "");
-    var GN = { erev: "ערב שבת", morning: "שבת בבוקר", afternoon: "שבת אחר הצהריים" };
-    var full = [], short = [];
-    if (m && S && S.lines) {
-      S.lines(m, "he").forEach(function (grp) {
-        full.push(""); full.push(GN[grp.group] || "");
-        grp.rows.forEach(function (r) { var t = r.line ? r.line : r.label + " " + r.time; full.push(t); short.push(t); });
-      });
-      if (m.mev && !m.mev.hidden && m.mev.he) { full.push(""); full.push(m.mev.he); }
+    var he = (m && m.title && m.title.he) || g.parashaHe || "", en = (m && m.title && m.title.en) || "";
+    var title = "Shabbat Shalom" + (en ? " | " + en : "") + " / שבת שלום" + (he ? " | " + he : "");
+    var GN = { he: { erev: "ערב שבת", morning: "שבת בבוקר", afternoon: "שבת אחר הצהריים" }, en: { erev: "Erev Shabbat", morning: "Shabbat morning", afternoon: "Shabbat afternoon" } };
+    function part(lang, short) {
+      var out = [];
+      if (m && S && S.lines) {
+        S.lines(m, lang).forEach(function (grp) {
+          out.push(""); out.push(GN[lang][grp.group] || "");
+          grp.rows.forEach(function (r) { var t = r.line ? r.line : r.label + " " + r.time; out.push(t); if (short) short.push(t); });
+        });
+        if (m.mev && !m.mev.hidden && (lang === "en" ? m.mev.en : m.mev.he)) { out.push(""); out.push(lang === "en" ? m.mev.en : m.mev.he); }
+      }
+      var kid = (g.sponsors || []).map(function (x) { return x.text; }).filter(Boolean);
+      if (kid.length) { out.push(""); out.push((lang === "en" ? "Sponsored this Shabbat: " : "תרומות השבת: ") + kid.join(" | ")); }
+      var yz = (g.yahrzeits || []).map(function (y) { return y.name; }).filter(Boolean);
+      if (yz.length) { out.push(""); out.push((lang === "en" ? "Yahrzeit this week: " : "יארצייט השבוע: ") + yz.join(", ")); }
+      while (out.length && !out[0]) out.shift();
+      return out;
     }
-    var kid = (g.sponsors || []).map(function (x) { return x.text; }).filter(Boolean);
-    if (kid.length) { full.push(""); full.push("תרומות השבת: " + kid.join(" | ")); }
-    var yz = (g.yahrzeits || []).map(function (y) { return y.name; }).filter(Boolean);
-    if (yz.length) { full.push(""); full.push("יארצייט השבוע: " + yz.join(", ")); }
-    while (full.length && !full[0]) full.shift();
+    var short = [], enPart = part("en", short), hePart = part("he", null);
     var bell = short.join(" · ");
     if (bell.length > 480) bell = bell.slice(0, 477) + "...";
-    return { title: title, bell: bell, email: full.join("\n") };
+    return { title: title, bell: bell, email: enPart.join("\n") + (enPart.length && hePart.length ? "\n\n----\n\n" : "") + hePart.join("\n") };
   }
   function shalomBox() {
     if (!st.isSA) return "";

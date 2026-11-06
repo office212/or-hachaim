@@ -28,7 +28,14 @@ claims and backup). There is no custom server.
 **Public contact email:** orhachaimcong@gmail.com.
 
 Design language: light Jerusalem stone, navy (#0e2c4c), thin gold
-lines, no red or burgundy, Hebrew first, then English. One language is shown at a time.
+lines, no red or burgundy. One language is shown at a time. **English is
+the default since 2026-11-06** (Hanoch): a device opens the site in English
+and keeps Hebrew once the language button chose it (localStorage `ohLang`;
+`src/ui/labels.js`, and the landing, privacy and offline pages' own first
+script). Emails put English first, then Hebrew (the welcome email, and
+"שבת שלום לקהילה": the sheet's English lines, then its Hebrew lines; its
+bell line is English). The TV keeps its own fixed look (Hebrew with
+English lines) and does not follow this choice.
 The official congregation logo (`src/assets/logo-4k-transparent.png`)
 is never altered.
 

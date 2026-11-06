@@ -81,22 +81,12 @@ function shouldSend(before, after) {
   return false;
 }
 
+/* Nov 6 (Hanoch): English first, then Hebrew (subject, text and html). */
 function buildMail(c) {
   const name = String(c.name || "").trim();
   const email = String(c.email || "").trim();
-  const subject = "ברוכים הבאים לאתר בית הכנסת אור החיים / Welcome to the Or Hachaim website";
+  const subject = "Welcome to the Or Hachaim website / ברוכים הבאים לאתר בית הכנסת אור החיים";
   const text =
-    "שלום " + (name || "") + ",\n\n" +
-    "נרשמת כמתפלל בבית הכנסת אור החיים, ועכשיו יש לך חשבון באתר שלנו.\n\n" +
-    "מה אפשר לראות באתר:\n" +
-    "את היתרה שלך ואת היסטוריית התשלומים, ואת זמני התפילה וזמני היום.\n\n" +
-    "איך נכנסים:\n" +
-    "היכנס עם גוגל באותה כתובת מייל: " + email + "\n" +
-    "החשבון שלי: " + SITE + "/congregant/\n" +
-    "דף הבית: " + SITE + "/\n\n" +
-    "שאלות: " + CONTACT_EMAIL + " | (646) 529-2504 | (347) 244-9382\n\n" +
-    "בברכה,\nבית הכנסת אור החיים\n\n" +
-    "----\n\n" +
     "Hello " + (name || "") + ",\n\n" +
     "You were added as a member of Or Hachaim Congregation, and you now have an account on our website.\n\n" +
     "What you can see on the site:\n" +
@@ -106,18 +96,19 @@ function buildMail(c) {
     "My account: " + SITE + "/congregant/\n" +
     "Home page: " + SITE + "/\n\n" +
     "Questions: " + CONTACT_EMAIL + " | (646) 529-2504 | (347) 244-9382\n\n" +
-    "Or Hachaim Congregation";
+    "Or Hachaim Congregation\n\n" +
+    "----\n\n" +
+    "שלום " + (name || "") + ",\n\n" +
+    "נרשמת כמתפלל בבית הכנסת אור החיים, ועכשיו יש לך חשבון באתר שלנו.\n\n" +
+    "מה אפשר לראות באתר:\n" +
+    "את היתרה שלך ואת היסטוריית התשלומים, ואת זמני התפילה וזמני היום.\n\n" +
+    "איך נכנסים:\n" +
+    "היכנס עם גוגל באותה כתובת מייל: " + email + "\n" +
+    "החשבון שלי: " + SITE + "/congregant/\n" +
+    "דף הבית: " + SITE + "/\n\n" +
+    "שאלות: " + CONTACT_EMAIL + " | (646) 529-2504 | (347) 244-9382\n\n" +
+    "בברכה,\nבית הכנסת אור החיים";
   const html =
-    "<div dir=\"rtl\" style=\"font-family:Arial,sans-serif;line-height:1.7;color:#26231e\">" +
-    "<p>שלום " + escHtml(name) + ",</p>" +
-    "<p>נרשמת כמתפלל בבית הכנסת אור החיים, ועכשיו יש לך חשבון באתר שלנו.</p>" +
-    "<p><b>מה אפשר לראות באתר:</b><br>את היתרה שלך ואת היסטוריית התשלומים, ואת זמני התפילה וזמני היום.</p>" +
-    "<p><b>איך נכנסים:</b><br>היכנס עם גוגל באותה כתובת מייל: " + escHtml(email) + "<br>" +
-    "<a href=\"" + SITE + "/congregant/\">החשבון שלי</a> · <a href=\"" + SITE + "/\">דף הבית</a></p>" +
-    "<p>שאלות: <a href=\"mailto:" + CONTACT_EMAIL + "\">" + CONTACT_EMAIL + "</a> | (646) 529-2504 | (347) 244-9382</p>" +
-    "<p>בברכה,<br>בית הכנסת אור החיים</p>" +
-    "<hr>" +
-    "</div>" +
     "<div dir=\"ltr\" style=\"font-family:Arial,sans-serif;line-height:1.7;color:#26231e\">" +
     "<p>Hello " + escHtml(name) + ",</p>" +
     "<p>You were added as a member of Or Hachaim Congregation, and you now have an account on our website.</p>" +
@@ -126,6 +117,16 @@ function buildMail(c) {
     "<a href=\"" + SITE + "/congregant/\">My account</a> · <a href=\"" + SITE + "/\">Home page</a></p>" +
     "<p>Questions: <a href=\"mailto:" + CONTACT_EMAIL + "\">" + CONTACT_EMAIL + "</a> | (646) 529-2504 | (347) 244-9382</p>" +
     "<p>Or Hachaim Congregation</p>" +
+    "<hr>" +
+    "</div>" +
+    "<div dir=\"rtl\" style=\"font-family:Arial,sans-serif;line-height:1.7;color:#26231e\">" +
+    "<p>שלום " + escHtml(name) + ",</p>" +
+    "<p>נרשמת כמתפלל בבית הכנסת אור החיים, ועכשיו יש לך חשבון באתר שלנו.</p>" +
+    "<p><b>מה אפשר לראות באתר:</b><br>את היתרה שלך ואת היסטוריית התשלומים, ואת זמני התפילה וזמני היום.</p>" +
+    "<p><b>איך נכנסים:</b><br>היכנס עם גוגל באותה כתובת מייל: " + escHtml(email) + "<br>" +
+    "<a href=\"" + SITE + "/congregant/\">החשבון שלי</a> · <a href=\"" + SITE + "/\">דף הבית</a></p>" +
+    "<p>שאלות: <a href=\"mailto:" + CONTACT_EMAIL + "\">" + CONTACT_EMAIL + "</a> | (646) 529-2504 | (347) 244-9382</p>" +
+    "<p>בברכה,<br>בית הכנסת אור החיים</p>" +
     "</div>";
   return { to: email, message: { subject: subject, text: text, html: html } };
 }

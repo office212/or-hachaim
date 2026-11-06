@@ -103,12 +103,17 @@ async function resolveMemberEmails(deps) {
   return out;
 }
 function escHtml(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
-/* one email, Hebrew, right to left; the text is the gabbai's own lines */
+/* one email; the text is the gabbai's own lines, English first then Hebrew
+   (Nov 6, Hanoch): each line takes its own direction (dir="auto"), and a
+   "----" line becomes a divider between the two languages */
 function broadcastMailHtml(title, text) {
-  const lines = String(text || "").split("\n").map(function (l) { return l.trim() ? "<p style=\"margin:0 0 8px\">" + escHtml(l) + "</p>" : ""; }).join("");
-  return "<div dir=\"rtl\" style=\"font-family:Arial,sans-serif;font-size:16px;line-height:1.6;color:#26231e;max-width:560px\">" +
-    "<h2 style=\"color:#0e2c4c;margin:0 0 12px\">" + escHtml(title) + "</h2>" + lines +
-    "<p style=\"margin:18px 0 0;color:#7a6f61;font-size:13px\">בית הכנסת אור החיים · Or Hachaim Congregation · 321 Harold St, Staten Island, NY 10314<br><a href=\"https://orhachaimsi.org/\">orhachaimsi.org</a></p></div>";
+  const lines = String(text || "").split("\n").map(function (l) {
+    if (/^-{3,}$/.test(l.trim())) return "<hr style=\"border:0;border-top:1px solid #d8cfbd;margin:16px 0\">";
+    return l.trim() ? "<p dir=\"auto\" style=\"margin:0 0 8px\">" + escHtml(l) + "</p>" : "";
+  }).join("");
+  return "<div dir=\"ltr\" style=\"font-family:Arial,sans-serif;font-size:16px;line-height:1.6;color:#26231e;max-width:560px\">" +
+    "<h2 dir=\"auto\" style=\"color:#0e2c4c;margin:0 0 12px\">" + escHtml(title) + "</h2>" + lines +
+    "<p style=\"margin:18px 0 0;color:#7a6f61;font-size:13px\">Or Hachaim Congregation · בית הכנסת אור החיים · 321 Harold St, Staten Island, NY 10314<br><a href=\"https://orhachaimsi.org/\">orhachaimsi.org</a></p></div>";
 }
 /* the mail documents functions/sendMail sends; one id per broadcast and member, so a repeat never sends twice */
 async function queueBroadcastMail(deps, broadcastId, people, title, text) {
