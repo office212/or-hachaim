@@ -87,6 +87,46 @@ async function resolveMemberUids(deps) {
   return uids;
 }
 
+/* Hanoch Nov 7 ("שבת שלום לקהילה", bell + email): every active member who has
+   an email, whether or not they ever signed in (the bell needs a sign-in, an
+   email does not). Same filter as resolveMemberUids. */
+async function resolveMemberEmails(deps) {
+  const out = [], seen = new Set();
+  const snap = await deps.db.collection("congregants").get();
+  for (const d of snap.docs) {
+    const c = d.data() || {};
+    if ((c.status || "active") !== "active") continue;
+    const email = String(c.email || "").trim().toLowerCase();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) || seen.has(email)) continue;
+    seen.add(email); out.push({ id: d.id, email: email, name: c.name || "" });
+  }
+  return out;
+}
+function escHtml(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
+/* one email, Hebrew, right to left; the text is the gabbai's own lines */
+function broadcastMailHtml(title, text) {
+  const lines = String(text || "").split("\n").map(function (l) { return l.trim() ? "<p style=\"margin:0 0 8px\">" + escHtml(l) + "</p>" : ""; }).join("");
+  return "<div dir=\"rtl\" style=\"font-family:Arial,sans-serif;font-size:16px;line-height:1.6;color:#26231e;max-width:560px\">" +
+    "<h2 style=\"color:#0e2c4c;margin:0 0 12px\">" + escHtml(title) + "</h2>" + lines +
+    "<p style=\"margin:18px 0 0;color:#7a6f61;font-size:13px\">בית הכנסת אור החיים · Or Hachaim Congregation · 321 Harold St, Staten Island, NY 10314<br><a href=\"https://orhachaimsi.org/\">orhachaimsi.org</a></p></div>";
+}
+/* the mail documents functions/sendMail sends; one id per broadcast and member, so a repeat never sends twice */
+async function queueBroadcastMail(deps, broadcastId, people, title, text) {
+  let n = 0;
+  for (let i = 0; i < people.length; i += 400) {
+    const batch = deps.db.batch();
+    people.slice(i, i + 400).forEach(function (p) {
+      batch.set(deps.db.collection("mail").doc("broadcast-" + broadcastId + "-" + p.id), {
+        to: p.email, message: { subject: title, text: title + "\n\n" + text, html: broadcastMailHtml(title, text) },
+        createdAt: deps.FieldValue.serverTimestamp(), kind: "broadcast", broadcastId: broadcastId
+      });
+      n++;
+    });
+    await batch.commit();
+  }
+  return n;
+}
+
 async function deliver(deps, uid, payload) {
   const ref = deps.db.collection("notifications").doc();
   const doc = {
@@ -232,6 +272,10 @@ async function sendBroadcastHandler(deps, req, res) {
     const body = req.body || {};
     const title = String(body.title || "").trim().slice(0, 120);
     const text = String(body.body || "").trim().slice(0, 500);
+    /* optional (Nov 7): also by email to every active member with an email,
+       with a longer text when given (the bell keeps the short one) */
+    const withEmail = body.email === true;
+    const mailText = String(body.emailBody || body.body || "").trim().slice(0, 4000);
     const audience = String(body.audience || "").trim().toLowerCase();
     if (!title) return res.status(400).json({ ok: false, error: "missing-title" });
     if (["members", "gabbaim", "everyone"].indexOf(audience) < 0) {
@@ -246,7 +290,12 @@ async function sendBroadcastHandler(deps, req, res) {
     }
     const broadcastId = deps.db.collection("notifications").doc().id;
     await deliverToMany(deps, uids, { title: title, body: text, kind: "broadcast", createdBy: callerEmail, broadcastId: broadcastId });
-    return res.status(200).json({ ok: true, sentTo: uids.size, broadcastId: broadcastId });
+    let emailedTo = 0;
+    if (withEmail && (audience === "members" || audience === "everyone")) {
+      try { emailedTo = await queueBroadcastMail(deps, broadcastId, await resolveMemberEmails(deps), title, mailText); }
+      catch (e) { console.error("broadcast email queue failed", e && e.message ? e.message : e); return res.status(200).json({ ok: true, sentTo: uids.size, broadcastId: broadcastId, emailedTo: 0, emailError: "queue-failed" }); }
+    }
+    return res.status(200).json({ ok: true, sentTo: uids.size, broadcastId: broadcastId, emailedTo: emailedTo });
   } catch (e) {
     console.error("sendBroadcast failed", e && e.message ? e.message : e);
     return res.status(500).json({ ok: false, error: "internal-error" });
@@ -274,6 +323,8 @@ exports._test = {
   SUPER_ADMIN_EMAIL: SUPER_ADMIN_EMAIL,
   resolveGabbaiUids: resolveGabbaiUids,
   resolveMemberUids: resolveMemberUids,
+  resolveMemberEmails: resolveMemberEmails,
+  broadcastMailHtml: broadcastMailHtml,
   deliver: deliver,
   deliverToMany: deliverToMany,
   handleLedgerCreate: handleLedgerCreate,

@@ -439,6 +439,18 @@ and logo are part of the sheet assets (`src/shabbat-sheet/`).
 Changes made here apply to this Shabbat only unless marked for
 every week.
 
+**"שבת שלום לקהילה" (2026-11-07, super admin only).** A box on the
+Shabbat package page sends the community this Shabbat's times exactly as
+the sheet prints them (this week's changes included), the Kiddush
+sponsors and this week's yahrzeits: a short line to every member's bell
+and the full text by email to every active member with an email. A
+confirm box shows the whole message first; a second send in the same week
+asks again. It calls `sendBroadcast` (functions/notifications) with
+`email: true`: the function writes one `mail/broadcast-<id>-<member>`
+document per member, which `functions/sendMail` sends. **The
+notifications function must be redeployed for the email part**; until
+then the bell part works and the email part is ignored.
+
 **On the TV (2026-11-07).** "הצג בזמני התפילות במסך" puts this
 sheet's davening, learning and added rows (shown rows with a time;
 candle lighting, Shkiah, Shema and Shabbat ends stay out, since the
@@ -558,6 +570,21 @@ Hebrew sentence.
 
 Own balance, own history, own card only. If no record matches the
 signed-in email, the page says so and shows nothing else.
+
+**Family yahrzeits (2026-11-07).** Under the card, "יארצייטים של
+המשפחה": the member adds a yahrzeit (name, relation, Hebrew day and
+month, optional year; a Gregorian date can be turned into the Hebrew
+date, with "after sunset") and sees each one's status: waiting for the
+gabbai, on the TV in its week, or not approved. A pending one can be
+cancelled. A request is `yahrzeitRequests/{id}` (`src/ui/oh-yahrzeit.js`,
+`firestore.rules` `match /yahrzeitRequests`): created only by the member
+for their own record, read by them and by content gabbaim. On
+`/gabbai/tv/content/` a content gabbai sees "בקשות יארצייט ממתפללים
+(N)" above the list (the gabbai home's alerts strip points there).
+"אשר והצג במסך" saves a published public yahrzeit item with id
+`yzreq-<request id>` through the usual screen-content path (shown on the
+TV in its week, every year, like one added by hand), then marks the
+request approved. Nothing reaches the TV without that approval.
 
 ### Backup and restore (`/backup/`, `/restore/`)
 
@@ -962,6 +989,10 @@ re-sign-in verified.
   services are still the Node 20 deploys of 2026-11-02 until each is
   redeployed (Google closed new Node 20 deploys 2026-10-30 and is
   retiring the runtime). See "Cloud Functions deploys" above.
+- **TV offline alert** (approved 2026-11-07, waiting until a TV is
+  in the shul): the TV reports "alive" every few minutes through a
+  server function, and the super admin gets a bell item when it has
+  been silent for 30 minutes.
 - **Privacy page is not linked from the site.** `/privacy/` exists
   and works but no page points to it yet.
 - **Web push notifications are not yet confirmed received** on a

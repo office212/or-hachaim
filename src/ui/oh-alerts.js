@@ -28,7 +28,8 @@
     alRange: "{a} עד {b}", alExpireD: "{name} {time} ({days}) עד {date}", alRecOne: "חיוב קבוע אחד לשבוע הזה",
     alRecLate: "{n} כבר באיחור", alRecNot: "עדיין לא חויבו", alPledgeOld: "{n} מעל 30 יום",
     alDataT: "זמני היום על המסך נגמרים בעוד {n} ימים", alDataT1: "זמני היום על המסך נגמרים מחר", alDataT0: "זמני היום על המסך נגמרו",
-    alDataD: "היום האחרון בקבצים: {date}. צריך להעלות את הקובץ {file} לפני כן, אחרת המסך יישאר בלי זמני היום."
+    alDataD: "היום האחרון בקבצים: {date}. צריך להעלות את הקובץ {file} לפני כן, אחרת המסך יישאר בלי זמני היום.",
+    alYzReqT: "בקשות יארצייט ממתפללים ({n})", alYzReqD: "מחכות לאישור לפני שיוצגו במסך", alYzReqGo: "לאישור"
   };
   function F(k, o) { return String(L(k)).replace(/\{(\w+)\}/g, function (m, x) { return o && o[x] != null ? o[x] : m; }); }
   function L(k) { var o = window.OH_LABELS || {}; return (o[k] !== undefined && o[k] !== null && o[k] !== "") ? o[k] : DEF[k]; }
@@ -70,6 +71,8 @@
       out.push({ id: "shabbat", hi: false, icon: "candle", title: L("alShabbatT") + (d.parasha ? " | " + d.parasha : ""),
         text: F("alShabbatD", { date: t.dateLoc(sh, false) }) + (d.special ? " | " + d.special : ""), go: L("alShabbatGo"), href: "gabbai/shabbat/" });
     }
+    /* Nov 7: members' yahrzeit requests waiting for a content gabbai (src/ui/oh-yahrzeit.js) */
+    if (screen && d.yzReq > 0) out.push({ id: "yzreq", hi: true, icon: "flame", title: F("alYzReqT", { n: d.yzReq }), text: L("alYzReqD"), go: L("alYzReqGo"), href: "gabbai/tv/content/#yz" });
     if (screen && d.items) {
       var E = window.OH_DISPLAY;
       /* yahrzeits in the week of today (Sunday to Shabbat), published or still a draft */
@@ -139,7 +142,7 @@
   function render() {
     if (!st.el) return;
     var t = T(), today = t.nyIso(now());
-    var list = build({ today: today, role: st.role, dataEnd: st.dataEnd, items: st.items, docs: st.docs, zman: t.zman, rec: st.rec, pledges: st.pledges, isYomTov: st.cal && st.cal.isYomTov ? function (iso) { try { return !!st.cal.isYomTov(iso); } catch (e) { return false; } } : null,
+    var list = build({ today: today, role: st.role, dataEnd: st.dataEnd, yzReq: st.yzReq || 0, items: st.items, docs: st.docs, zman: t.zman, rec: st.rec, pledges: st.pledges, isYomTov: st.cal && st.cal.isYomTov ? function (iso) { try { return !!st.cal.isYomTov(iso); } catch (e) { return false; } } : null,
       parasha: st.sb && st.sb.parashaHe, special: st.sb && st.sb.special && st.sb.special.map(function (x) { return x.he; }).join(" | ") });
     var real = list.filter(function (a) { return a.id !== "shabbat"; });
     var h = '<div class="al-head"><h2>' + esc(L("alTitle")) + "</h2><span>" + esc(L("alTitleEn")) + "</span></div>";
@@ -164,6 +167,7 @@
       t.loadZmanim(rootPath()).then(render);
       if (window.OH_SCREEN_CONTENT) st.unsub = window.OH_SCREEN_CONTENT.subscribe("editor", function (items) { if (items) { st.items = items; render(); } });
       loadDocs();
+      try { if (f._db && f._db()) f._db().collection("yahrzeitRequests").where("status", "==", "pending").get().then(function (snap) { st.yzReq = snap.size || 0; render(); }, function () {}); } catch (e) {}
       if (window.OH_CALENDAR && window.OH_CALENDAR.load) {
         window.OH_CALENDAR.load({ base: rootPath() + "src/", files: { zmanim: ["zmanim/roy-daily-5787.json"] } }).then(function (c) {
           st.cal = c; try { st.sb = c.shabbatBlock(t.comingShabbat(t.nyIso(now()))); } catch (e) {} render();

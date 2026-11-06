@@ -792,18 +792,19 @@
     broadcastFunctionUrl: function () {
       return window.OH_BROADCAST_FUNCTION_URL || (cfg && cfg.broadcastFunctionUrl) || "https://us-east1-or-hachaim.cloudfunctions.net/sendBroadcast";
     },
-    sendBroadcastNotification: async function (title, body, audience) {
+    /* opts (Nov 7, "שבת שלום לקהילה"): { email: true, emailBody: "longer text" } also emails every active member */
+    sendBroadcastNotification: async function (title, body, audience, opts) {
       if (!state.ready || !state.user) return { ok: false, reason: "not-signed-in" };
       if (state.user.email.toLowerCase() !== SUPER_ADMIN_EMAIL) return { ok: false, reason: "not-super-admin" };
       var url = window.OH_FIREBASE.broadcastFunctionUrl();
       try {
         var token = await state.user.getIdToken();
         var resp = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
-          body: JSON.stringify({ title: String(title || "").trim(), body: String(body || "").trim(), audience: audience }) });
+          body: JSON.stringify(Object.assign({ title: String(title || "").trim(), body: String(body || "").trim(), audience: audience }, opts && opts.email ? { email: true, emailBody: String(opts.emailBody || "").trim() } : {})) });
         var data = null;
         try { data = await resp.json(); } catch (e) {}
         if (!resp.ok) return { ok: false, reason: (data && data.error) || ("http-" + resp.status) };
-        return { ok: true, sentTo: data && data.sentTo };
+        return { ok: true, sentTo: data && data.sentTo, emailedTo: data && data.emailedTo, emailError: data && data.emailError };
       } catch (e) { return { ok: false, reason: String(e && e.message ? e.message : e) }; }
     },
     grantUserClaimsAndSave: async function (email, permission, imageUpload) {
