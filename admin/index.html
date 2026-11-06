@@ -61,6 +61,16 @@
 <p id="bcMsg" class="hint"></p>
 </div>
 </div>
+<div id="tvDisplaySection" style="display:none">
+<h2>תצוגת טלוויזיה</h2>
+<div class="gold-frame" style="padding:1rem">
+<p class="oh-help">המסך מואר כרגיל כל הלילה. אפשר להדליק הכהיית לילה אוטומטית (מ־23:30 עד שעה לפני עלות השחר), והשינוי מופיע במסך תוך שניות.</p>
+<label><input type="checkbox" id="tvDim"> הכהיית לילה אוטומטית</label>
+<p id="tvDimState" class="hint"></p>
+<button class="btn" onclick="saveTvDisplay()">שמור</button>
+<p id="tvDimMsg" class="hint"></p>
+</div>
+</div>
 </div>
 <script>
 function signInFromGate(){
@@ -136,12 +146,35 @@ async function deleteUm(id){
 }
 async function checkUmVisibility(){
   try {
-    var fb = window.OH_FIREBASE, sec = document.getElementById("userMgmtSection"), bsec = document.getElementById("broadcastSection");
+    var fb = window.OH_FIREBASE, sec = document.getElementById("userMgmtSection"), bsec = document.getElementById("broadcastSection"), tsec = document.getElementById("tvDisplaySection");
     if(!fb || !fb.ready || !fb.user || !sec) return;
     var role = await fb.resolveRole();
-    if(role && role.isSuperAdmin){ sec.style.display = ""; if(!_umShown){ _umShown = true; refreshUmList(); } if(bsec) bsec.style.display = ""; }
-    else { sec.style.display = "none"; if(bsec) bsec.style.display = "none"; }
+    if(role && role.isSuperAdmin){ sec.style.display = ""; if(!_umShown){ _umShown = true; refreshUmList(); } if(bsec) bsec.style.display = ""; if(tsec){ tsec.style.display = ""; if(!_tvShown){ _tvShown = true; refreshTvDisplay(); } } }
+    else { sec.style.display = "none"; if(bsec) bsec.style.display = "none"; if(tsec) tsec.style.display = "none"; }
   } catch(e) {}
+}
+var _tvShown = false;
+async function refreshTvDisplay(){
+  var fb = window.OH_FIREBASE, box = document.getElementById("tvDim"), stEl = document.getElementById("tvDimState");
+  if(!fb || !fb.loadTvDisplay){ if(stEl) stEl.textContent = L("הגדרת התצוגה לא זמינה כרגע.", "The display setting is not available right now."); return; }
+  var r = await fb.loadTvDisplay();
+  if(!r || !r.ok){ if(stEl) stEl.textContent = L("ההגדרה לא נטענה: ", "The setting did not load: ") + (r && r.reason ? r.reason : "?"); return; }
+  if(box) box.checked = !!r.nightDim;
+  if(stEl) stEl.textContent = r.nightDim ? L("כרגע: המסך מוכהה בלילה.", "Now: the screen dims at night.") : L("כרגע: המסך מואר כרגיל.", "Now: the screen stays lit as normal.");
+}
+async function saveTvDisplay(){
+  var fb = window.OH_FIREBASE, msgEl = document.getElementById("tvDimMsg");
+  if(!fb || !fb.saveTvDisplay){ msgEl.textContent = L("שמירת ההגדרה לא זמינה כרגע.", "Saving the setting is not available right now."); return; }
+  var on = !!document.getElementById("tvDim").checked;
+  msgEl.textContent = L("שומר...", "Saving...");
+  var r = await fb.saveTvDisplay(on);
+  if(r && r.saved){
+    msgEl.textContent = L("נשמר.", "Saved.");
+    if(fb.logActivity) fb.logActivity(on ? "הודלקה הכהיית לילה בטלוויזיה" : "כובתה הכהיית לילה בטלוויזיה", "", { area: "screen", code: "tvDisplay.update" });
+    refreshTvDisplay();
+  } else {
+    msgEl.textContent = L("לא נשמר: ", "Not saved: ") + (r && r.reason ? r.reason : "?");
+  }
 }
 setInterval(checkUmVisibility, 1000);
 checkUmVisibility();
