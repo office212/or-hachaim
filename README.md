@@ -61,7 +61,7 @@ automatically.
 | `/finance/` | Finance gabbaim and super admin | Member list and cards, ledger, neder fast entry, recurring charges, tax letters, annual report, backup export. Writes to the activity log as it goes, but does not show it (see `/gabbai/activity/`). The super admin also sees join requests and role controls here. |
 | `/congregant/` | Signed-in member (own record only) | "My Account": the member's own balance and history. A signed-in person who is not a member yet sees only the join request screen here. |
 | `/backup/` | Finance gabbaim and super admin | Download a full backup file (JSON) of all finance data. Changes nothing. |
-| `/restore/` | Finance gabbaim and super admin | Restore from a backup file. Step 1 is always a dry run (no writes); step 2 imports missing documents only and never deletes or overwrites. |
+| `/restore/` | Super admin only | Restore from a backup file. Step 1 is always a dry run (reads only): it answers at once, reads up to 8 documents at a time (20 s limit each), shows progress per collection and shows every error on the page. Step 2 imports missing documents only and never deletes or overwrites. |
 
 Deleted on purpose: the old gated `/screen/` page was removed on
 2026-11-03. Its shared files (`screen/screen.css`, `screen/content.css`,
