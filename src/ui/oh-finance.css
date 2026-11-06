@@ -17,7 +17,7 @@
 .fn .fn-warnline{color:var(--warn)}
 
 /* tabs */
-.fn-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:4px;border:1px solid var(--hair);border-radius:16px;background:var(--surface);margin:4px 0 14px}
+.fn-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:4px;border:1px solid var(--hair);border-radius:16px;background:var(--surface);margin:4px 0 14px}
 .fn-tabs button{border:0;background:none;border-radius:12px;min-height:44px;font-weight:700;font-size:15px;color:var(--muted);padding:0 4px}
 .fn-tabs button[aria-current="page"]{background:var(--navy);color:#f6ecd6}
 
@@ -126,5 +126,5 @@ dialog.fn-sheet h3{margin:0 0 10px;color:#0e2c4c;font-size:22px}
 /* the older tools, under "עוד" */
 #fnMore[hidden]{display:none!important}
 @media screen{#printArea{display:none}}
-@media (max-width:420px){.fn-ned{grid-template-columns:78px minmax(0,1fr) 82px;gap:6px;padding:8px}.fn-tabs button{font-size:14px}}
+@media (max-width:420px){.fn-ned{grid-template-columns:78px minmax(0,1fr) 82px;gap:6px;padding:8px}.fn-tabs{gap:2px;padding:3px}.fn-tabs button{font-size:13.5px;padding:0 2px}}
 @media print{.fn,.fn-toast{display:none!important}}

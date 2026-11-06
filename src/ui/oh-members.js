@@ -126,6 +126,7 @@
     /* finance page: called after every load of the member list */
     attach: function (cons, rerender) { S.cons = cons; S.rerender = rerender; renderToggle(); refreshAdmin(); },
     refresh: refreshAdmin,
+    requestCount: function () { return isSA() ? S.requests.length : 0; },
     toggleInactive: function () { S.showInactive = !S.showInactive; paint(); },
     openFor: function (kind, id) { S.open = { kind: kind, id: id }; S.msg = {}; paint(); },
     close: function () { S.open = null; paint(); },

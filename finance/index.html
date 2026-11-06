@@ -38,13 +38,13 @@
 <p id="dataSource" class="oh-help">כניסה נדרשת</p>
 <!-- Nov 6 (Hanoch, approved demo): the finance screens, drawn by src/ui/oh-fin.js -->
 <div id="fn" class="fn ohx"></div>
-<div id="fnPark" hidden><div id="ohInactiveToggle" hidden></div></div>
-<!-- the older tools, unchanged, shown under "עוד" (#more; #reports scrolls to the annual report) -->
-<section id="fnMore" hidden>
-<h2>הוספת מתפלל</h2>
+<div id="fnPark" hidden><div id="ohInactiveToggle" hidden></div><div id="fnAddMember">
 <div class="gold-frame no-print" style="padding:1rem"><p class="oh-help">מייל חובה. בלי מייל אין כניסה לאתר.</p>
 <label>שם</label><input id="newName"><label>טלפון</label><input id="newPhone"><label>מייל (חובה)</label><input id="newEmail">
 <button class="btn" id="addCongBtn" onclick="addCong()">הוסף מתפלל</button><p id="addMsg"></p></div>
+</div></div>
+<!-- the older tools, unchanged, shown under "עוד" (#more; #reports scrolls to the annual report) -->
+<section id="fnMore" hidden>
 <h2 hidden>חיובים קבועים</h2><!-- hidden (Hanoch Nov 5 7:57 AM: no recurring charges planned for now) -->
 <div class="gold-frame no-print" style="padding:1rem" hidden><p class="oh-help">דמי חבר נרשמים לבד, כל חודש או כל שנה.</p>
 <div id="recList"></div><button class="btn" onclick="applyRecurring()">חייב עכשיו את מה שהגיע זמנו</button><p id="recMsg"></p></div>

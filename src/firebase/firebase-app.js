@@ -417,6 +417,21 @@
         return { saved: true, id: ref.id };
       } catch (e) { return { saved: false, reason: String(e && e.code ? e.code : (e && e.message ? e.message : e)) }; }
     },
+    /* Hanoch Nov 6: a gabbai fixes a member's name and phone (a Google
+       account name is not always the person's real name). Only these two
+       fields are written; the email never changes here (the rules let only
+       the super admin change an existing email, and this never tries). */
+    updateCongregantDetails: async function (id, data) {
+      if (!state.ready || !state.db) return { saved: false, reason: "test-only" };
+      if (!state.user) return { saved: false, reason: "not-signed-in" };
+      var name = String((data && data.name) || "").replace(/\s+/g, " ").trim(), phone = String((data && data.phone) || "").trim();
+      if (name.length < 2) return { saved: false, reason: "missing-name" };
+      if (name.length > 80 || phone.length > 30) return { saved: false, reason: "too-long" };
+      try {
+        await state.db.collection("congregants").doc(String(id)).update({ name: name, phone: phone });
+        return { saved: true, name: name, phone: phone };
+      } catch (e) { return { saved: false, reason: String(e && e.code ? e.code : (e && e.message ? e.message : e)) }; }
+    },
     /* ---------- Stage D (Hanoch 2026-11-04 4:12-4:14 PM): members, join requests, roles ----------
        No new collection. A join request is a congregants document with id
        "join_" + the person's uid and status "pending" (the rules allow exactly

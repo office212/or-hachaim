@@ -477,7 +477,8 @@ the document answers 200, as the rule says.
 
 Since 2026-11-06 the page opens on the simpler finance screens
 (`src/ui/oh-fin.js`, `src/ui/oh-finance.css`, from the demo Hanoch
-approved). Four tabs: home, payment, nedarim, who owes. Each view
+approved). Five tabs: home, payment, nedarim, who owes, members
+(added 2026-11-06). Each view
 has its own address (`#pay`, `#charge`, `#nedarim`, `#owes`,
 `#members`, `#m-<member id>`, `#more`; `#reports` opens "more" at the
 annual report):
@@ -511,8 +512,25 @@ annual report):
   description starts with `ביטול [<operationId>]`, operationId
   `void-<operationId>` (one cancellation per entry, ever). The
   original stays in the history, marked "בוטל". No rules change.
-- **More** (`#more`): add member, tax letters, annual report,
-  backup, unchanged.
+- **Edit details** (2026-11-06): "עריכת פרטים" on the member card
+  lets a finance gabbai or the super admin fix the member's name and
+  phone (a Google account name is not always the real name).
+  `OH_FIREBASE.updateCongregantDetails` writes only `name` and
+  `phone`; the email is shown but never changes there (the rules
+  already let finance edit name and phone and lock an existing
+  email; tested). One activity-log line, old → new.
+- **Members** (`#members`, 2026-11-06): every member task in one
+  place. Search by name or phone; "+ מתפלל חדש" opens the page's own
+  add form (`addCong`: email required, the duplicate-email and
+  same-person warnings) right in the tab; join requests with
+  approve/decline for the super admin (`OH_MEMBERS`; the gabbai home's
+  link `finance/#ohJoinReqs` opens this tab, and the finance home shows
+  a "בקשות הצטרפות (N)" line); "הצג לא פעילים"; each row shows "לא
+  פעיל" or "אין מייל" and opens the member card. These page parts keep
+  their own state and are parked in `#fnPark` while another view is
+  drawn.
+- **More** (`#more`): tax letters, annual report, backup, unchanged
+  (adding a member moved to the Members tab).
 
 The details below still hold:
 

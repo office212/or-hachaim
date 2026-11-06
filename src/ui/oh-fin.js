@@ -87,16 +87,17 @@
     if (h === "pay" || h === "charge") { if (!st.pay || st.pay.kind !== (h === "pay" ? "payment" : "charge")) st.pay = newPay(h === "pay" ? "payment" : "charge", st.pay && st.pay.m); return "pay"; }
     if (h === "nedarim" || h === "owes" || h === "members" || h === "more") return h;
     if (h === "reports") return "more";
+    if (h === "ohJoinReqs") return "members"; /* the gabbai home's "join requests" link */
     return "home";
   }
   function go(hash) { if (("#" + hash) === location.hash) { route(); return; } location.hash = hash; }
-  function route() { st.view = viewFromHash(); render(); window.scrollTo(0, 0); if (location.hash === "#reports") { var r = document.getElementById("reports"); if (r) r.scrollIntoView(); } }
+  function route() { st.view = viewFromHash(); st.editing = null; st.editDraft = null; st.editErr = ""; render(); window.scrollTo(0, 0); if (location.hash === "#reports") { var r = document.getElementById("reports"); if (r) r.scrollIntoView(); } }
   function newPay(kind, m) { return { kind: kind, m: m || null, amount: "", how: "", why: "", note: "", date: today(), showDate: false, q: "", op: op("entry"), err: "" }; }
 
   /* ---------- views ---------- */
   function tabs() {
-    var t = [["home", T("בית", "Home")], ["pay", T("תשלום", "Payment")], ["nedarim", T("נדרים", "Nedarim")], ["owes", T("מי חייב", "Who owes")]];
-    var cur = st.view === "member" || st.view === "members" || st.view === "more" ? "home" : st.view;
+    var t = [["home", T("בית", "Home")], ["pay", T("תשלום", "Payment")], ["nedarim", T("נדרים", "Nedarim")], ["owes", T("מי חייב", "Who owes")], ["members", T("מתפללים", "Members")]];
+    var cur = st.view === "member" ? "members" : st.view === "more" ? "home" : st.view;
     return '<nav class="fn-tabs" aria-label="' + T("כספים", "Finance") + '">' + t.map(function (x) { return '<button type="button" data-go="' + x[0] + '"' + (cur === x[0] ? ' aria-current="page"' : "") + ">" + esc(x[1]) + "</button>"; }).join("") + "</nav>";
   }
   function back(to) { return '<button type="button" class="fn-back" data-go="' + (to || "home") + '">→ ' + T("חזרה", "Back") + "</button>"; }
@@ -113,7 +114,9 @@
       });
     });
     recent.sort(function (a, b) { return a.e.date < b.e.date ? 1 : a.e.date > b.e.date ? -1 : (b.e._new || 0) - (a.e._new || 0); });
-    var h = '<div class="fn-search">' + I.search + '<input id="fnQ" type="search" autocomplete="off" placeholder="' + T("חיפוש מתפלל, לפי שם או טלפון", "Find a member, by name or phone") + '" value="' + esc(st.q) + '" aria-label="' + T("חיפוש מתפלל", "Find a member") + '"></div>';
+    var jr = M() && M().requestCount ? M().requestCount() : 0;
+    var h = jr ? '<button type="button" class="fn-act" data-go="members" style="margin-bottom:12px"><span class="fn-ic">' + I.owe + "</span><span><b>" + T("בקשות הצטרפות", "Join requests") + " (" + jr + ")</b><span>" + T("מחכות לאישור, בלשונית מתפללים", "Waiting for approval, in the Members tab") + "</span></span></button>" : "";
+    h += '<div class="fn-search">' + I.search + '<input id="fnQ" type="search" autocomplete="off" placeholder="' + T("חיפוש מתפלל, לפי שם או טלפון", "Find a member, by name or phone") + '" value="' + esc(st.q) + '" aria-label="' + T("חיפוש מתפלל", "Find a member") + '"></div>';
     h += '<div id="fnRes">' + results() + "</div>";
     h += '<div class="fn-acts">' +
       '<button type="button" class="fn-act fn-primary" data-go="pay"><span class="fn-ic">' + I.pay + "</span><span><b>" + T("רישום תשלום", "Record a payment") + "</b><span>" + T("שם, סכום, איך שילם", "Name, amount, how paid") + "</span></span></button>" +
@@ -123,7 +126,7 @@
       '<div class="fn-stat"><div class="fn-v fn-num">' + money(open) + '</div><div class="fn-k">' + T("פתוח לגבייה", "Open to collect") + '</div></div>' +
       '<div class="fn-stat"><div class="fn-v fn-num">' + owing.length + '</div><div class="fn-k">' + T("מתפללים עם יתרה", "Members with a balance") + "</div></div></div>";
     h += "<h2>" + T("רישומים אחרונים", "Recent entries") + '</h2><div class="fn-list">' + (recent.length ? recent.slice(0, 6).map(function (r) { return entryRow(r.c, r.e, r.voided, true); }).join("") : '<div class="fn-empty">' + T("אין עדיין רישומים", "No entries yet") + "</div>") + "</div>";
-    h += '<div class="fn-chips" style="margin-top:16px"><button type="button" class="fn-chip" data-go="members">' + T("כל המתפללים", "All members") + " (" + C().filter(listed).length + ')</button><button type="button" class="fn-chip" data-go="more">' + T("עוד: הוספת מתפלל, קבלות מס, דוח שנתי, גיבוי", "More: add member, tax letters, annual report, backup") + "</button></div>";
+    h += '<div class="fn-chips" style="margin-top:16px"><button type="button" class="fn-chip" data-go="more">' + T("עוד: קבלות מס, דוח שנתי, גיבוי", "More: tax letters, annual report, backup") + "</button></div>";
     return h;
   }
   function results() {
@@ -135,7 +138,7 @@
   }
   function memberRow(c) {
     var b = bal(c);
-    return '<button type="button" class="fn-rowbtn" data-go="m-' + esc(c.id) + '"><div class="fn-row"><div class="fn-grow"><div class="fn-t">' + esc(c.name) + (isActive(c) ? "" : ' <span class="fn-pill">' + T("לא פעיל", "Inactive") + "</span>") + '</div><div class="fn-d fn-num" style="text-align:right">' + esc(c.phone || "") + '</div></div><div class="fn-amt">' + (b > 0.004 ? '<span class="fn-num fn-owe fn-amt">' + money(b) + "</span>" : '<span class="fn-pill fn-ok">' + esc(U.balanceInfo(b).label) + (U.balanceInfo(b).kind === "credit" ? " " + esc(U.balanceInfo(b).amount) : "") + "</span>") + "</div></div></button>";
+    return '<button type="button" class="fn-rowbtn" data-go="m-' + esc(c.id) + '"><div class="fn-row"><div class="fn-grow"><div class="fn-t">' + esc(c.name) + (isActive(c) ? "" : ' <span class="fn-pill">' + T("לא פעיל", "Inactive") + "</span>") + (c.email ? "" : ' <span class="fn-pill">' + T("אין מייל", "No email") + "</span>") + '</div><div class="fn-d fn-num" style="text-align:right">' + esc(c.phone || "") + '</div></div><div class="fn-amt">' + (b > 0.004 ? '<span class="fn-num fn-owe fn-amt">' + money(b) + "</span>" : '<span class="fn-pill fn-ok">' + esc(U.balanceInfo(b).label) + (U.balanceInfo(b).kind === "credit" ? " " + esc(U.balanceInfo(b).amount) : "") + "</span>") + "</div></div></button>";
   }
   function typeWord(e) { return e.type === "payment" ? T("תשלום", "Payment") : e.type === "charge" ? T("חיוב", "Charge") : (VOID_RE.test(e.description || "") ? T("ביטול רישום", "Cancellation") : T("תיקון", "Correction")); }
   function entryDesc(e) {
@@ -249,20 +252,42 @@
       }).join("") : '<div class="fn-empty">' + T("אין חובות פתוחים ✓", "No open balances ✓") + "</div>") + "</div>";
   }
 
+  /* Hanoch Nov 6: the "מתפללים" tab, every member task in one place: search,
+     add (the page's own form and checks, addCong in finance/index.html, moved
+     in here), join requests (super admin, OH_MEMBERS), the inactive toggle,
+     and the list; a row opens the member card (edit details, payments, role). */
   function members() {
-    var q = st.mq.trim().toLowerCase();
-    var list = C().filter(listed).filter(function (c) { return !q || String(c.name || "").toLowerCase().indexOf(q) >= 0; }).sort(function (a, b) { return String(a.name).localeCompare(String(b.name), "he"); });
-    return back("home") + "<h1>" + T("כל המתפללים", "All members") + '</h1><div class="fn-search">' + I.search + '<input id="fnMQ" type="search" autocomplete="off" placeholder="' + T("סינון לפי שם", "Filter by name") + '" value="' + esc(st.mq) + '" aria-label="' + T("סינון לפי שם", "Filter by name") + '"></div><div id="fnInactiveSlot"></div>' +
-      '<div class="fn-list" style="margin-top:10px">' + (list.length ? list.map(memberRow).join("") : '<div class="fn-empty">' + T("אין מתפללים", "No members") + "</div>") + "</div>";
+    var q = st.mq.trim().toLowerCase(), digits = q.replace(/\D/g, "");
+    var all = C().filter(listed);
+    var list = all.filter(function (c) { return !q || String(c.name || "").toLowerCase().indexOf(q) >= 0 || (digits.length >= 3 && String(c.phone || "").replace(/\D/g, "").indexOf(digits) >= 0); })
+      .sort(function (a, b) { return String(a.name).localeCompare(String(b.name), "he"); });
+    var h = "<h1>" + T("מתפללים", "Members") + '</h1><p class="fn-sub">' + all.length + " " + T("מתפללים", "members") + "</p>";
+    h += '<div id="fnJoinSlot"></div>';
+    h += st.addOpen ? '<div class="fn-box" style="margin:0 0 14px"><div class="fn-box-h" style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>' + T("מתפלל חדש", "New member") + '</b><button type="button" class="fn-btn fn-ghost fn-sm" data-addmem="0">' + T("סגור", "Close") + '</button></div><div id="fnAddSlot" style="padding:0 6px 6px"></div></div>'
+      : '<div style="margin:0 0 14px"><button type="button" class="fn-btn fn-primary" data-addmem="1">+ ' + T("מתפלל חדש", "New member") + "</button></div>";
+    h += '<div class="fn-search">' + I.search + '<input id="fnMQ" type="search" autocomplete="off" placeholder="' + T("חיפוש לפי שם או טלפון", "Search by name or phone") + '" value="' + esc(st.mq) + '" aria-label="' + T("חיפוש מתפלל", "Find a member") + '"></div><div id="fnInactiveSlot" style="margin-top:8px"></div>' +
+      '<div class="fn-list" style="margin-top:10px">' + (list.length ? list.map(memberRow).join("") : '<div class="fn-empty">' + (q ? T("לא נמצא מתפלל כזה", "No member found") : T("אין מתפללים", "No members")) + "</div>") + "</div>";
+    return h;
   }
-
   function member() {
     var c = con(st.member);
     if (!c) return back("home") + '<div class="fn-empty">' + (C().length ? T("המתפלל לא נמצא.", "Member not found.") : T("טוען...", "Loading...")) + "</div>";
     var b = bal(c), v = voidedIds(c);
     var rows = (c.ledger || []).filter(function (e) { return !(e.type === "correction" && VOID_RE.test(e.description || "")); })
       .slice().sort(function (a, z) { return a.date < z.date ? 1 : a.date > z.date ? -1 : (z._new || 0) - (a._new || 0); });
-    var h = back("home") + "<h1>" + esc(c.name) + '</h1><p class="fn-sub"><span class="fn-num">' + esc(c.phone || "") + "</span>" + (c.email ? ' · <span class="fn-num">' + esc(c.email) + "</span>" : "") + "</p>";
+    var h = back("home");
+    /* Hanoch Nov 6: the gabbai fixes the name and phone; the email stays as it is */
+    if (st.editing === c.id) {
+      var e = st.editDraft || { name: c.name || "", phone: c.phone || "" };
+      h += "<h1>" + T("עריכת פרטים", "Edit details") + '</h1><div class="fn-field"><label for="fnEdName">' + T("שם", "Name") + '</label><input class="fn-input" id="fnEdName" maxlength="80" autocomplete="off" value="' + esc(e.name) + '"></div>' +
+        '<div class="fn-field"><label for="fnEdPhone">' + T("טלפון", "Phone") + '</label><input class="fn-input fn-num" id="fnEdPhone" type="tel" maxlength="30" autocomplete="off" dir="ltr" value="' + esc(e.phone) + '"></div>' +
+        '<div class="fn-field"><span class="lab">' + T("מייל", "Email") + '</span><div class="fn-num" style="text-align:right">' + esc(c.email || T("אין", "none")) + '</div><p class="fn-note">' + T("המייל הוא החשבון שהמתפלל נכנס איתו לאתר, ולכן הוא לא משתנה כאן.", "The email is the account the member signs in with, so it does not change here.") + "</p></div>" +
+        (st.editErr ? '<div class="fn-msg fn-err" role="alert">' + esc(st.editErr) + "</div>" : "") +
+        '<div class="fn-two"><button type="button" class="fn-btn fn-primary" id="fnEdSave"' + (st.busy ? " disabled" : "") + ">" + (st.busy ? T("שומר...", "Saving...") : T("שמור", "Save")) + '</button><button type="button" class="fn-btn" data-edcancel="1">' + T("ביטול", "Cancel") + "</button></div>";
+      return h;
+    }
+    h += "<h1>" + esc(c.name) + '</h1><p class="fn-sub"><span class="fn-num">' + esc(c.phone || "") + "</span>" + (c.email ? ' · <span class="fn-num">' + esc(c.email) + "</span>" : "") +
+      ' <button type="button" class="fn-btn fn-ghost fn-sm" data-edit="' + esc(c.id) + '">' + T("עריכת פרטים", "Edit details") + "</button></p>";
     h += '<div class="fn-balance"><div class="fn-k">' + T("יתרה לתשלום", "Balance owed") + '</div><div class="fn-v">' + balWord(b) + "</div></div>";
     h += '<div class="fn-two"><button type="button" class="fn-btn fn-primary" data-new="payment">+ ' + T("תשלום", "Payment") + '</button><button type="button" class="fn-btn" data-new="charge">+ ' + T("חיוב", "Charge") + "</button></div>";
     if (M()) h += M().cardExtras(c);
@@ -276,6 +301,11 @@
   var VIEWS = { home: home, pay: pay, nedarim: nedarim, owes: owes, members: members, member: member, more: function () { return back("home"); } };
   function render(focusSel) {
     var el = document.getElementById("fn"); if (!el) return;
+    /* the page's own parts that live inside the views (they keep their state and
+       handlers: the inactive toggle, the join requests, the add-member form):
+       out to the parking spot before anything is redrawn, back in after */
+    var park = document.getElementById("fnPark"), PARTS = [["ohInactiveToggle", "fnInactiveSlot"], ["ohJoinReqs", "fnJoinSlot"], ["fnAddMember", "fnAddSlot"]];
+    if (park) PARTS.forEach(function (x) { var n = document.getElementById(x[0]); if (n && n.parentNode !== park) park.appendChild(n); });
     if (document.body.classList.contains("gated")) { el.innerHTML = ""; var mo = document.getElementById("fnMore"); if (mo) mo.hidden = true; return; }
     var a = document.activeElement, keep = focusSel || null, pos = null;
     if (!keep && a && el.contains(a)) {
@@ -285,11 +315,8 @@
       try { pos = a.selectionStart; } catch (e) {}
     }
     el.innerHTML = tabs() + (VIEWS[st.view] || home)();
+    PARTS.forEach(function (x) { var n = document.getElementById(x[0]), slot = document.getElementById(x[1]); if (n && slot) slot.appendChild(n); });
     var more = document.getElementById("fnMore"); if (more) more.hidden = st.view !== "more";
-    /* the inactive toggle and join requests live in the page; they follow the view */
-    var tog = document.getElementById("ohInactiveToggle"), slot = document.getElementById("fnInactiveSlot");
-    if (tog) { if (slot) slot.appendChild(tog); else { var park = document.getElementById("fnPark"); if (park) park.appendChild(tog); } }
-    var jr = document.getElementById("ohJoinReqs"); if (jr) jr.style.display = st.view === "home" ? "" : "none";
     if (keep) { var f = el.querySelector(keep); if (f) { f.focus(); try { if (pos != null && f.setSelectionRange) f.setSelectionRange(pos, pos); } catch (e) {} } }
   }
 
@@ -343,6 +370,23 @@
       (c.ledger = c.ledger || []).push({ date: entry.date, operationId: entry.operationId, type: entry.type, amount: entry.amount, description: entry.description || "", enteredBy: (f && f.user && f.user.email) || "", method: entry.method || "", source: entry.source || "manual", aliyah: entry.aliyah || "", _new: Date.now() });
     }
     return { ok: ok, live: !!r.saved, r: r };
+  }
+  async function saveDetails() {
+    var c = con(st.editing); if (!c || st.busy) return;
+    var name = String(($("#fnEdName") || {}).value || "").replace(/\s+/g, " ").trim(), phone = String(($("#fnEdPhone") || {}).value || "").trim();
+    st.editDraft = { name: name, phone: phone };
+    if (name.length < 2) { st.editErr = T("כתבו שם (לפחות 2 אותיות).", "Write a name (at least 2 letters)."); render("#fnEdName"); return; }
+    if (name === (c.name || "") && phone === (c.phone || "")) { st.editing = null; st.editDraft = null; st.editErr = ""; render(); return; }
+    var f = fb();
+    st.busy = true; st.editErr = ""; render();
+    var r = (f && f.updateCongregantDetails) ? await f.updateCongregantDetails(c.id, { name: name, phone: phone }) : { saved: false, reason: "test-only" };
+    st.busy = false;
+    if (!r.saved && r.reason !== "test-only") { st.editErr = T("לא נשמר: ", "Not saved: ") + reason(r) + T(". נסו שוב.", ". Try again."); render(); return; }
+    var was = (c.name || "") + (c.phone ? " (" + c.phone + ")" : "");
+    c.name = r.name || name; c.phone = r.phone != null ? r.phone : phone;
+    if (r.saved) log("עודכנו פרטי מתפלל: " + was + " ← " + c.name + (c.phone ? " (" + c.phone + ")" : ""), { code: "member.details", target: c.name, targetId: c.id });
+    st.editing = null; st.editDraft = null; render();
+    toast(T("הפרטים עודכנו ✓", "Details updated ✓") + (r.saved ? "" : " (" + T("תצוגה מקומית, לא נשמר", "local preview, not saved") + ")"));
   }
   function log(sentence, extra) { if (typeof window.logLine === "function") window.logLine("finance", sentence, extra); }
   async function savePay() {
@@ -415,6 +459,10 @@
     if (d.showdate) { st.pay.showDate = true; render("#fnDate"); return; }
     if (t.id === "fnSave") { savePay(); return; }
     if (d.void) { var c = con(d.cid), e = c && (c.ledger || []).filter(function (x) { return x.operationId === d.void; })[0]; voidEntry(c, e, false); return; }
+    if (d.addmem) { st.addOpen = d.addmem === "1"; render(st.addOpen ? "#newName" : null); return; }
+    if (d.edit) { st.editing = d.edit; st.editDraft = null; st.editErr = ""; render("#fnEdName"); return; }
+    if (d.edcancel) { st.editing = null; st.editDraft = null; st.editErr = ""; render(); return; }
+    if (t.id === "fnEdSave") { saveDetails(); return; }
     if (d.statement) { var c2 = con(d.statement); if (c2) printStatement(c2); return; }
     if (d.csv) { if (typeof window.exportCSV === "function") window.exportCSV(d.csv); return; }
     if (d.addrow) { st.ned.rows.push({ al: "", name: "", amount: "", custom: true, op: op("neder") }); render('[data-ni="' + (st.ned.rows.length - 1) + '"][data-k="al"]'); return; }
